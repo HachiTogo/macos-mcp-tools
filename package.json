@@ -1,0 +1,38 @@
+{
+  "name": "@hachitogo/macos-mcp-tools",
+  "version": "0.0.1",
+  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, and Memory",
+  "type": "module",
+  "bin": {
+    "macos-tools": "./src/cli.ts"
+  },
+  "files": [
+    "src/cli.ts",
+    "src/lib/jxa.ts",
+    "src/servers/mail.ts",
+    "src/servers/contacts.ts",
+    "src/servers/notes.ts",
+    "src/servers/tasks.ts",
+    "src/servers/memory.ts"
+  ],
+  "scripts": {
+    "dev": "bun run src/cli.ts",
+    "test": "bun test",
+    "test:integration": "RUN_INTEGRATION_TESTS=1 bun test src/integration",
+    "test:integration:apps": "RUN_INTEGRATION_TESTS=1 RUN_APP_INTEGRATION_TESTS=1 bun test src/integration",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "os": ["darwin"],
+  "license": "MIT",
+  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks"]
+}
