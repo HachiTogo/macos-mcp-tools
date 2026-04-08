@@ -1,6 +1,6 @@
 {
   "name": "@hachitogo/macos-mcp-tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, and Memory",
   "type": "module",
   "bin": {
@@ -34,5 +34,16 @@
   },
   "os": ["darwin"],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HachiTogo/macos-mcp-tools.git"
+  },
+  "homepage": "https://github.com/HachiTogo/macos-mcp-tools#readme",
+  "bugs": {
+    "url": "https://github.com/HachiTogo/macos-mcp-tools/issues"
+  },
   "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks"]
 }
