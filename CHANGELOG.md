@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-04-26
+
+### Changed
+- **BREAKING**: Renamed MCP server identifiers and `source` payload fields:
+  - `memory` server: `sqlite-memory` → `memory`
+  - `tasks` server: `task-manager` → `tasks`
+  Consumers reading the `source` field on tool results must update their expectations. Database filenames (`sqlite-memory.db`, `tasks.db`) are unchanged.
+- **BREAKING**: Removed the `.opencode/data` tier-2 fallback in `resolveDataDir()`. Data directory resolution is now: `MACOS_TOOLS_DATA_DIR` env var, else `~/.local/share/macos-tools/`. Workspaces relying on the implicit `.opencode/data` discovery must either set `MACOS_TOOLS_DATA_DIR` explicitly or migrate their data to `~/.local/share/macos-tools/`.
+
+### Added
+- Pure-helper unit tests for the `tasks` server (`applyFlaggedToTags`)
+
 ## [0.0.3] - 2026-04-08
 
 ### Fixed

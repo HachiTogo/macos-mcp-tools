@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { homedir } from "node:os"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
@@ -45,19 +45,13 @@ type Task = {
 
 // ── Constants ──────────────────────────────────────────────────────────
 
-// Data directory: env var > .opencode/data (if exists) > ~/.local/share/macos-tools/
+// Data directory: MACOS_TOOLS_DATA_DIR env var, else ~/.local/share/macos-tools/
 function resolveDataDir(): string {
   if (process.env.MACOS_TOOLS_DATA_DIR) {
     const dir = resolve(process.env.MACOS_TOOLS_DATA_DIR)
     mkdirSync(dir, { recursive: true })
     return dir
   }
-  // Check for .opencode/data relative to cwd (opencode workspace)
-  const opencodeDir = resolve(".opencode/data")
-  if (existsSync(opencodeDir)) {
-    return opencodeDir
-  }
-  // Default
   const defaultDir = join(homedir(), ".local", "share", "macos-tools")
   mkdirSync(defaultDir, { recursive: true })
   return defaultDir
@@ -69,7 +63,7 @@ const DEFAULT_LIMIT = 100
 const MAX_LIMIT = 500
 const TASK_STATUSES = ["active", "completed", "dropped"] as const satisfies readonly TaskStatus[]
 const REPEAT_FROM_VALUES = ["completion", "due"] as const
-const SOURCE_NAME = "task-manager"
+const SOURCE_NAME = "tasks"
 
 // ── Database ───────────────────────────────────────────────────────────
 
@@ -147,7 +141,7 @@ const rowToTask = (row: TaskRow): Task => ({
 
 // ── Tag helpers ────────────────────────────────────────────────────────
 
-const applyFlaggedToTags = (tags: string[], flagged: boolean | undefined): string[] => {
+export const applyFlaggedToTags = (tags: string[], flagged: boolean | undefined): string[] => {
   if (flagged === undefined) {
     return tags
   }
@@ -550,7 +544,7 @@ const handleListProjects = (args: { status?: TaskStatus }) => {
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "task-manager", version: "0.0.1" })
+const server = new McpServer({ name: "tasks", version: "0.1.0" })
 
 server.registerTool(
   "list_tasks",

@@ -32,7 +32,7 @@ const createEntry = (overrides: Partial<NormalizedEntry> = {}): NormalizedEntry 
   aliases: overrides.aliases ?? [],
 })
 
-describe("sqlite-memory pure helpers", () => {
+describe("memory pure helpers", () => {
   test("normalizeText trims, lowercases, removes accents, and collapses punctuation", () => {
     expect(normalizeText("  Café—Plan!!  ")).toBe("cafe plan")
     expect(normalizeText(null)).toBe("")

@@ -165,11 +165,10 @@ Tools: `create_entry`, `update_entry`, `get_entry`, `search_entries`, `query_las
 
 ### Data Directory
 
-`tasks` and `memory` store SQLite databases in this order:
+`tasks` and `memory` store their SQLite databases at:
 
-1. `MACOS_TOOLS_DATA_DIR`
-2. existing `.opencode/data` in the current working directory
-3. `~/.local/share/macos-tools/`
+1. `MACOS_TOOLS_DATA_DIR` if set
+2. `~/.local/share/macos-tools/` otherwise
 
 Example:
 
