@@ -337,36 +337,19 @@ function run(argv) {
   if (!text) return JSON.stringify({ status: "error", to: target, detail: "Message text is required." })
   if (!target) return JSON.stringify({ status: "error", to: target, detail: "Recipient is required." })
 
-  // Group chat identifiers start with "chat"
-  var isGroup = target.indexOf("chat") === 0
-
-  if (isGroup) {
-    var chats = Messages.chats()
-    for (var i = 0; i < chats.length; i++) {
-      try {
-        var chatId = chats[i].id()
-        if (chatId.endsWith(";" + target)) {
-          Messages.send(text, { to: chats[i] })
-          return JSON.stringify({ status: "sent", to: target })
-        }
-      } catch (e) { continue }
-    }
-    return JSON.stringify({ status: "error", to: target, detail: "Group chat not found: " + target })
-  }
-
-  // 1:1: find buddy across iMessage services
-  var services = Messages.services()
-  for (var i = 0; i < services.length; i++) {
+  // Find the chat whose internal ID ends with the target identifier.
+  // 1:1 chats: "any;-;ennea.kyle@icloud.com"  group chats: "any;+;chat64037..."
+  var suffix = ";" + target
+  var chats = Messages.chats()
+  for (var i = 0; i < chats.length; i++) {
     try {
-      if (services[i].serviceType() !== "iMessage") continue
-      var buddies = services[i].buddies.whose({ handle: target })
-      if (buddies.length > 0) {
-        Messages.send(text, { to: buddies[0] })
+      if (chats[i].id().endsWith(suffix)) {
+        Messages.send(text, { to: chats[i] })
         return JSON.stringify({ status: "sent", to: target })
       }
     } catch (e) { continue }
   }
-  return JSON.stringify({ status: "error", to: target, detail: "No iMessage buddy found for: " + target })
+  return JSON.stringify({ status: "error", to: target, detail: "Chat not found for: " + target })
 }
 `
 
