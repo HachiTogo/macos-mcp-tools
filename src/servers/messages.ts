@@ -26,6 +26,7 @@ type ChatRow = {
   serviceName: string | null
   style: number
   lastMessageText: string | null
+  lastMessageBody: Uint8Array | null
   lastMessageDate: number | null
   participantCount: number
 }
@@ -34,6 +35,7 @@ type MessageRow = {
   rowid: number
   guid: string
   text: string | null
+  attributedBody: Uint8Array | null
   isFromMe: number
   date: number
   senderId: string | null
@@ -95,6 +97,46 @@ const isoToAppleNanos = (iso: string): number => {
   return (unix - APPLE_EPOCH_OFFSET) * 1e9
 }
 
+// ── attributedBody extraction ─────────────────────────────────────────
+
+const NS_STRING_MARKER = new TextEncoder().encode("NSString")
+
+const extractTextFromBody = (blob: Uint8Array | null): string | null => {
+  if (!blob || blob.length === 0) return null
+  const buf = Buffer.from(blob)
+  const idx = buf.indexOf(NS_STRING_MARKER)
+  if (idx < 0) return null
+  const rest = buf.subarray(idx + NS_STRING_MARKER.length)
+  const plusIdx = rest.indexOf(0x2b) // '+'
+  if (plusIdx < 0) return null
+  const after = rest.subarray(plusIdx + 1)
+  if (after.length === 0) return null
+
+  let textLen: number
+  let textStart: number
+  const flag = after[0]
+  if (flag < 0x80) {
+    textLen = flag
+    textStart = 1
+  } else if (flag === 0x81) {
+    if (after.length < 3) return null
+    textLen = after[1] | (after[2] << 8)
+    textStart = 3
+  } else if (flag === 0x82) {
+    if (after.length < 5) return null
+    textLen = after[1] | (after[2] << 8) | (after[3] << 16) | (after[4] << 24)
+    textStart = 5
+  } else {
+    return null
+  }
+
+  if (after.length < textStart + textLen) return null
+  return after.subarray(textStart, textStart + textLen).toString("utf-8")
+}
+
+const resolveText = (row: { text: string | null, attributedBody: Uint8Array | null }): string | null =>
+  row.text || extractTextFromBody(row.attributedBody) || null
+
 // ── Database helpers ──────────────────────────────────────────────────
 
 const openDb = (): Database => new Database(CHAT_DB_PATH, { readonly: true })
@@ -123,6 +165,10 @@ const listChats = (limit: number): NormalizedChat[] =>
          JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
          WHERE cmj.chat_id = c.ROWID
          ORDER BY m.date DESC LIMIT 1)  AS lastMessageText,
+        (SELECT m.attributedBody FROM message m
+         JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+         WHERE cmj.chat_id = c.ROWID
+         ORDER BY m.date DESC LIMIT 1)  AS lastMessageBody,
         (SELECT MAX(m.date) FROM message m
          JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
          WHERE cmj.chat_id = c.ROWID)   AS lastMessageDate,
@@ -136,20 +182,22 @@ const listChats = (limit: number): NormalizedChat[] =>
       LIMIT ?
     `).all(limit) as ChatRow[]
 
-    return rows.map((row) => ({
+    return rows.map((row) => {
+      const lastText = resolveText({ text: row.lastMessageText, attributedBody: row.lastMessageBody })
+      return {
       chatId: row.chatIdentifier,
       displayName: row.displayName || row.chatIdentifier,
       isGroup: row.style === 43,
       service: row.serviceName || "iMessage",
-      lastMessage: row.lastMessageText
-        ? row.lastMessageText.length > 100
-          ? row.lastMessageText.slice(0, 100) + "…"
-          : row.lastMessageText
+      lastMessage: lastText
+        ? lastText.length > 100
+          ? lastText.slice(0, 100) + "…"
+          : lastText
         : null,
       lastMessageAt: row.lastMessageDate ? appleNanosToIso(row.lastMessageDate) : null,
       participantCount: row.participantCount,
       source: SOURCE_NAME,
-    }))
+    }})
   })
 
 const getMessages = (
@@ -181,6 +229,7 @@ const getMessages = (
         m.ROWID                   AS rowid,
         m.guid                    AS guid,
         m.text                    AS text,
+        m.attributedBody          AS attributedBody,
         m.is_from_me              AS isFromMe,
         m.date                    AS date,
         h.id                      AS senderId,
@@ -197,7 +246,7 @@ const getMessages = (
 
     return rows.reverse().map((row) => ({
       id: row.rowid,
-      text: row.text,
+      text: resolveText(row),
       isFromMe: row.isFromMe === 1,
       sender: row.isFromMe === 1 ? "me" : (row.senderId || "unknown"),
       date: appleNanosToIso(row.date),
@@ -231,6 +280,7 @@ const searchMessages = (
         m.ROWID            AS rowid,
         m.guid             AS guid,
         m.text             AS text,
+        m.attributedBody   AS attributedBody,
         m.is_from_me       AS isFromMe,
         m.date             AS date,
         h.id               AS senderId,
@@ -248,7 +298,7 @@ const searchMessages = (
 
     return rows.map((row) => ({
       id: row.rowid,
-      text: row.text,
+      text: resolveText(row),
       isFromMe: row.isFromMe === 1,
       sender: row.isFromMe === 1 ? "me" : (row.senderId || "unknown"),
       date: appleNanosToIso(row.date),
