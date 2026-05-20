@@ -1,7 +1,7 @@
 {
   "name": "@hachitogo/macos-mcp-tools",
-  "version": "0.1.0",
-  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, and Memory",
+  "version": "0.2.0",
+  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, Memory, and Messages",
   "type": "module",
   "bin": {
     "macos-mcp-tools": "bin/macos-tools.js"
@@ -14,7 +14,8 @@
     "src/servers/contacts.ts",
     "src/servers/notes.ts",
     "src/servers/tasks.ts",
-    "src/servers/memory.ts"
+    "src/servers/memory.ts",
+    "src/servers/messages.ts"
   ],
   "scripts": {
     "dev": "bun run src/cli.ts",
@@ -46,5 +47,5 @@
   "bugs": {
     "url": "https://github.com/HachiTogo/macos-mcp-tools/issues"
   },
-  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks"]
+  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks", "messages", "imessage"]
 }

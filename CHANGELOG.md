@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Messages Server**: New Apple Messages MCP server with 5 tools for iMessage and SMS.
+  Hybrid architecture: SQLite reads from `~/Library/Messages/chat.db` for fast queries, JXA/AppleScript for sending.
+  Supports both 1:1 and group chat sending.
+  Inspired by [@griches/apple-messages-mcp](https://github.com/griches/apple-mcp) (MIT).
+  - `list_chats` — list recent conversations with last message preview and participant count
+  - `get_messages` — get message history for a specific chat with date range filtering
+  - `search_messages` — search messages by text content across all or specific conversations
+  - `get_participants` — get participants of a conversation
+  - `send_message` — send iMessage to a phone number, email, or group chat
 - **Mail Server**: `extract_email_links` tool — extracts every hyperlink from an Apple Mail message as `{ url, text }` pairs by parsing the raw RFC 822 source server-side. The HTML source is never returned to the caller; only the link pairs are returned.
 
 ## [0.1.0] - 2026-04-26

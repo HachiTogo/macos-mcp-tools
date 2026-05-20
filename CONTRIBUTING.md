@@ -31,7 +31,8 @@ src/
     ├── contacts.ts  # Apple Contacts MCP server
     ├── notes.ts     # Apple Notes MCP server
     ├── tasks.ts     # Task manager MCP server
-    └── memory.ts    # Memory store MCP server
+    ├── memory.ts    # Memory store MCP server
+    └── messages.ts  # Apple Messages MCP server
 ```
 
 ## Scripts
