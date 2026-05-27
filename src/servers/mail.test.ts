@@ -3,15 +3,20 @@ import { describe, expect, test } from "bun:test"
 import {
   classifyAccountByMailboxUrl,
   createEmailHandle,
+  extractLinksFromSource,
   formatEmailsForContent,
   formatMarkEmailsJunkSummary,
   formatMarkEmailsNotJunkSummary,
   formatMarkEmailsReadSummary,
   getMailboxAccountKey,
+  parseExtractEmailLinksArguments,
+  parseForwardEmailArguments,
   parseMarkEmailsJunkArguments,
   parseMarkEmailsNotJunkArguments,
   parseMarkEmailsReadArguments,
   parseFetchEmailBodyArguments,
+  parseReplyEmailArguments,
+  parseSendEmailArguments,
   type NormalizedEmail,
 } from "./mail"
 
@@ -45,6 +50,7 @@ const createEmail = (overrides: Partial<NormalizedEmail>): NormalizedEmail => ({
   receivedAt: overrides.receivedAt ?? "2026-03-14T12:00:00.000Z",
   receivedAtLocal: overrides.receivedAtLocal ?? "2026-03-14T08:00:00",
   isUnread: overrides.isUnread ?? true,
+  messageUrl: overrides.messageUrl ?? "",
   source: overrides.source ?? "Apple Mail Envelope Index",
 })
 
@@ -418,5 +424,370 @@ describe("mark emails not-junk summary formatting", () => {
     expect(summary).toContain("1 marked not junk")
     expect(summary).toContain("1 already not junk")
     expect(summary).toContain("1 no inbox mailbox")
+  })
+})
+
+describe("extract email links helpers", () => {
+  test("parses valid handle into extract arguments", () => {
+    expect(
+      parseExtractEmailLinksArguments({
+        handle: {
+          accountId: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
+          mailboxUrl: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
+          mailId: "42",
+        },
+      }),
+    ).toEqual({
+      handle: {
+        accountId: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
+        mailboxUrl: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
+        mailId: "42",
+      },
+    })
+  })
+
+  test("rejects missing handle", () => {
+    expect(() => parseExtractEmailLinksArguments({})).toThrow("Invalid handle")
+  })
+
+  test("rejects handle missing required fields", () => {
+    expect(() =>
+      parseExtractEmailLinksArguments({
+        handle: { accountId: "abc", mailboxUrl: "imap://abc/INBOX" },
+      }),
+    ).toThrow("Invalid handle")
+  })
+
+  test("rejects unexpected top-level fields", () => {
+    expect(() =>
+      parseExtractEmailLinksArguments({
+        handle: {
+          accountId: "abc",
+          mailboxUrl: "imap://abc/INBOX",
+          mailId: "1",
+        },
+        extra: "bad",
+      }),
+    ).toThrow()
+  })
+
+  test("extracts links from a plain HTML part", () => {
+    const source = [
+      "MIME-Version: 1.0",
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      '<html><body><a href="https://example.com/one">One</a> and <a href="https://example.com/two">Two</a></body></html>',
+    ].join("\r\n")
+
+    const { links, truncated } = extractLinksFromSource(source)
+
+    expect(truncated).toBe(false)
+    expect(links).toEqual([
+      { url: "https://example.com/one", text: "One" },
+      { url: "https://example.com/two", text: "Two" },
+    ])
+  })
+
+  test("decodes quoted-printable HTML part", () => {
+    const source = [
+      "MIME-Version: 1.0",
+      "Content-Type: text/html; charset=utf-8",
+      "Content-Transfer-Encoding: quoted-printable",
+      "",
+      '<a href=3D"https://example.com/path?a=3D1&b=3D=\r\n2">Click =\r\nhere</a>',
+    ].join("\r\n")
+
+    const { links } = extractLinksFromSource(source)
+
+    expect(links).toEqual([
+      { url: "https://example.com/path?a=1&b=2", text: "Click here" },
+    ])
+  })
+
+  test("falls back to bare URL extraction for text/plain only", () => {
+    const source = [
+      "MIME-Version: 1.0",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "Visit https://example.com/a or https://example.com/b for details.",
+    ].join("\r\n")
+
+    const { links } = extractLinksFromSource(source)
+
+    expect(links).toEqual([
+      { url: "https://example.com/a", text: "https://example.com/a" },
+      { url: "https://example.com/b", text: "https://example.com/b" },
+    ])
+  })
+
+  test("skips mailto, javascript, and hash anchors", () => {
+    const source = [
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      '<a href="mailto:x@y.com">x</a><a href="#top">top</a><a href="javascript:void(0)">x</a><a href="https://example.com/keep">keep</a>',
+    ].join("\r\n")
+
+    const { links } = extractLinksFromSource(source)
+
+    expect(links).toEqual([{ url: "https://example.com/keep", text: "keep" }])
+  })
+
+  test("strips nested tags and collapses whitespace in anchor text", () => {
+    const source = [
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      '<a href="https://example.com/X"><span>Click   <b>here</b></span></a>',
+    ].join("\r\n")
+
+    const { links } = extractLinksFromSource(source)
+
+    expect(links).toEqual([{ url: "https://example.com/X", text: "Click here" }])
+  })
+
+  test("decodes HTML entities in anchor text", () => {
+    const source = [
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      '<a href="https://example.com/X">A &amp; B</a>',
+    ].join("\r\n")
+
+    const { links } = extractLinksFromSource(source)
+
+    expect(links).toEqual([{ url: "https://example.com/X", text: "A & B" }])
+  })
+
+  test("truncates when link count exceeds MAX_LINKS", () => {
+    const anchors = Array.from({ length: 600 }, (_, i) =>
+      `<a href="https://example.com/${i}">Link ${i}</a>`,
+    ).join("")
+    const source = [
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      `<html><body>${anchors}</body></html>`,
+    ].join("\r\n")
+
+    const { links, truncated } = extractLinksFromSource(source)
+
+    expect(truncated).toBe(true)
+    expect(links).toHaveLength(500)
+    expect(links[0]).toEqual({ url: "https://example.com/0", text: "Link 0" })
+    expect(links[499]).toEqual({ url: "https://example.com/499", text: "Link 499" })
+  })
+})
+
+describe("send email argument parsing", () => {
+  test("accepts valid send arguments", () => {
+    const result = parseSendEmailArguments({
+      to: ["alice@example.com"],
+      subject: "Hello",
+      body: "Body text",
+    })
+    expect(result.to).toEqual(["alice@example.com"])
+    expect(result.subject).toBe("Hello")
+    expect(result.body).toBe("Body text")
+    expect(result.cc).toBeUndefined()
+    expect(result.bcc).toBeUndefined()
+    expect(result.from).toBeUndefined()
+  })
+
+  test("accepts optional cc, bcc, from", () => {
+    const result = parseSendEmailArguments({
+      to: ["alice@example.com"],
+      cc: ["carl@example.com"],
+      bcc: ["bert@example.com"],
+      subject: "Hello",
+      body: "Body text",
+      from: "me@example.com",
+    })
+    expect(result.cc).toEqual(["carl@example.com"])
+    expect(result.bcc).toEqual(["bert@example.com"])
+    expect(result.from).toBe("me@example.com")
+  })
+
+  test("rejects empty 'to' array", () => {
+    expect(() =>
+      parseSendEmailArguments({ to: [], subject: "Hi", body: "Body" }),
+    ).toThrow("at least one")
+  })
+
+  test("rejects missing 'to' field", () => {
+    expect(() =>
+      parseSendEmailArguments({ subject: "Hi", body: "Body" }),
+    ).toThrow("non-empty array")
+  })
+
+  test("rejects invalid email format in 'to'", () => {
+    expect(() =>
+      parseSendEmailArguments({
+        to: ["not-an-email"],
+        subject: "Hi",
+        body: "Body",
+      }),
+    ).toThrow("valid email address")
+  })
+
+  test("rejects invalid email format in 'cc'", () => {
+    expect(() =>
+      parseSendEmailArguments({
+        to: ["alice@example.com"],
+        cc: ["bad@@email"],
+        subject: "Hi",
+        body: "Body",
+      }),
+    ).toThrow("valid email address")
+  })
+
+  test("rejects empty subject", () => {
+    expect(() =>
+      parseSendEmailArguments({ to: ["alice@example.com"], subject: "", body: "Body" }),
+    ).toThrow("subject")
+  })
+
+  test("rejects empty body", () => {
+    expect(() =>
+      parseSendEmailArguments({ to: ["alice@example.com"], subject: "Hi", body: "" }),
+    ).toThrow("body")
+  })
+
+  test("rejects bad 'from' email format", () => {
+    expect(() =>
+      parseSendEmailArguments({
+        to: ["alice@example.com"],
+        subject: "Hi",
+        body: "Body",
+        from: "not-an-email",
+      }),
+    ).toThrow("from")
+  })
+})
+
+describe("reply email argument parsing", () => {
+  const validHandle = {
+    accountId: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
+    mailboxUrl: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
+    mailId: "42",
+  }
+
+  test("accepts valid reply arguments", () => {
+    const result = parseReplyEmailArguments({
+      handle: validHandle,
+      body: "Thanks!",
+    })
+    expect(result.handle.accountId).toBe(validHandle.accountId)
+    expect(result.body).toBe("Thanks!")
+    expect(result.replyAll).toBeUndefined()
+    expect(result.from).toBeUndefined()
+  })
+
+  test("accepts optional replyAll and from", () => {
+    const result = parseReplyEmailArguments({
+      handle: validHandle,
+      body: "Thanks!",
+      replyAll: true,
+      from: "me@example.com",
+    })
+    expect(result.replyAll).toBe(true)
+    expect(result.from).toBe("me@example.com")
+  })
+
+  test("rejects missing handle", () => {
+    expect(() => parseReplyEmailArguments({ body: "Hi" })).toThrow("handle")
+  })
+
+  test("rejects handle missing fields", () => {
+    expect(() =>
+      parseReplyEmailArguments({
+        handle: { accountId: "x", mailboxUrl: "y" },
+        body: "Hi",
+      }),
+    ).toThrow("handle")
+  })
+
+  test("rejects empty body", () => {
+    expect(() => parseReplyEmailArguments({ handle: validHandle, body: "" })).toThrow("body")
+  })
+
+  test("rejects non-boolean replyAll", () => {
+    expect(() =>
+      parseReplyEmailArguments({ handle: validHandle, body: "Hi", replyAll: "yes" }),
+    ).toThrow("replyAll")
+  })
+
+  test("rejects bad 'from' email format", () => {
+    expect(() =>
+      parseReplyEmailArguments({
+        handle: validHandle,
+        body: "Hi",
+        from: "not-an-email",
+      }),
+    ).toThrow("from")
+  })
+})
+
+describe("forward email argument parsing", () => {
+  const validHandle = {
+    accountId: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
+    mailboxUrl: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
+    mailId: "42",
+  }
+
+  test("accepts valid forward arguments", () => {
+    const result = parseForwardEmailArguments({
+      handle: validHandle,
+      to: ["alice@example.com"],
+    })
+    expect(result.handle.accountId).toBe(validHandle.accountId)
+    expect(result.to).toEqual(["alice@example.com"])
+    expect(result.body).toBeUndefined()
+  })
+
+  test("accepts optional body, cc, bcc, from", () => {
+    const result = parseForwardEmailArguments({
+      handle: validHandle,
+      to: ["alice@example.com"],
+      cc: ["carl@example.com"],
+      bcc: ["bert@example.com"],
+      body: "FYI",
+      from: "me@example.com",
+    })
+    expect(result.body).toBe("FYI")
+    expect(result.cc).toEqual(["carl@example.com"])
+    expect(result.bcc).toEqual(["bert@example.com"])
+    expect(result.from).toBe("me@example.com")
+  })
+
+  test("rejects empty 'to' array", () => {
+    expect(() =>
+      parseForwardEmailArguments({ handle: validHandle, to: [] }),
+    ).toThrow("at least one")
+  })
+
+  test("rejects missing 'to' field", () => {
+    expect(() => parseForwardEmailArguments({ handle: validHandle })).toThrow("non-empty array")
+  })
+
+  test("rejects invalid email format in 'to'", () => {
+    expect(() =>
+      parseForwardEmailArguments({
+        handle: validHandle,
+        to: ["not-an-email"],
+      }),
+    ).toThrow("valid email address")
+  })
+
+  test("rejects missing handle", () => {
+    expect(() =>
+      parseForwardEmailArguments({ to: ["alice@example.com"] }),
+    ).toThrow("handle")
+  })
+
+  test("rejects bad 'from' email format", () => {
+    expect(() =>
+      parseForwardEmailArguments({
+        handle: validHandle,
+        to: ["alice@example.com"],
+        from: "not-an-email",
+      }),
+    ).toThrow("from")
   })
 })

@@ -1,6 +1,6 @@
 # @hachitogo/macos-mcp-tools
 
-MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, and Memory.
+MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, Memory, and Messages.
 
 The project uses a hybrid approach: JXA/`osascript` for macOS app automation, and direct read-only SQLite access where it is faster and more reliable. In practice this matters most for Apple Mail reads, where pure `osascript` approaches tended to time out on non-trivial queries.
 
@@ -11,6 +11,7 @@ The project uses a hybrid approach: JXA/`osascript` for macOS app automation, an
 - `notes`: read and update Apple Notes via JXA
 - `tasks`: local SQLite-backed task manager
 - `memory`: local SQLite-backed structured memory store
+- `messages`: read/search/send Apple Messages (iMessage and SMS)
 
 ## Architecture
 
@@ -22,6 +23,7 @@ flowchart LR
   CLI --> Notes["notes server"]
   CLI --> Tasks["tasks server"]
   CLI --> Memory["memory server"]
+  CLI --> Messages["messages server"]
 
   Mail --> MailDB["Apple Mail SQLite\nEnvelope Index"]
   Mail --> JXA["JXA / osascript"]
@@ -29,6 +31,8 @@ flowchart LR
   Notes --> JXA
   Tasks --> TasksDB["SQLite in local data dir"]
   Memory --> MemoryDB["SQLite in local data dir"]
+  Messages --> MsgDB["Messages SQLite\nchat.db"]
+  Messages --> JXA
 ```
 
 ## Requirements
@@ -36,6 +40,7 @@ flowchart LR
 - macOS
 - [Bun](https://bun.sh) 1.0+
 - Optional: `pdftotext` for PDF attachment text extraction
+- Full Disk Access for the terminal app (required by the messages server to read `~/Library/Messages/chat.db`)
 
 Install Bun with Homebrew:
 
@@ -65,6 +70,7 @@ bunx @hachitogo/macos-mcp-tools contacts
 bunx @hachitogo/macos-mcp-tools notes
 bunx @hachitogo/macos-mcp-tools tasks
 bunx @hachitogo/macos-mcp-tools memory
+bunx @hachitogo/macos-mcp-tools messages
 ```
 
 ### 2. Configure Claude Desktop
@@ -93,6 +99,10 @@ Add entries like this to your Claude Desktop MCP config:
     "memory": {
       "command": "bunx",
       "args": ["@hachitogo/macos-mcp-tools", "memory"]
+    },
+    "apple_messages": {
+      "command": "bunx",
+      "args": ["@hachitogo/macos-mcp-tools", "messages"]
     }
   }
 }
@@ -124,6 +134,10 @@ Add entries like this to your OpenCode MCP config:
     "memory": {
       "type": "local",
       "command": ["bunx", "@hachitogo/macos-mcp-tools", "memory"]
+    },
+    "apple_messages": {
+      "type": "local",
+      "command": ["bunx", "@hachitogo/macos-mcp-tools", "messages"]
     }
   }
 }
@@ -135,7 +149,7 @@ Add entries like this to your OpenCode MCP config:
 
 Uses a hybrid implementation: direct read-only SQLite queries for fast message reads and searches, plus JXA for actions like fetching bodies, listing attachments, and mutating message state.
 
-Tools: `unread_emails`, `mark_emails_read`, `fetch_email_body`, `mark_emails_junk`, `mark_emails_not_junk`, `list_email_attachments`, `fetch_email_attachment`, `search_emails`
+Tools: `unread_emails`, `mark_emails_read`, `fetch_email_body`, `mark_emails_junk`, `mark_emails_not_junk`, `list_email_attachments`, `fetch_email_attachment`, `search_emails`, `extract_email_links`, `send_email`, `reply_email`, `forward_email`
 
 ### Contacts
 
@@ -161,15 +175,20 @@ Structured memory store with subject-action-object triples, aliases, and duratio
 
 Tools: `create_entry`, `update_entry`, `get_entry`, `search_entries`, `query_last_occurrence`, `query_duration_since`
 
+### Messages
+
+Hybrid implementation: direct read-only SQLite queries against `~/Library/Messages/chat.db` for reading and searching, plus JXA for sending messages. Supports both 1:1 and group chat sending. Inspired by [@griches/apple-messages-mcp](https://github.com/griches/apple-mcp) (MIT).
+
+Tools: `list_chats`, `get_messages`, `search_messages`, `get_participants`, `send_message`
+
 ## Configuration
 
 ### Data Directory
 
-`tasks` and `memory` store SQLite databases in this order:
+`tasks` and `memory` store their SQLite databases at:
 
-1. `MACOS_TOOLS_DATA_DIR`
-2. existing `.opencode/data` in the current working directory
-3. `~/.local/share/macos-tools/`
+1. `MACOS_TOOLS_DATA_DIR` if set
+2. `~/.local/share/macos-tools/` otherwise
 
 Example:
 
@@ -188,7 +207,7 @@ The mail server may create `config/email.json` locally to classify accounts. Thi
 - Opt-in integration tests: `bun run test:integration`
 - Opt-in live macOS app smoke tests: `bun run test:integration:apps`
 
-Integration tests are isolated and non-destructive. The default opt-in suite uses temporary data directories so it does not touch real task or memory databases. The live macOS app smoke tests are also read-only, but they do connect to your local Mail, Contacts, and Notes data and therefore remain separately opt-in.
+Integration tests are isolated and non-destructive. The default opt-in suite uses temporary data directories so it does not touch real task or memory databases. The live macOS app smoke tests are also read-only, but they do connect to your local Mail, Contacts, Notes, and Messages data and therefore remain separately opt-in.
 
 ## License
 

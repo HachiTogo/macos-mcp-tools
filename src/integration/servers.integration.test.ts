@@ -133,7 +133,7 @@ if (!RUN_INTEGRATION_TESTS) {
         task: { id: string; name: string; status: string; project: string | null; tags: string[] }
       }>(created)
 
-      expect(createPayload.source).toBe("task-manager")
+      expect(createPayload.source).toBe("tasks")
       expect(createPayload.task.name).toBe("Integration task")
       expect(createPayload.task.project).toBe("Sandbox")
       expect(createPayload.task.tags).toContain("alpha")
@@ -150,7 +150,7 @@ if (!RUN_INTEGRATION_TESTS) {
         tasks: Array<{ id: string; status: string }>
       }>(listed)
 
-      expect(listPayload.source).toBe("task-manager")
+      expect(listPayload.source).toBe("tasks")
       expect(listPayload.tasks.some((task) => task.id === taskId && task.status === "active")).toBe(true)
 
       const completed = await server!.client.callTool({
@@ -232,7 +232,7 @@ if (!RUN_INTEGRATION_TESTS) {
         entry: { id: string; title: string | null; aliases: string[] }
       }>(created)
 
-      expect(createPayload.source).toBe("sqlite-memory")
+      expect(createPayload.source).toBe("memory")
       expect(createPayload.entry.title).toBe("Integration entry")
       expect(createPayload.entry.aliases).toContain("integration alias")
 

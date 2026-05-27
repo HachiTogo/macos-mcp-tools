@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Messages Server**: New Apple Messages MCP server with 5 tools for iMessage and SMS.
+  Hybrid architecture: SQLite reads from `~/Library/Messages/chat.db` for fast queries, JXA/AppleScript for sending.
+  Supports both 1:1 and group chat sending.
+  Inspired by [@griches/apple-messages-mcp](https://github.com/griches/apple-mcp) (MIT).
+  - `list_chats` — list recent conversations with last message preview and participant count
+  - `get_messages` — get message history for a specific chat with date range filtering
+  - `search_messages` — search messages by text content across all or specific conversations
+  - `get_participants` — get participants of a conversation
+  - `send_message` — send iMessage to a phone number, email, or group chat
+- **Mail Server**: `extract_email_links` tool — extracts every hyperlink from an Apple Mail message as `{ url, text }` pairs by parsing the raw RFC 822 source server-side. The HTML source is never returned to the caller; only the link pairs are returned.
+- **Mail Server**: `flag_emails` tool — set flag color (`flagIndex`), flagged status, or background color on Apple Mail messages via JXA. Supports batch operations with per-message flag/color settings.
+
+## [0.1.0] - 2026-04-26
+
+### Changed
+- **BREAKING**: Renamed MCP server identifiers and `source` payload fields:
+  - `memory` server: `sqlite-memory` → `memory`
+  - `tasks` server: `task-manager` → `tasks`
+  Consumers reading the `source` field on tool results must update their expectations. Database filenames (`sqlite-memory.db`, `tasks.db`) are unchanged.
+- **BREAKING**: Removed the `.opencode/data` tier-2 fallback in `resolveDataDir()`. Data directory resolution is now: `MACOS_TOOLS_DATA_DIR` env var, else `~/.local/share/macos-tools/`. Workspaces relying on the implicit `.opencode/data` discovery must either set `MACOS_TOOLS_DATA_DIR` explicitly or migrate their data to `~/.local/share/macos-tools/`.
+
+### Added
+- Pure-helper unit tests for the `tasks` server (`applyFlaggedToTags`)
+
 ## [0.0.3] - 2026-04-08
 
 ### Fixed

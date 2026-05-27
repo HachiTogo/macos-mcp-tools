@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
@@ -140,19 +140,13 @@ type QueryMatch = {
 
 // ── Constants ──────────────────────────────────────────────────────────
 
-// Data directory: env var > .opencode/data (if exists) > ~/.local/share/macos-tools/
+// Data directory: MACOS_TOOLS_DATA_DIR env var, else ~/.local/share/macos-tools/
 function resolveDataDir(): string {
   if (process.env.MACOS_TOOLS_DATA_DIR) {
     const dir = resolve(process.env.MACOS_TOOLS_DATA_DIR)
     mkdirSync(dir, { recursive: true })
     return dir
   }
-  // Check for .opencode/data relative to cwd (opencode workspace)
-  const opencodeDir = resolve(".opencode/data")
-  if (existsSync(opencodeDir)) {
-    return opencodeDir
-  }
-  // Default
   const defaultDir = join(homedir(), ".local", "share", "macos-tools")
   mkdirSync(defaultDir, { recursive: true })
   return defaultDir
@@ -163,7 +157,7 @@ const DB_PATH = join(DATA_DIR, "sqlite-memory.db")
 const DEFAULT_LIMIT = 25
 const MAX_LIMIT = 100
 const ENTRY_KINDS = ["memory", "task", "event", "note"] as const satisfies readonly EntryKind[]
-const SOURCE_NAME = "sqlite-memory"
+const SOURCE_NAME = "memory"
 
 // ── Database ───────────────────────────────────────────────────────────
 
@@ -710,7 +704,7 @@ const selectBestMatch = (entries: NormalizedEntry[], matcher: EntryMatcher) => {
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "sqlite-memory", version: "0.0.1" })
+const server = new McpServer({ name: "memory", version: "0.1.0" })
 
 const nullableString = z.union([z.string(), z.null()]).optional()
 const nullableNumber = z.union([z.number(), z.null()]).optional()
