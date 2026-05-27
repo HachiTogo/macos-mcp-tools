@@ -1,7 +1,7 @@
 {
   "name": "@hachitogo/macos-mcp-tools",
-  "version": "0.0.6",
-  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, Memory, and Messages",
+  "version": "0.1.0",
+  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, Memory, Messages, Calendar Events, and Reminders",
   "type": "module",
   "bin": {
     "macos-mcp-tools": "bin/macos-tools.js"
@@ -15,18 +15,37 @@
     "src/servers/notes.ts",
     "src/servers/tasks.ts",
     "src/servers/memory.ts",
-    "src/servers/messages.ts"
+    "src/servers/messages.ts",
+    "src/servers/events.ts",
+    "src/servers/reminders.ts",
+    "src/lib/eventkit/index.ts",
+    "src/lib/eventkit/types.ts",
+    "src/lib/eventkit/constants.ts",
+    "src/lib/eventkit/helpers.ts",
+    "src/lib/eventkit/schemas.ts",
+    "src/lib/eventkit/cli-executor.ts",
+    "src/lib/eventkit/date-utils.ts",
+    "src/lib/eventkit/tags.ts",
+    "src/lib/eventkit/subtasks.ts",
+    "src/lib/eventkit/calendar-repository.ts",
+    "src/lib/eventkit/reminder-repository.ts",
+    "swift/EventKitCLI.swift",
+    "swift/EventKitCLI.entitlements",
+    "swift/Info.plist",
+    "swift/build.mjs",
+    "bin/EventKitCLI"
   ],
   "scripts": {
     "dev": "bun run src/cli.ts",
     "test": "bun test",
     "test:integration": "RUN_INTEGRATION_TESTS=1 bun test src/integration",
     "test:integration:apps": "RUN_INTEGRATION_TESTS=1 RUN_APP_INTEGRATION_TESTS=1 bun test src/integration",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "build:swift": "bun swift/build.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -47,5 +66,11 @@
   "bugs": {
     "url": "https://github.com/HachiTogo/macos-mcp-tools/issues"
   },
-  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks", "messages", "imessage"]
+  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks", "messages", "imessage", "calendar", "events", "reminders", "eventkit"],
+  "overrides": {
+    "zod": "^4.4.3"
+  },
+  "resolutions": {
+    "zod": "^4.4.3"
+  }
 }
