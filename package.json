@@ -1,7 +1,7 @@
 {
   "name": "@hachitogo/macos-mcp-tools",
-  "version": "0.1.0",
-  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, Memory, Messages, Calendar Events, and Reminders",
+  "version": "0.3.0",
+  "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Memory, Messages, Calendar Events, and Reminders",
   "type": "module",
   "bin": {
     "macos-mcp-tools": "bin/macos-tools.js"
@@ -13,7 +13,6 @@
     "src/servers/mail.ts",
     "src/servers/contacts.ts",
     "src/servers/notes.ts",
-    "src/servers/tasks.ts",
     "src/servers/memory.ts",
     "src/servers/messages.ts",
     "src/servers/events.ts",
@@ -66,7 +65,7 @@
   "bugs": {
     "url": "https://github.com/HachiTogo/macos-mcp-tools/issues"
   },
-  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "tasks", "messages", "imessage", "calendar", "events", "reminders", "eventkit"],
+  "keywords": ["mcp", "macos", "apple", "mail", "contacts", "notes", "messages", "imessage", "calendar", "events", "reminders", "eventkit"],
   "overrides": {
     "zod": "^4.4.3"
   },

@@ -1,6 +1,6 @@
 # @hachitogo/macos-mcp-tools
 
-MCP servers for macOS: Apple Mail, Contacts, Notes, Tasks, Memory, Messages, Calendar Events, and Reminders.
+MCP servers for macOS: Apple Mail, Contacts, Notes, Memory, Messages, Calendar Events, and Reminders.
 
 The project uses a hybrid approach: JXA/`osascript` for macOS app automation, and direct read-only SQLite access where it is faster and more reliable. In practice this matters most for Apple Mail reads, where pure `osascript` approaches tended to time out on non-trivial queries. Calendar Events and Reminders use a compiled Swift binary (EventKitCLI) that interfaces directly with Apple's EventKit framework.
 
@@ -9,7 +9,6 @@ The project uses a hybrid approach: JXA/`osascript` for macOS app automation, an
 - `mail`: read/search Apple Mail and perform selected message actions
 - `contacts`: read and update Apple Contacts via JXA
 - `notes`: read and update Apple Notes via JXA
-- `tasks`: local SQLite-backed task manager
 - `memory`: local SQLite-backed structured memory store
 - `messages`: read/search/send Apple Messages (iMessage and SMS)
 - `events`: read, create, update, and delete Apple Calendar events via EventKit
@@ -23,7 +22,6 @@ flowchart LR
   CLI --> Mail["mail server"]
   CLI --> Contacts["contacts server"]
   CLI --> Notes["notes server"]
-  CLI --> Tasks["tasks server"]
   CLI --> Memory["memory server"]
   CLI --> Messages["messages server"]
   CLI --> Events["events server"]
@@ -33,7 +31,6 @@ flowchart LR
   Mail --> JXA["JXA / osascript"]
   Contacts --> JXA
   Notes --> JXA
-  Tasks --> TasksDB["SQLite in local data dir"]
   Memory --> MemoryDB["SQLite in local data dir"]
   Messages --> MsgDB["Messages SQLite\nchat.db"]
   Messages --> JXA
@@ -76,7 +73,6 @@ Each subcommand starts one standalone MCP server on stdio:
 bunx @hachitogo/macos-mcp-tools mail
 bunx @hachitogo/macos-mcp-tools contacts
 bunx @hachitogo/macos-mcp-tools notes
-bunx @hachitogo/macos-mcp-tools tasks
 bunx @hachitogo/macos-mcp-tools memory
 bunx @hachitogo/macos-mcp-tools messages
 bunx @hachitogo/macos-mcp-tools events
@@ -101,10 +97,6 @@ Add entries like this to your Claude Desktop MCP config:
     "apple_notes": {
       "command": "bunx",
       "args": ["@hachitogo/macos-mcp-tools", "notes"]
-    },
-    "tasks": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "tasks"]
     },
     "memory": {
       "command": "bunx",
@@ -144,10 +136,6 @@ Add entries like this to your OpenCode MCP config:
     "apple_notes": {
       "type": "local",
       "command": ["bunx", "@hachitogo/macos-mcp-tools", "notes"]
-    },
-    "tasks": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "tasks"]
     },
     "memory": {
       "type": "local",
@@ -189,12 +177,6 @@ Full CRUD for Apple Notes folders and notes, plus search, via JXA.
 
 Tools: `list_folders`, `create_folder`, `list_notes`, `get_note`, `create_note`, `update_note`, `move_note`, `append_to_note`, `delete_note`, `delete_folder`, `search_notes`
 
-### Tasks
-
-SQLite-backed task manager with projects, tags, repeat rules, and flagging.
-
-Tools: `list_tasks`, `get_task`, `create_task`, `update_task`, `complete_task`, `drop_task`, `reopen_task`, `list_projects`
-
 ### Memory
 
 Structured memory store with subject-action-object triples, aliases, and duration queries.
@@ -223,7 +205,7 @@ Tools: `reminders_tasks`, `reminders_lists`, `reminders_subtasks`
 
 ### Data Directory
 
-`tasks` and `memory` store their SQLite databases at:
+`memory` stores its SQLite database at:
 
 1. `MACOS_TOOLS_DATA_DIR` if set
 2. `~/.local/share/macos-tools/` otherwise
@@ -231,7 +213,7 @@ Tools: `reminders_tasks`, `reminders_lists`, `reminders_subtasks`
 Example:
 
 ```bash
-MACOS_TOOLS_DATA_DIR=/path/to/data bunx @hachitogo/macos-mcp-tools tasks
+MACOS_TOOLS_DATA_DIR=/path/to/data bunx @hachitogo/macos-mcp-tools memory
 ```
 
 ### Mail Account Classification
@@ -247,7 +229,7 @@ The mail server may create `config/email.json` locally to classify accounts. Thi
 
 - Swift binary rebuild: `bun run build:swift` (requires Xcode Command Line Tools)
 
-Integration tests are isolated and non-destructive. The default opt-in suite uses temporary data directories so it does not touch real task or memory databases. The live macOS app smoke tests are also read-only, but they do connect to your local Mail, Contacts, Notes, and Messages data and therefore remain separately opt-in.
+Integration tests are isolated and non-destructive. The default opt-in suite uses temporary data directories so it does not touch real memory databases. The live macOS app smoke tests are also read-only, but they do connect to your local Mail, Contacts, Notes, and Messages data and therefore remain separately opt-in.
 
 ## License
 
