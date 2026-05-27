@@ -10,7 +10,7 @@ const RUN_INTEGRATION_TESTS = process.env.RUN_INTEGRATION_TESTS === "1"
 const RUN_APP_INTEGRATION_TESTS = process.env.RUN_APP_INTEGRATION_TESTS === "1"
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url))
 
-type ServerName = "mail" | "contacts" | "notes" | "tasks" | "memory"
+type ServerName = "mail" | "contacts" | "notes" | "memory"
 
 type TestServer = {
   client: Client
@@ -93,103 +93,6 @@ const getTextJsonContent = <T>(result: unknown): T => {
 if (!RUN_INTEGRATION_TESTS) {
   test.skip("integration tests are opt-in; set RUN_INTEGRATION_TESTS=1", () => undefined)
 } else {
-  describe("tasks server integration", () => {
-    let server: TestServer | undefined
-
-    beforeAll(async () => {
-      server = await startServer("tasks")
-    })
-
-    afterAll(async () => {
-      await stopServer(server)
-    })
-
-    test("exposes the expected task tools", async () => {
-      const result = await server!.client.listTools()
-      const toolNames = result.tools.map((tool) => tool.name)
-
-      expect(toolNames).toContain("list_tasks")
-      expect(toolNames).toContain("get_task")
-      expect(toolNames).toContain("create_task")
-      expect(toolNames).toContain("update_task")
-      expect(toolNames).toContain("complete_task")
-      expect(toolNames).toContain("drop_task")
-      expect(toolNames).toContain("reopen_task")
-      expect(toolNames).toContain("list_projects")
-    })
-
-    test("creates and queries tasks in isolated storage", async () => {
-      const created = await server!.client.callTool({
-        name: "create_task",
-        arguments: {
-          name: "Integration task",
-          project: "Sandbox",
-          tags: ["alpha"],
-          flagged: true,
-        },
-      })
-      const createPayload = getStructuredContent<{
-        source: string
-        task: { id: string; name: string; status: string; project: string | null; tags: string[] }
-      }>(created)
-
-      expect(createPayload.source).toBe("tasks")
-      expect(createPayload.task.name).toBe("Integration task")
-      expect(createPayload.task.project).toBe("Sandbox")
-      expect(createPayload.task.tags).toContain("alpha")
-      expect(createPayload.task.tags).toContain("flagged")
-
-      const taskId = createPayload.task.id
-
-      const listed = await server!.client.callTool({
-        name: "list_tasks",
-        arguments: { project: "Sandbox", status: "active" },
-      })
-      const listPayload = getStructuredContent<{
-        source: string
-        tasks: Array<{ id: string; status: string }>
-      }>(listed)
-
-      expect(listPayload.source).toBe("tasks")
-      expect(listPayload.tasks.some((task) => task.id === taskId && task.status === "active")).toBe(true)
-
-      const completed = await server!.client.callTool({
-        name: "complete_task",
-        arguments: { id: taskId },
-      })
-      const completePayload = getStructuredContent<{
-        completed: { id: string; status: string; completedAt: string | null }
-      }>(completed)
-
-      expect(completePayload.completed.id).toBe(taskId)
-      expect(completePayload.completed.status).toBe("completed")
-      expect(typeof completePayload.completed.completedAt).toBe("string")
-
-      const fetched = await server!.client.callTool({
-        name: "get_task",
-        arguments: { id: taskId },
-      })
-      const fetchPayload = getStructuredContent<{
-        task: { id: string; status: string }
-      }>(fetched)
-
-      expect(fetchPayload.task.id).toBe(taskId)
-      expect(fetchPayload.task.status).toBe("completed")
-
-      const projects = await server!.client.callTool({
-        name: "list_projects",
-        arguments: { status: "completed" },
-      })
-      const projectPayload = getStructuredContent<{
-        projects: Array<{ project: string; activeCount: number; completedCount: number }>
-      }>(projects)
-      const sandboxProject = projectPayload.projects.find((project) => project.project === "Sandbox")
-
-      expect(sandboxProject).toBeDefined()
-      expect((sandboxProject?.completedCount ?? 0) >= 1).toBe(true)
-    })
-  })
-
   describe("memory server integration", () => {
     let server: TestServer | undefined
 
