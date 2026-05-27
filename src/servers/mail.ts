@@ -207,6 +207,27 @@ export type MarkEmailsNotJunkResult = {
   detail?: string
 }
 
+export type FlagEmailsArguments = {
+  emails: FlagEmailsTarget[]
+}
+
+export type FlagEmailsTarget = {
+  id: string
+  subject?: string
+  handle: EmailHandle
+  flagIndex?: number
+  flaggedStatus?: boolean
+  backgroundColor?: string
+}
+
+export type FlagEmailsResult = {
+  id: string
+  subject?: string
+  handle: EmailHandle
+  status: "flagged" | "not_found" | "invalid_handle" | "error"
+  detail?: string
+}
+
 export type SendEmailArguments = {
   to: string[]
   cc?: string[]
@@ -883,6 +904,103 @@ function run(argv) {
       return {
         ...baseResult,
         status: "marked_not_junk",
+      }
+    } catch (error) {
+      return {
+        ...baseResult,
+        status: "error",
+        detail: error instanceof Error ? error.message : String(error),
+      }
+    }
+  })
+
+  return JSON.stringify({ results })
+}
+`
+
+const FLAG_EMAILS_JXA = String.raw`
+function run(argv) {
+  const Mail = Application("Mail")
+  const input = JSON.parse(argv[0] || "{}")
+  const targets = Array.isArray(input.targets) ? input.targets : []
+  const decodeMailboxPart = (value) => {
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
+  }
+  const getMailboxName = (mailboxUrl) => mailboxUrl
+    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
+    .split("/")
+    .filter(Boolean)
+    .map(decodeMailboxPart)
+    .join("/")
+
+  const results = targets.map((target) => {
+    const baseResult = {
+      id: target.id,
+      subject: target.subject,
+      handle: target.handle,
+    }
+
+    try {
+      const handle = target.handle || {}
+      const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
+      const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
+      const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
+      const mailboxName = getMailboxName(mailboxUrl)
+
+      if (!accountId || !mailId || !mailboxName) {
+        return {
+          ...baseResult,
+          status: "invalid_handle",
+          detail: "Missing accountId, mailboxUrl, or mailId.",
+        }
+      }
+
+      const account = Mail.accounts.byId(accountId)
+
+      if (typeof account.exists === "function" && !account.exists()) {
+        return {
+          ...baseResult,
+          status: "not_found",
+        }
+      }
+
+      const mailbox = account.mailboxes.byName(mailboxName)
+
+      if (typeof mailbox.exists === "function" && !mailbox.exists()) {
+        return {
+          ...baseResult,
+          status: "not_found",
+        }
+      }
+
+      const matchedMessage = mailbox.messages.byId(Number(mailId))
+
+      if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
+        return {
+          ...baseResult,
+          status: "not_found",
+        }
+      }
+
+      if (typeof target.flagIndex === "number") {
+        matchedMessage.flagIndex = target.flagIndex
+      }
+
+      if (typeof target.flaggedStatus === "boolean") {
+        matchedMessage.flaggedStatus = target.flaggedStatus
+      }
+
+      if (typeof target.backgroundColor === "string") {
+        matchedMessage.backgroundColor = target.backgroundColor
+      }
+
+      return {
+        ...baseResult,
+        status: "flagged",
       }
     } catch (error) {
       return {
@@ -1893,6 +2011,45 @@ export const parseMarkEmailsNotJunkArguments = (value: unknown): MarkEmailsNotJu
   }
 }
 
+export const parseFlagEmailsArguments = (value: unknown): FlagEmailsArguments => {
+  const objectValue = validateArgumentsObject(value, ["emails"])
+  const emails = getRequiredArray(objectValue, "emails")
+
+  if (emails.length === 0) {
+    throw new Error("Invalid emails: expected at least one email.")
+  }
+
+  return {
+    emails: emails.map((emailValue, index) => {
+      if (!emailValue || typeof emailValue !== "object" || Array.isArray(emailValue)) {
+        throw new Error(`Invalid emails[${index}]: expected an object.`)
+      }
+
+      const email = emailValue as Record<string, unknown>
+
+      const result: FlagEmailsTarget = {
+        id: getOptionalString(email, "id") ?? `email-${index + 1}`,
+        subject: getOptionalString(email, "subject"),
+        handle: getMarkEmailHandle(email),
+      }
+
+      if (typeof email.flagIndex === "number") {
+        result.flagIndex = email.flagIndex
+      }
+
+      if (typeof email.flaggedStatus === "boolean") {
+        result.flaggedStatus = email.flaggedStatus
+      }
+
+      if (typeof email.backgroundColor === "string") {
+        result.backgroundColor = email.backgroundColor
+      }
+
+      return result
+    }),
+  }
+}
+
 const EMAIL_ADDRESS_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MAX_EMAIL_BODY_LENGTH = 1_000_000
 
@@ -2244,6 +2401,52 @@ export const formatMarkEmailsNotJunkSummary = (results: MarkEmailsNotJunkResult[
 
   if (counts.noInboxMailbox > 0) {
     parts.push(`${counts.noInboxMailbox} no inbox mailbox`)
+  }
+
+  if (counts.error > 0) {
+    parts.push(`${counts.error} error${counts.error === 1 ? "" : "s"}`)
+  }
+
+  return `${parts.join("; ")}.`
+}
+
+export const formatFlagEmailsSummary = (results: FlagEmailsResult[]) => {
+  const counts = {
+    flagged: 0,
+    notFound: 0,
+    invalidHandle: 0,
+    error: 0,
+  }
+
+  for (const result of results) {
+    switch (result.status) {
+      case "flagged":
+        counts.flagged += 1
+        break
+      case "not_found":
+        counts.notFound += 1
+        break
+      case "invalid_handle":
+        counts.invalidHandle += 1
+        break
+      case "error":
+        counts.error += 1
+        break
+    }
+  }
+
+  const parts = [`Processed ${results.length} email${results.length === 1 ? "" : "s"}`]
+
+  if (counts.flagged > 0) {
+    parts.push(`${counts.flagged} flagged`)
+  }
+
+  if (counts.notFound > 0) {
+    parts.push(`${counts.notFound} not found`)
+  }
+
+  if (counts.invalidHandle > 0) {
+    parts.push(`${counts.invalidHandle} invalid handle`)
   }
 
   if (counts.error > 0) {
@@ -3066,6 +3269,34 @@ const markEmailsNotJunkWithJxa = (targets: MarkEmailsNotJunkTarget[]) => {
   return output.results
 }
 
+const flagEmailsWithJxa = (targets: FlagEmailsTarget[]) => {
+  const command = spawnSync(
+    "osascript",
+    ["-l", "JavaScript", "-e", FLAG_EMAILS_JXA, "--", JSON.stringify({ targets })],
+    {
+      encoding: "utf8",
+    },
+  )
+
+  if (command.error) {
+    throw command.error
+  }
+
+  if (command.status !== 0) {
+    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
+  }
+
+  const output = JSON.parse(command.stdout || "{}") as {
+    results?: FlagEmailsResult[]
+  }
+
+  if (!Array.isArray(output.results)) {
+    throw new Error("Mail flag emails failed: invalid JXA response.")
+  }
+
+  return output.results
+}
+
 const createMarkEmailsJunkResult = async (argumentsValue: MarkEmailsJunkArguments) => {
   try {
     const results = markEmailsJunkWithJxa(argumentsValue.emails)
@@ -3136,6 +3367,46 @@ const createMarkEmailsNotJunkResult = async (argumentsValue: MarkEmailsNotJunkAr
         {
           type: "text",
           text: formatMarkEmailsNotJunkSummary(results),
+        },
+      ],
+      structuredContent: {
+        results,
+      },
+      isError: true,
+    }
+  }
+}
+
+const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments) => {
+  try {
+    const results = flagEmailsWithJxa(argumentsValue.emails)
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: formatFlagEmailsSummary(results),
+        },
+      ],
+      structuredContent: {
+        results,
+      },
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    const results: FlagEmailsResult[] = argumentsValue.emails.map((email) => ({
+      id: email.id,
+      subject: email.subject,
+      handle: email.handle,
+      status: "error",
+      detail,
+    }))
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: formatFlagEmailsSummary(results),
         },
       ],
       structuredContent: {
@@ -3389,6 +3660,30 @@ server.registerTool(
   async (args) => {
     const argumentsValue = parseMarkEmailsNotJunkArguments(args)
     const result = await createMarkEmailsNotJunkResult(argumentsValue)
+    return result as { content: { type: "text"; text: string }[]; isError?: boolean }
+  },
+)
+
+server.registerTool(
+  "flag_emails",
+  {
+    description: "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flagIndex', 'flaggedStatus', or 'backgroundColor'.",
+    inputSchema: {
+      emails: z.array(
+        z.object({
+          id: z.string(),
+          subject: z.string().optional(),
+          handle: handleSchema,
+          flagIndex: z.number().int().min(-1).max(6).optional().describe("Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray"),
+          flaggedStatus: z.boolean().optional().describe("Set flagged status directly. true=flagged, false=unflagged."),
+          backgroundColor: z.enum(["blue", "gray", "green", "none", "orange", "purple", "red", "yellow"]).optional().describe("Message background color in Mail.app."),
+        }),
+      ).min(1).describe("Array of email objects to flag."),
+    },
+  },
+  async (args) => {
+    const argumentsValue = parseFlagEmailsArguments(args)
+    const result = await createFlagEmailsResult(argumentsValue)
     return result as { content: { type: "text"; text: string }[]; isError?: boolean }
   },
 )
