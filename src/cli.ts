@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-const SUBCOMMANDS = ["mail", "contacts", "notes", "tasks", "memory", "messages"] as const
+const SUBCOMMANDS = ["mail", "contacts", "notes", "tasks", "memory", "messages", "events", "reminders"] as const
 type Subcommand = (typeof SUBCOMMANDS)[number]
 
 const USAGE = `
@@ -16,6 +16,8 @@ Subcommands:
   tasks      Task manager (SQLite-backed tasks with repeat rules)
   memory     Memory store (structured entries with search and duration queries)
   messages   Apple Messages (iMessage/SMS read, search, send)
+  events     Apple Calendar (events and calendars CRUD)
+  reminders  Apple Reminders (tasks, lists, subtasks CRUD)
 
 Examples:
   bunx @hachitogo/macos-mcp-tools mail
@@ -58,5 +60,11 @@ switch (subcommand) {
     break
   case "messages":
     await import("./servers/messages.js")
+    break
+  case "events":
+    await import("./servers/events.js")
+    break
+  case "reminders":
+    await import("./servers/reminders.js")
     break
 }
