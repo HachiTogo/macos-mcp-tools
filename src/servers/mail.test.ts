@@ -9,6 +9,9 @@ import {
   formatMarkEmailsNotJunkSummary,
   formatMarkEmailsReadSummary,
   getMailboxAccountKey,
+  groupEmailsByAccount,
+  isBatchFailure,
+  isExcludedMailbox,
   parseExtractEmailLinksArguments,
   parseForwardEmailArguments,
   parseMarkEmailsJunkArguments,
@@ -789,5 +792,55 @@ describe("forward email argument parsing", () => {
         from: "not-an-email",
       }),
     ).toThrow("from")
+  })
+})
+
+describe("mailbox exclusion", () => {
+  test("excludes top-level junk, spam, trash, drafts and outbox mailboxes", () => {
+    for (const name of ["Junk", "Spam", "Trash", "Drafts", "Outbox", "Deleted Messages", "Sent Messages"]) {
+      expect(isExcludedMailbox("imap://acct/" + name, name, "icloud")).toBe(true)
+    }
+  })
+
+  test("excludes nested provider mailboxes and prefix-named variants", () => {
+    expect(isExcludedMailbox("imap://acct/[Gmail]/Spam", "[Gmail]/Spam", "gmail")).toBe(true)
+    expect(isExcludedMailbox("imap://acct/INBOX/Junk E-mail", "INBOX/Junk E-mail", "icloud")).toBe(true)
+    expect(isExcludedMailbox("imap://acct/[Gmail]", "[Gmail]", "gmail")).toBe(true)
+  })
+
+  test("keeps inbox and user folders", () => {
+    expect(isExcludedMailbox("imap://acct/INBOX", "INBOX", "icloud")).toBe(false)
+    expect(isExcludedMailbox("imap://acct/Receipts", "Receipts", "icloud")).toBe(false)
+    expect(isExcludedMailbox("imap://acct/Projects/Trashcan Redesign", "Projects/Trashcan Redesign", "icloud")).toBe(true)
+  })
+
+  test("excludes All Mail only for non-Gmail providers", () => {
+    expect(isExcludedMailbox("imap://acct/All Mail", "All Mail", "icloud")).toBe(true)
+    expect(isExcludedMailbox("imap://acct/[Gmail]/All Mail", "[Gmail]/All Mail", "gmail")).toBe(false)
+  })
+})
+
+describe("account grouping order", () => {
+  test("orders configured labels first, then unknown labels alphabetically, with an empty displayOrder", () => {
+    const emails = [
+      createEmail({ id: "z", accountLabel: "Zeta", accountCategory: "personal" }),
+      createEmail({ id: "a", accountLabel: "Alpha", accountCategory: "work" }),
+      createEmail({ id: "m", accountLabel: "Mid", accountCategory: "work" }),
+    ]
+    const groups = groupEmailsByAccount(emails, { accounts: {}, displayOrder: [] })
+    expect(groups.map((group) => group.accountLabel)).toEqual(["Alpha", "Mid", "Zeta"])
+
+    const ordered = groupEmailsByAccount(emails, { accounts: {}, displayOrder: ["Zeta"] })
+    expect(ordered.map((group) => group.accountLabel)).toEqual(["Zeta", "Alpha", "Mid"])
+  })
+})
+
+describe("batch mutation error reporting", () => {
+  test("is an error only when every item failed", () => {
+    expect(isBatchFailure([{ status: "not_found" }, { status: "invalid_handle" }])).toBe(true)
+    expect(isBatchFailure([{ status: "error" }])).toBe(true)
+    expect(isBatchFailure([{ status: "not_found" }, { status: "marked_read" }])).toBe(false)
+    expect(isBatchFailure([{ status: "already_read" }])).toBe(false)
+    expect(isBatchFailure([])).toBe(false)
   })
 })
