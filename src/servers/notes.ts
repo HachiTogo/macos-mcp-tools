@@ -506,5 +506,12 @@ server.registerTool(
 
 // ── Entry point ────────────────────────────────────────────────────────
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+export const main = async () => {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+};
+
+// Boot only when executed directly; cli.ts and tests import this module without starting a server.
+if (import.meta.main) {
+  await main();
+}
