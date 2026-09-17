@@ -17,6 +17,7 @@ import {
 } from "../lib/eventkit/index.js";
 import type { CalendarToolArgs, CalendarsToolArgs } from "../lib/eventkit/index.js";
 
+import { PACKAGE_VERSION } from "../lib/version.js";
 // ── Formatters ────────────────────────────────────────────────────────
 
 const formatEventMarkdown = (event: {
@@ -81,7 +82,7 @@ const formatEventMarkdown = (event: {
 
 const server = new McpServer({
   name: "apple-events",
-  version: "0.0.1",
+  version: PACKAGE_VERSION,
 });
 
 server.registerTool(

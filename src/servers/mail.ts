@@ -7,6 +7,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
+import { PACKAGE_VERSION } from "../lib/version"
 type TableColumnRow = {
   name: string
 }
@@ -3567,7 +3568,7 @@ const emailsArraySchema = z.array(
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "apple-mail", version: "0.0.1" })
+const server = new McpServer({ name: "apple-mail", version: PACKAGE_VERSION })
 
 server.registerTool(
   "unread_emails",
