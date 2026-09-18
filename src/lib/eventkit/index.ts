@@ -11,7 +11,6 @@ export {
   bufferToString,
   formatMultilineNotes,
   CliUserError,
-  isDevelopmentMode,
   handleAsyncOperation,
   extractAndValidateArgs,
   formatListMarkdown,

@@ -92,22 +92,6 @@ export function formatMultilineNotes(notes: string): string {
 
 // Error handling
 
-const USER_ACTIONABLE_PERMISSION_PATTERNS = [
-  /permission denied/i,
-  /permission is write-only/i,
-  /access denied/i,
-  /not authorized.*(calendar|reminders)/i,
-  /System Settings > Privacy & Security/i,
-  /full calendar access/i,
-  /full reminder access/i,
-] as const;
-
-function isUserActionablePermissionError(message: string): boolean {
-  return USER_ACTIONABLE_PERMISSION_PATTERNS.some((pattern) =>
-    pattern.test(message),
-  );
-}
-
 export class CliUserError extends Error {
   constructor(message: string) {
     super(message);
@@ -115,29 +99,18 @@ export class CliUserError extends Error {
   }
 }
 
-export function isDevelopmentMode(): boolean {
-  return (
-    process.env.NODE_ENV === 'development' ||
-    (!!process.env.DEBUG && process.env.DEBUG !== '')
-  );
-}
-
-function createErrorMessage(operation: string, error: unknown): string {
+export function createErrorMessage(operation: string, error: unknown): string {
   const message =
     error instanceof Error ? error.message : 'System error occurred';
-  const isDev = isDevelopmentMode();
 
+  // Validation and user-facing CLI errors are already phrased for the caller.
   if (error instanceof ValidationError || error instanceof CliUserError) {
     return message;
   }
 
-  if (isUserActionablePermissionError(message)) {
-    return `Failed to ${operation}: ${message}`;
-  }
-
-  return isDev
-    ? `Failed to ${operation}: ${message}`
-    : `Failed to ${operation}: System error occurred`;
+  // Everything else keeps its real message. The consumer is an agent that cannot set NODE_ENV or
+  // DEBUG, so replacing the detail with a generic string removed its only diagnostic channel.
+  return `Failed to ${operation}: ${message}`;
 }
 
 export async function handleAsyncOperation(
