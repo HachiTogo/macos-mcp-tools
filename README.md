@@ -132,16 +132,16 @@ for s in mail contacts notes memory messages events reminders; do claude mcp add
 
 ### 5. Updating
 
-A global install does not update itself. After a new release:
+A global install does not update itself. After a new release, clear Bun's cached registry metadata first, then reinstall:
 
 ```bash
-bun install -g @hachitogo/macos-mcp-tools@latest
+bun pm cache rm && bun install -g @hachitogo/macos-mcp-tools@latest
 ```
 
-Then quit and reopen the host. Check what is installed versus published with:
+Then quit and reopen the host. The cache clear matters: Bun keeps the package manifest it last saw, so for some minutes after a publish `@latest` (and even an exact new version) can resolve to the previous release with no warning. Confirm what is installed:
 
 ```bash
-"$(bun pm bin -g)/macos-mcp-tools" --help | head -1; bun pm view @hachitogo/macos-mcp-tools dist-tags
+grep '"version"' "$(bun pm bin -g)/../install/global/node_modules/@hachitogo/macos-mcp-tools/package.json"; bun pm view @hachitogo/macos-mcp-tools dist-tags
 ```
 
 ## Servers
