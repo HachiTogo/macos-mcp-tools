@@ -102,7 +102,7 @@ const isoToAppleNanos = (iso: string): number => {
 
 const NS_STRING_MARKER = new TextEncoder().encode("NSString")
 
-const extractTextFromBody = (blob: Uint8Array | null): string | null => {
+export const extractTextFromBody = (blob: Uint8Array | null): string | null => {
   if (!blob || blob.length === 0) return null
   const buf = Buffer.from(blob)
   const idx = buf.indexOf(NS_STRING_MARKER)
@@ -135,8 +135,11 @@ const extractTextFromBody = (blob: Uint8Array | null): string | null => {
   return after.subarray(textStart, textStart + textLen).toString("utf-8")
 }
 
-const resolveText = (row: { text: string | null, attributedBody: Uint8Array | null }): string | null =>
+export const resolveText = (row: { text: string | null, attributedBody: Uint8Array | null }): string | null =>
   row.text || extractTextFromBody(row.attributedBody) || null
+
+// Escape LIKE metacharacters so a query like "50%" matches literally. Pair with ESCAPE '\\' in SQL.
+export const escapeLikePattern = (value: string): string => value.replace(/[\\%_]/g, "\\$&")
 
 // ── Database helpers ──────────────────────────────────────────────────
 
@@ -257,26 +260,27 @@ const getMessages = (
     }))
   })
 
-const searchMessages = (
+export const searchMessages = (
   query: string,
   limit: number,
   chatIdentifier?: string,
 ): (NormalizedMessage & { chatId: string })[] =>
   withDb((db) => {
+    // Modern Messages rows often have text = NULL with the body only in attributedBody, so the SQL
+    // LIKE alone misses them. Rows with NULL text are decoded in JS via resolveText, exactly as
+    // get_messages renders them, and matched case-insensitively there.
     const conditions = [
-      "m.text LIKE ?",
+      "(m.text LIKE ? ESCAPE '\\' OR (m.text IS NULL AND m.attributedBody IS NOT NULL))",
       "m.associated_message_type = 0",
     ]
-    const params: (string | number)[] = [`%${query}%`]
+    const params: (string | number)[] = [`%${escapeLikePattern(query)}%`]
 
     if (chatIdentifier) {
       conditions.push("c.chat_identifier = ?")
       params.push(chatIdentifier)
     }
 
-    params.push(limit)
-
-    const rows = db.query(`
+    const statement = db.query(`
       SELECT
         m.ROWID            AS rowid,
         m.guid             AS guid,
@@ -294,20 +298,27 @@ const searchMessages = (
       LEFT JOIN handle h ON m.handle_id = h.ROWID
       WHERE ${conditions.join(" AND ")}
       ORDER BY m.date DESC
-      LIMIT ?
-    `).all(...params) as (MessageRow & { chatIdentifier: string })[]
+    `)
 
-    return rows.map((row) => ({
-      id: row.rowid,
-      text: resolveText(row),
-      isFromMe: row.isFromMe === 1,
-      sender: row.isFromMe === 1 ? "me" : (row.senderId || "unknown"),
-      date: appleNanosToIso(row.date),
-      dateLocal: appleNanosToLocal(row.date),
-      isRead: row.isRead === 1,
-      chatId: row.chatIdentifier,
-      source: SOURCE_NAME,
-    }))
+    const needle = query.toLowerCase()
+    const results: (NormalizedMessage & { chatId: string })[] = []
+    for (const row of statement.iterate(...params) as IterableIterator<MessageRow & { chatIdentifier: string }>) {
+      const text = resolveText(row)
+      if (!text || !text.toLowerCase().includes(needle)) continue
+      results.push({
+        id: row.rowid,
+        text,
+        isFromMe: row.isFromMe === 1,
+        sender: row.isFromMe === 1 ? "me" : (row.senderId || "unknown"),
+        date: appleNanosToIso(row.date),
+        dateLocal: appleNanosToLocal(row.date),
+        isRead: row.isRead === 1,
+        chatId: row.chatIdentifier,
+        source: SOURCE_NAME,
+      })
+      if (results.length >= limit) break
+    }
+    return results
   })
 
 const getParticipants = (chatIdentifier: string): NormalizedParticipant[] =>
@@ -465,7 +476,7 @@ server.registerTool(
 server.registerTool(
   "search_messages",
   {
-    description: "Search messages by text content across all conversations, or within a specific conversation.",
+    description: "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
     inputSchema: {
       query: z.string().min(1)
         .describe("Text to search for in message content."),
