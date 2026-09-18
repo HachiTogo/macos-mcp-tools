@@ -223,6 +223,7 @@ The mail server may create `config/email.json` locally to classify accounts. Thi
 
 ## Testing
 
+- Lint and format check: `bun run lint` (fix with `bun run format`)
 - Unit tests: `bun test`
 - Type checks: `bun run typecheck`
 - Opt-in integration tests: `bun run test:integration`
