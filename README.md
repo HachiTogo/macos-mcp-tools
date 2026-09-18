@@ -62,100 +62,86 @@ brew install poppler
 
 ## Quick Start
 
-### 1. Verify the CLI locally
+### 1. Install globally (the only supported pattern for MCP hosts)
 
 ```bash
-bunx @hachitogo/macos-mcp-tools mail
+bun install -g @hachitogo/macos-mcp-tools@latest
 ```
 
-Each subcommand starts one standalone MCP server on stdio:
+Then find the absolute path of the installed launcher. You will paste this path into every MCP host config:
 
 ```bash
-bunx @hachitogo/macos-mcp-tools mail
-bunx @hachitogo/macos-mcp-tools contacts
-bunx @hachitogo/macos-mcp-tools notes
-bunx @hachitogo/macos-mcp-tools memory
-bunx @hachitogo/macos-mcp-tools messages
-bunx @hachitogo/macos-mcp-tools events
-bunx @hachitogo/macos-mcp-tools reminders
+echo "$(bun pm bin -g)/macos-mcp-tools"
 ```
+
+Typical results are `/Users/<you>/.bun/bin/macos-mcp-tools` when `BUN_INSTALL` is set, or `/Users/<you>/.cache/.bun/bin/macos-mcp-tools` when it is not. Verify it runs:
+
+```bash
+"$(bun pm bin -g)/macos-mcp-tools" --help
+```
+
+> **Do not use `bunx` in an MCP host config.** Hosts such as Claude Desktop start all seven servers at the same instant. `bunx` links each launch into one shared temp directory with no lock, so seven concurrent `bunx` runs corrupt each other's `node_modules` and the servers crash on startup with errors like `Cannot find package 'zod-to-json-schema'`, `Failed to link which: EEXIST`, or `could not determine executable to run`. Warming the cache does not prevent it. A global install has no install step at launch, so the race cannot happen.
+
+> **Use the absolute path, not a bare command name.** GUI hosts do not inherit your shell `PATH`, so `macos-mcp-tools` or `bun` alone will often fail with "No executable file" even though they work in Terminal.
 
 ### 2. Configure Claude Desktop
 
-Add entries like this to your Claude Desktop MCP config:
+Open Settings → Developer → Edit Config (or edit `~/Library/Application Support/Claude/claude_desktop_config.json` while Claude Desktop is fully quit; the app can overwrite edits made while it is running). Replace `/Users/<you>/.cache/.bun/bin/macos-mcp-tools` with the path from step 1:
 
 ```json
 {
   "mcpServers": {
-    "apple_mail": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "mail"]
-    },
-    "apple_contacts": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "contacts"]
-    },
-    "apple_notes": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "notes"]
-    },
-    "memory": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "memory"]
-    },
-    "apple_messages": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "messages"]
-    },
-    "apple_events": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "events"]
-    },
-    "apple_reminders": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "reminders"]
-    }
+    "apple_mail":      { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["mail"] },
+    "apple_contacts":  { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["contacts"] },
+    "apple_notes":     { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["notes"] },
+    "memory":          { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["memory"] },
+    "apple_messages":  { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["messages"] },
+    "apple_events":    { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["events"] },
+    "apple_reminders": { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["reminders"] }
   }
 }
 ```
 
-### 3. Configure OpenCode
+Quit and reopen Claude Desktop. If a server fails to start, read `~/Library/Logs/Claude/mcp-server-<name>.log`; it prints the exact command Desktop ran and anything the server wrote to stderr.
 
-Add entries like this to your OpenCode MCP config:
+### 3. Configure Claude Code
+
+One command per server, same launcher path:
+
+```bash
+for s in mail contacts notes memory messages events reminders; do claude mcp add "apple_$s" -- "$(bun pm bin -g)/macos-mcp-tools" "$s"; done
+```
+
+(The `memory` server ends up named `apple_memory` with this loop; rename it if you prefer.)
+
+### 4. Configure OpenCode
 
 ```json
 {
   "mcp": {
-    "apple_mail": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "mail"]
-    },
-    "apple_contacts": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "contacts"]
-    },
-    "apple_notes": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "notes"]
-    },
-    "memory": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "memory"]
-    },
-    "apple_messages": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "messages"]
-    },
-    "apple_events": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "events"]
-    },
-    "apple_reminders": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "reminders"]
-    }
+    "apple_mail":      { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "mail"] },
+    "apple_contacts":  { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "contacts"] },
+    "apple_notes":     { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "notes"] },
+    "memory":          { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "memory"] },
+    "apple_messages":  { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "messages"] },
+    "apple_events":    { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "events"] },
+    "apple_reminders": { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "reminders"] }
   }
 }
+```
+
+### 5. Updating
+
+A global install does not update itself. After a new release:
+
+```bash
+bun install -g @hachitogo/macos-mcp-tools@latest
+```
+
+Then quit and reopen the host. Check what is installed versus published with:
+
+```bash
+"$(bun pm bin -g)/macos-mcp-tools" --help | head -1; bun pm view @hachitogo/macos-mcp-tools dist-tags
 ```
 
 ## Servers
@@ -201,6 +187,139 @@ Tools: `calendar_events`, `calendar_calendars`
 Manages Apple Reminders via EventKit. Supports full CRUD with subtasks (stored as checklists in notes), tags (native #tag format), priority levels, location triggers, alarms, and recurrence rules.
 
 Tools: `reminders_tasks`, `reminders_lists`, `reminders_subtasks`
+
+## Examples
+
+Everything below is typed into Claude Desktop as a normal chat message. Claude picks the tool, calls it, and answers from the result. Names, addresses and IDs are invented.
+
+### "Give me a summary of all unread emails"
+
+Claude calls `unread_emails` on the `apple_mail` server with `{ "limit": 25 }`. The tool returns grouped text (plus the same data as `structuredContent`):
+
+```text
+Found 4 unread emails.
+
+Northwind (work) — 3 unread
+1. [2026-09-18T08:42:00] Priya Raman — Q3 pipeline review: agenda (INBOX)
+2. [2026-09-18T07:15:00] GitHub — [northwind/api] PR #412 ready for review (INBOX)
+3. [2026-09-17T18:03:00] Sam Okafor — Re: contractor invoice (INBOX)
+
+Personal (personal) — 1 unread
+4. [2026-09-18T06:58:00] Bainbridge Library — Hold ready for pickup (INBOX)
+```
+
+Claude's reply, roughly:
+
+> You have 4 unread. **Work (3):** Priya sent the agenda for today's Q3 pipeline review; GitHub says PR #412 on northwind/api is ready for review; Sam followed up on the contractor invoice thread. **Personal (1):** the library has a hold ready for pickup. Want me to open any of these?
+
+Follow-ups that work: *"Read me Sam's email"* (`fetch_email_body`), *"Mark the GitHub one as read"* (`mark_emails_read`), *"Any links in the library email?"* (`extract_email_links`).
+
+### "What reminders are due or overdue as of today, ranked by priority?"
+
+Claude calls `reminders_tasks` on `apple_reminders` twice, `{ "action": "read", "dueWithin": "overdue" }` and `{ "action": "read", "dueWithin": "today" }`, then sorts. Each call returns markdown:
+
+```text
+### Reminders (Total: 3)
+
+- [ ] Renew car registration
+  - List: Errands
+  - ID: 7E1C2A4F-...
+  - Priority: high (1)
+  - Due: 2026-09-15
+- [ ] Reply to school volunteer form
+  - List: Family
+  - ID: 0B93D6E2-...
+  - Priority: medium (5)
+  - Due: 2026-09-17
+- [ ] Order printer toner
+  - List: Errands
+  - ID: C41F8B7D-...
+  - Due: 2026-09-16
+```
+
+Claude's reply, roughly:
+
+> **Overdue, highest priority first:** 1) Renew car registration (high, due Sep 15, 3 days late). 2) Reply to school volunteer form (medium, due Sep 17). 3) Order printer toner (no priority, due Sep 16). **Due today:** Submit expense report (high), Call the vet (medium). Want me to mark any complete or push the toner one to Friday?
+
+Follow-ups: *"Mark the toner one done"* (`reminders_tasks` with `action: "update"`, `id`, `completed: true`), *"Add 'pick up dry cleaning' to Errands for tomorrow, high priority"* (`action: "create"`).
+
+### "What's on my calendar tomorrow?"
+
+Claude calls `calendar_events` on `apple_events` with `{ "action": "read", "startDate": "2026-09-19 00:00:00", "endDate": "2026-09-20 00:00:00" }`:
+
+```text
+### Calendar Events (Total: 2)
+
+- Dentist
+  - Calendar: Family
+  - ID: 27985AF3-...:5C0E2D91-...
+  - Start: 2026-09-19T09:30:00-07:00
+  - End: 2026-09-19T10:30:00-07:00
+  - Location: 1200 Winslow Way E
+- Team sync
+  - Calendar: Work
+  - ID: 5D22C354-...:a8f2k1@google.com
+  - Start: 2026-09-19T13:00:00-07:00
+  - End: 2026-09-19T13:30:00-07:00
+  - Availability: busy
+```
+
+> Two things tomorrow: dentist at 9:30 on Winslow Way (an hour), and the 1:00 team sync for 30 minutes. The rest of the day is open.
+
+If you leave the dates out, the read defaults to the next 14 days.
+
+### "Did anyone text me about Saturday's ride?"
+
+Claude calls `search_messages` on `apple_messages` with `{ "query": "Saturday", "limit": 20 }`:
+
+```text
+Found 2 message(s) matching "Saturday":
+
+[9/17/2026, 8:12:44 PM] [+14155550123] +14155550123: Still on for Saturday? Thinking 7am from the ferry.
+[9/17/2026, 8:20:10 PM] [+14155550123] me: 7 works. Bring lights, it'll be dark.
+```
+
+> Yes. Dana asked last night if Saturday is still on and suggested 7am from the ferry; you replied that 7 works and to bring lights. Want me to add it to the Family calendar?
+
+Follow-up: *"Yes, 7 to 10, call it Group ride"* (`calendar_events` with `action: "create"`).
+
+### "Save a note with the three action items from today's review"
+
+Claude calls `create_note` on `apple_notes` with `{ "folder": "Work", "title": "Q3 pipeline review — actions", "body": "<ul><li>Priya: send updated forecast by Fri</li><li>Me: review PR #412</li><li>Sam: resend invoice with PO number</li></ul>" }`:
+
+```json
+{
+  "success": true,
+  "name": "Q3 pipeline review — actions",
+  "folder": "Work"
+}
+```
+
+> Saved to Notes under Work as "Q3 pipeline review — actions" with the three items.
+
+### "When did I last get the car serviced, and how long ago was that?"
+
+The `memory` server is a small structured store for facts you want Claude to keep across conversations. Claude calls `query_duration_since` with `{ "subject": "car", "action": "serviced" }`:
+
+```json
+{
+  "source": "memory",
+  "query": { "subject": "car", "action": "serviced" },
+  "status": "matched",
+  "entry": {
+    "id": "b2c4e6f8-…",
+    "kind": "event",
+    "subject": "car",
+    "action": "serviced",
+    "happened_at": "2026-03-02"
+  },
+  "elapsed_days": 200
+}
+```
+
+> Last service was March 2, about 200 days ago (6.5 months). If you're on a six-month interval, you're due.
+
+To record one: *"Remember that I serviced the car today"* (`create_entry`).
 
 ## Configuration
 
