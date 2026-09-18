@@ -48,6 +48,7 @@ import {
   UpdateSubtaskSchema,
   updateSubtask,
 } from "../lib/eventkit/index.js"
+import { errorResult } from "../lib/mcp-result.js"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -537,7 +538,7 @@ server.registerTool(
         }, "delete reminder")
 
       default:
-        return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
+        return errorResult("reminders_tasks", new Error(`Unknown action: ${String(args.action)}`))
     }
   },
 )
@@ -596,7 +597,7 @@ server.registerTool(
         }, "delete reminder list")
 
       default:
-        return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
+        return errorResult("reminders_lists", new Error(`Unknown action: ${String(args.action)}`))
     }
   },
 )
@@ -703,7 +704,7 @@ server.registerTool(
         }, "reorder subtasks")
 
       default:
-        return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
+        return errorResult("reminders_subtasks", new Error(`Unknown action: ${String(args.action)}`))
     }
   },
 )

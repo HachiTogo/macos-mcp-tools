@@ -1,6 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import type { z } from "zod"
-import { ValidationError, validateInput } from "./schemas.js"
+import { errorMessage, textResult } from "../mcp-result.js"
+import { validateInput } from "./schemas.js"
 import type {
   CalendarsToolArgs,
   CalendarToolArgs,
@@ -84,16 +85,9 @@ export class CliUserError extends Error {
 }
 
 export function createErrorMessage(operation: string, error: unknown): string {
-  const message = error instanceof Error ? error.message : "System error occurred"
-
-  // Validation and user-facing CLI errors are already phrased for the caller.
-  if (error instanceof ValidationError || error instanceof CliUserError) {
-    return message
-  }
-
-  // Everything else keeps its real message. The consumer is an agent that cannot set NODE_ENV or
-  // DEBUG, so replacing the detail with a generic string removed its only diagnostic channel.
-  return `Failed to ${operation}: ${message}`
+  // Same "<operation> failed: <message>" contract as src/lib/mcp-result.ts. Validation and
+  // user-facing CLI errors are already phrased for the caller, so their message is used as-is.
+  return `${operation} failed: ${errorMessage(error)}`
 }
 
 export async function handleAsyncOperation(
@@ -101,21 +95,9 @@ export async function handleAsyncOperation(
   operationName: string,
 ): Promise<CallToolResult> {
   try {
-    const result = await operation()
-    return {
-      content: [{ type: "text", text: result }],
-      isError: false,
-    }
+    return textResult(await operation())
   } catch (error) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: createErrorMessage(operationName, error),
-        },
-      ],
-      isError: true,
-    }
+    return { ...textResult(createErrorMessage(operationName, error)), isError: true }
   }
 }
 
