@@ -92,7 +92,7 @@ server.registerTool(
       "Manages calendar events (time blocks). Supports reading, creating, updating, and deleting calendar events.",
     inputSchema: {
       action: z.enum(["read", "create", "update", "delete"]).describe("The operation to perform"),
-      id: z.string().optional().describe("The unique identifier of the event (REQUIRED for update, delete; optional for read to get single event)"),
+      id: z.string().optional().describe("The unique identifier of the event (REQUIRED for update, delete; optional for read to get a single event, searched within two years of today)"),
       title: z.string().optional().describe("The title of the event (REQUIRED for create, optional for update)"),
       startDate: z.string().optional().describe("Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601"),
       endDate: z.string().optional().describe("End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601"),

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test';
-import { nullToUndefined } from './helpers.js';
+import { CliUserError, createErrorMessage, nullToUndefined } from './helpers.js';
+import { ValidationError } from './schemas.js';
 
 describe('helpers', () => {
   describe('nullToUndefined', () => {
@@ -69,6 +70,31 @@ describe('helpers', () => {
       expect(result).not.toBe(obj);
       expect(obj.notes).toBeNull();
       expect(result.notes).toBeUndefined();
+    });
+  });
+
+  describe('createErrorMessage', () => {
+    it('keeps the underlying message for unexpected errors', () => {
+      expect(createErrorMessage('read calendar events', new Error("Event with ID 'x' not found."))).toBe(
+        "Failed to read calendar events: Event with ID 'x' not found.",
+      );
+    });
+
+    it('passes permission errors through with the operation prefix', () => {
+      const message = 'Calendar permission denied. Grant access in System Settings > Privacy & Security';
+      expect(createErrorMessage('read calendar events', new Error(message))).toBe(
+        `Failed to read calendar events: ${message}`,
+      );
+    });
+
+    it('returns validation and user errors verbatim', () => {
+      expect(createErrorMessage('create reminder', new ValidationError('title is required'))).toBe('title is required');
+      expect(createErrorMessage('create reminder', new CliUserError('List "Work" not found'))).toBe('List "Work" not found');
+    });
+
+    it('never hides the detail behind a generic string when a real message exists', () => {
+      expect(createErrorMessage('update event', new Error('boom'))).not.toContain('System error occurred');
+      expect(createErrorMessage('update event', 'not an Error object')).toBe('Failed to update event: System error occurred');
     });
   });
 });
