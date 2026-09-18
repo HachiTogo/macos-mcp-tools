@@ -62,100 +62,86 @@ brew install poppler
 
 ## Quick Start
 
-### 1. Verify the CLI locally
+### 1. Install globally (the only supported pattern for MCP hosts)
 
 ```bash
-bunx @hachitogo/macos-mcp-tools mail
+bun install -g @hachitogo/macos-mcp-tools@latest
 ```
 
-Each subcommand starts one standalone MCP server on stdio:
+Then find the absolute path of the installed launcher. You will paste this path into every MCP host config:
 
 ```bash
-bunx @hachitogo/macos-mcp-tools mail
-bunx @hachitogo/macos-mcp-tools contacts
-bunx @hachitogo/macos-mcp-tools notes
-bunx @hachitogo/macos-mcp-tools memory
-bunx @hachitogo/macos-mcp-tools messages
-bunx @hachitogo/macos-mcp-tools events
-bunx @hachitogo/macos-mcp-tools reminders
+echo "$(bun pm bin -g)/macos-mcp-tools"
 ```
+
+Typical results are `/Users/<you>/.bun/bin/macos-mcp-tools` when `BUN_INSTALL` is set, or `/Users/<you>/.cache/.bun/bin/macos-mcp-tools` when it is not. Verify it runs:
+
+```bash
+"$(bun pm bin -g)/macos-mcp-tools" --help
+```
+
+> **Do not use `bunx` in an MCP host config.** Hosts such as Claude Desktop start all seven servers at the same instant. `bunx` links each launch into one shared temp directory with no lock, so seven concurrent `bunx` runs corrupt each other's `node_modules` and the servers crash on startup with errors like `Cannot find package 'zod-to-json-schema'`, `Failed to link which: EEXIST`, or `could not determine executable to run`. Warming the cache does not prevent it. A global install has no install step at launch, so the race cannot happen.
+
+> **Use the absolute path, not a bare command name.** GUI hosts do not inherit your shell `PATH`, so `macos-mcp-tools` or `bun` alone will often fail with "No executable file" even though they work in Terminal.
 
 ### 2. Configure Claude Desktop
 
-Add entries like this to your Claude Desktop MCP config:
+Open Settings → Developer → Edit Config (or edit `~/Library/Application Support/Claude/claude_desktop_config.json` while Claude Desktop is fully quit; the app can overwrite edits made while it is running). Replace `/Users/<you>/.cache/.bun/bin/macos-mcp-tools` with the path from step 1:
 
 ```json
 {
   "mcpServers": {
-    "apple_mail": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "mail"]
-    },
-    "apple_contacts": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "contacts"]
-    },
-    "apple_notes": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "notes"]
-    },
-    "memory": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "memory"]
-    },
-    "apple_messages": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "messages"]
-    },
-    "apple_events": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "events"]
-    },
-    "apple_reminders": {
-      "command": "bunx",
-      "args": ["@hachitogo/macos-mcp-tools", "reminders"]
-    }
+    "apple_mail":      { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["mail"] },
+    "apple_contacts":  { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["contacts"] },
+    "apple_notes":     { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["notes"] },
+    "memory":          { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["memory"] },
+    "apple_messages":  { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["messages"] },
+    "apple_events":    { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["events"] },
+    "apple_reminders": { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["reminders"] }
   }
 }
 ```
 
-### 3. Configure OpenCode
+Quit and reopen Claude Desktop. If a server fails to start, read `~/Library/Logs/Claude/mcp-server-<name>.log`; it prints the exact command Desktop ran and anything the server wrote to stderr.
 
-Add entries like this to your OpenCode MCP config:
+### 3. Configure Claude Code
+
+One command per server, same launcher path:
+
+```bash
+for s in mail contacts notes memory messages events reminders; do claude mcp add "apple_$s" -- "$(bun pm bin -g)/macos-mcp-tools" "$s"; done
+```
+
+(The `memory` server ends up named `apple_memory` with this loop; rename it if you prefer.)
+
+### 4. Configure OpenCode
 
 ```json
 {
   "mcp": {
-    "apple_mail": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "mail"]
-    },
-    "apple_contacts": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "contacts"]
-    },
-    "apple_notes": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "notes"]
-    },
-    "memory": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "memory"]
-    },
-    "apple_messages": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "messages"]
-    },
-    "apple_events": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "events"]
-    },
-    "apple_reminders": {
-      "type": "local",
-      "command": ["bunx", "@hachitogo/macos-mcp-tools", "reminders"]
-    }
+    "apple_mail":      { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "mail"] },
+    "apple_contacts":  { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "contacts"] },
+    "apple_notes":     { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "notes"] },
+    "memory":          { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "memory"] },
+    "apple_messages":  { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "messages"] },
+    "apple_events":    { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "events"] },
+    "apple_reminders": { "type": "local", "command": ["/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "reminders"] }
   }
 }
+```
+
+### 5. Updating
+
+A global install does not update itself. After a new release:
+
+```bash
+bun install -g @hachitogo/macos-mcp-tools@latest
+```
+
+Then quit and reopen the host. Check what is installed versus published with:
+
+```bash
+"$(bun pm bin -g)/macos-mcp-tools" --help | head -1; bun pm view @hachitogo/macos-mcp-tools dist-tags
 ```
 
 ## Servers

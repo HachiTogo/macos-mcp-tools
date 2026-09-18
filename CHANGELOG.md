@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-18
+
+### Changed
+- **README**: installation now documents the only supported pattern for MCP hosts: a global `bun install -g` and an absolute launcher path in each host config. `bunx` is explicitly warned against because concurrent launches from a host corrupt its shared temp install and crash the servers on startup. Adds Claude Code instructions and an update procedure.
+
 ## [0.4.0] - 2026-09-18
 
 ### Changed
