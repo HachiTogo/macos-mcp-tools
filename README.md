@@ -44,8 +44,9 @@ flowchart LR
 - macOS
 - [Bun](https://bun.sh) 1.0+
 - Optional: `pdftotext` for PDF attachment text extraction
-- Full Disk Access for the terminal app (required by the messages server to read `~/Library/Messages/chat.db`)
-- Xcode Command Line Tools (required to rebuild the EventKitCLI Swift binary from source; not needed if using the prebuilt binary)
+- Full Disk Access for the host process (required by the mail server to read `~/Library/Mail/V10/MailData/Envelope Index` and by the messages server to read `~/Library/Messages/chat.db`)
+- Automation permission for Mail, Contacts, Notes and Messages; macOS prompts on first use of each
+- Xcode Command Line Tools, only to rebuild the EventKitCLI Swift binary with `bun run build:swift`. The prebuilt `bin/EventKitCLI` is Apple Silicon (arm64) only; Intel Macs must rebuild it.
 
 Install Bun with Homebrew:
 
@@ -229,7 +230,7 @@ The mail server may create `config/email.json` locally to classify accounts. Thi
 
 - Swift binary rebuild: `bun run build:swift` (requires Xcode Command Line Tools)
 
-Integration tests are isolated and non-destructive. The default opt-in suite uses temporary data directories so it does not touch real memory databases. The live macOS app smoke tests are also read-only, but they do connect to your local Mail, Contacts, Notes, and Messages data and therefore remain separately opt-in.
+Integration tests are isolated and non-destructive. The default opt-in suite uses temporary data directories so it does not touch real memory databases. The live macOS app smoke tests are also read-only, but they do connect to your local Mail, Contacts, and Notes data and therefore remain separately opt-in.
 
 ## License
 

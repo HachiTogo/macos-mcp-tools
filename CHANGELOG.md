@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-18
+
+### Fixed
+- **Mail**: top-level `Junk`, `Spam`, `Trash`, `Drafts`, `Outbox` and `Deleted Messages` mailboxes are now excluded from `unread_emails`; previously only nested paths such as `[Gmail]/Spam` were.
+- **Mail**: account groups sort deterministically when `displayOrder` is empty (the comparator returned `NaN` for every auto-discovered config).
+- **Mail**: `mark_emails_read`, `mark_emails_junk`, `mark_emails_not_junk` and `flag_emails` set `isError` when every item failed (`not_found`, `invalid_handle`, ...). Partial success still reports per-item statuses.
+- **Messages**: `search_messages` now finds messages whose body is stored only in `attributedBody` (the common case on current macOS); it uses the same decoder as `get_messages`. `%`, `_` and `\` in the query are matched literally.
+- **Events**: `calendar_events` with `action: "read"` and an `id` returned "not found" for every event because the unbounded query was clipped by EventKit's four-year predicate limit. It now searches two years either side of today.
+- **Events / Reminders**: tool errors report their underlying message instead of `System error occurred`.
+- **CLI**: usage text names the real binary, `macos-mcp-tools`.
+
+### Changed
+- Every MCP server reports the package version from `package.json` instead of a hardcoded `0.0.1`/`0.1.0`.
+- Servers export `main()` and start only when run directly, so importing them from tests no longer boots a stdio server.
+- Toolchain pinned for reproducible CI: `@types/bun` `^1.3.14`, Bun `1.3.14` in workflows, `actions/checkout@v5`. Redundant zod `overrides`/`resolutions` and unused tsconfig build options removed.
+- `AGENTS.md` now requires one SemVer version bump per merged PR or PR stack.
+
+### Added
+- `LICENSE` file (MIT), matching the license already declared in `package.json`.
+- Unit tests for `messages.ts` (first coverage) and for the mail and EventKit helpers changed above.
+
+## [0.3.0] - 2026-05-27
+
+### Removed
+- **BREAKING**: The `tasks` server and its tools (`list_tasks`, `get_task`, `create_task`, `update_task`, `complete_task`, `drop_task`, `reopen_task`, `list_projects`) were removed. Use the `reminders` server for task management. Existing `tasks.db` files are left untouched.
+
+_No 0.2.0 was tagged; 0.3.0 followed 0.1.0 directly._
+
+## [0.1.0] - 2026-05-27
+
+### Added
+- **Events Server**: Apple Calendar via EventKit (`calendar_events`, `calendar_calendars`) with recurrence, alarms, structured locations and availability.
+- **Reminders Server**: Apple Reminders via EventKit (`reminders_tasks`, `reminders_lists`, `reminders_subtasks`) with subtasks, tags, priorities, location triggers and recurrence.
+- Swift helper `EventKitCLI` (`swift/EventKitCLI.swift`, built with `bun run build:swift`) and a prebuilt `bin/EventKitCLI` for Apple Silicon.
+
+## [0.0.6] - 2026-05-27
+
+### Fixed
+- Synced `package.json` version with the release tag.
+
+## [0.0.5] - 2026-05-27
+
+### Changed
+- README lists the `flag_emails` mail tool.
+
+## [0.0.4] - 2026-05-27
+
+### Changed
+- **BREAKING**: Renamed MCP server identifiers and `source` payload fields:
+  - `memory` server: `sqlite-memory` → `memory`
+  - `tasks` server: `task-manager` → `tasks`
+  Consumers reading the `source` field on tool results must update their expectations. Database filenames (`sqlite-memory.db`, `tasks.db`) are unchanged.
+- **BREAKING**: Removed the `.opencode/data` tier-2 fallback in `resolveDataDir()`. Data directory resolution is now: `MACOS_TOOLS_DATA_DIR` env var, else `~/.local/share/macos-tools/`.
+
 ### Added
 - **Messages Server**: New Apple Messages MCP server with 5 tools for iMessage and SMS.
   Hybrid architecture: SQLite reads from `~/Library/Messages/chat.db` for fast queries, JXA/AppleScript for sending.
@@ -19,18 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `send_message` — send iMessage to a phone number, email, or group chat
 - **Mail Server**: `extract_email_links` tool — extracts every hyperlink from an Apple Mail message as `{ url, text }` pairs by parsing the raw RFC 822 source server-side. The HTML source is never returned to the caller; only the link pairs are returned.
 - **Mail Server**: `flag_emails` tool — set flag color (`flagIndex`), flagged status, or background color on Apple Mail messages via JXA. Supports batch operations with per-message flag/color settings.
-
-## [0.1.0] - 2026-04-26
-
-### Changed
-- **BREAKING**: Renamed MCP server identifiers and `source` payload fields:
-  - `memory` server: `sqlite-memory` → `memory`
-  - `tasks` server: `task-manager` → `tasks`
-  Consumers reading the `source` field on tool results must update their expectations. Database filenames (`sqlite-memory.db`, `tasks.db`) are unchanged.
-- **BREAKING**: Removed the `.opencode/data` tier-2 fallback in `resolveDataDir()`. Data directory resolution is now: `MACOS_TOOLS_DATA_DIR` env var, else `~/.local/share/macos-tools/`. Workspaces relying on the implicit `.opencode/data` discovery must either set `MACOS_TOOLS_DATA_DIR` explicitly or migrate their data to `~/.local/share/macos-tools/`.
-
-### Added
-- Pure-helper unit tests for the `tasks` server (`applyFlaggedToTags`)
+- Pure-helper unit tests for the `tasks` server (`applyFlaggedToTags`).
 
 ## [0.0.3] - 2026-04-08
 

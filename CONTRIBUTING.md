@@ -23,16 +23,22 @@ bun run src/cli.ts <subcommand>
 
 ```
 src/
-├── cli.ts           # CLI entry point, handles subcommands
+├── cli.ts              # CLI entry point, dispatches to one server per subcommand
 ├── lib/
-│   └── jxa.ts       # Shared JXA helper for AppleScript execution
+│   ├── jxa.ts          # Shared JXA helper for AppleScript execution
+│   ├── version.ts      # Package version read from package.json
+│   └── eventkit/       # TypeScript bridge to the EventKitCLI Swift binary
+├── integration/        # Opt-in stdio integration tests
 └── servers/
-    ├── mail.ts      # Apple Mail MCP server
-    ├── contacts.ts  # Apple Contacts MCP server
-    ├── notes.ts     # Apple Notes MCP server
-    ├── tasks.ts     # Task manager MCP server
-    ├── memory.ts    # Memory store MCP server
-    └── messages.ts  # Apple Messages MCP server
+    ├── mail.ts         # Apple Mail MCP server
+    ├── contacts.ts     # Apple Contacts MCP server
+    ├── notes.ts        # Apple Notes MCP server
+    ├── memory.ts       # Memory store MCP server
+    ├── messages.ts     # Apple Messages MCP server
+    ├── events.ts       # Apple Calendar MCP server (EventKit)
+    └── reminders.ts    # Apple Reminders MCP server (EventKit)
+swift/
+└── EventKitCLI.swift   # Swift source for bin/EventKitCLI (bun run build:swift)
 ```
 
 ## Scripts
