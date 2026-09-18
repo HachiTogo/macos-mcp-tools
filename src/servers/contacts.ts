@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { runJxa } from "../lib/jxa.js"
+import { jsonResult, runTool } from "../lib/mcp-result.js"
 
 import { PACKAGE_VERSION } from "../lib/version.js"
 
@@ -326,8 +327,8 @@ server.registerTool(
       confirm: z.boolean().optional().describe("Must be true to confirm delete"),
     },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("contacts_people", () => {
       let raw: string
       switch (args.action) {
         case "read":
@@ -366,17 +367,10 @@ server.registerTool(
           raw = runJxa(JXA_CONTACTS_DELETE, { id: args.id, confirm: args.confirm })
           break
         default:
-          return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
+          throw new Error(`Unknown action: ${String(args.action)}`)
       }
-      const result = JSON.parse(raw)
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult(JSON.parse(raw))
+    }),
 )
 
 server.registerTool(
@@ -393,8 +387,8 @@ server.registerTool(
       confirm: z.boolean().optional().describe("Must be true to confirm delete"),
     },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("contacts_groups", () => {
       let raw: string
       switch (args.action) {
         case "read":
@@ -416,17 +410,10 @@ server.registerTool(
           raw = runJxa(JXA_GROUPS_REMOVE_MEMBER, { name: args.name, person_id: args.person_id })
           break
         default:
-          return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
+          throw new Error(`Unknown action: ${String(args.action)}`)
       }
-      const result = JSON.parse(raw)
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult(JSON.parse(raw))
+    }),
 )
 
 // ── Entry point ────────────────────────────────────────────────────────
