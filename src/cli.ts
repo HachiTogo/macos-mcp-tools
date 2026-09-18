@@ -33,11 +33,13 @@ Usage:
 
 Subcommands:
 ${SUBCOMMANDS.map((name) => `  ${name.padEnd(PAD)}  ${SERVERS[name].summary}`).join("\n")}
+  ${"doctor".padEnd(PAD)}  Check permissions, the EventKitCLI binary, host configs, and the installed version
 
 Examples:
-  bunx @hachitogo/macos-mcp-tools mail
+  macos-mcp-tools doctor
+  macos-mcp-tools mail
 
-Each subcommand starts a standalone MCP server on stdio.
+Each server subcommand starts a standalone MCP server on stdio.
 `.trim()
 
 const isSubcommand = (value: string | undefined): value is Subcommand =>
@@ -48,6 +50,11 @@ const subcommand = process.argv[2]
 if (!subcommand || subcommand === "--help" || subcommand === "-h") {
   console.log(USAGE)
   process.exit(0)
+}
+
+if (subcommand === "doctor") {
+  const { runDoctor } = await import("./doctor.js")
+  process.exit(await runDoctor())
 }
 
 if (!isSubcommand(subcommand)) {
