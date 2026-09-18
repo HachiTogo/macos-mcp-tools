@@ -1,8 +1,8 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
-import { runJxa } from "../lib/jxa.js";
-import { PACKAGE_VERSION } from "../lib/version.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { z } from "zod"
+import { runJxa } from "../lib/jxa.js"
+import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── JXA scripts ────────────────────────────────────────────────────────
 
@@ -277,7 +277,7 @@ function run(argv) {
 const server = new McpServer({
   name: "apple-notes",
   version: PACKAGE_VERSION,
-});
+})
 
 server.registerTool(
   "list_folders",
@@ -288,14 +288,17 @@ server.registerTool(
   },
   async () => {
     try {
-      const raw = runJxa(JXA_LIST_FOLDERS);
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_LIST_FOLDERS)
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "create_folder",
@@ -307,14 +310,17 @@ server.registerTool(
   },
   async ({ name }) => {
     try {
-      const raw = runJxa(JXA_CREATE_FOLDER, { name });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_CREATE_FOLDER, { name })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "list_notes",
@@ -329,14 +335,17 @@ server.registerTool(
   },
   async ({ folder, limit, offset }) => {
     try {
-      const raw = runJxa(JXA_LIST_NOTES, { folder, limit, offset });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_LIST_NOTES, { folder, limit, offset })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "get_note",
@@ -350,14 +359,17 @@ server.registerTool(
   },
   async ({ title, folder }) => {
     try {
-      const raw = runJxa(JXA_GET_NOTE, { title, ...(folder !== undefined ? { folder } : {}) });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_GET_NOTE, { title, ...(folder !== undefined ? { folder } : {}) })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "create_note",
@@ -371,14 +383,17 @@ server.registerTool(
   },
   async ({ title, body, folder }) => {
     try {
-      const raw = runJxa(JXA_CREATE_NOTE, { title, body, folder });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_CREATE_NOTE, { title, body, folder })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "update_note",
@@ -392,14 +407,17 @@ server.registerTool(
   },
   async ({ title, body, folder }) => {
     try {
-      const raw = runJxa(JXA_UPDATE_NOTE, { title, body, ...(folder !== undefined ? { folder } : {}) });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_UPDATE_NOTE, { title, body, ...(folder !== undefined ? { folder } : {}) })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "move_note",
@@ -413,14 +431,17 @@ server.registerTool(
   },
   async ({ title, from_folder, to_folder }) => {
     try {
-      const raw = runJxa(JXA_MOVE_NOTE, { title, from_folder, to_folder });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_MOVE_NOTE, { title, from_folder, to_folder })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "append_to_note",
@@ -434,14 +455,17 @@ server.registerTool(
   },
   async ({ title, content, folder }) => {
     try {
-      const raw = runJxa(JXA_APPEND_TO_NOTE, { title, content, ...(folder !== undefined ? { folder } : {}) });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_APPEND_TO_NOTE, { title, content, ...(folder !== undefined ? { folder } : {}) })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "delete_note",
@@ -454,14 +478,17 @@ server.registerTool(
   },
   async ({ title, folder }) => {
     try {
-      const raw = runJxa(JXA_DELETE_NOTE, { title, ...(folder !== undefined ? { folder } : {}) });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_DELETE_NOTE, { title, ...(folder !== undefined ? { folder } : {}) })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "delete_folder",
@@ -473,19 +500,23 @@ server.registerTool(
   },
   async ({ name }) => {
     try {
-      const raw = runJxa(JXA_DELETE_FOLDER, { name });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_DELETE_FOLDER, { name })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "search_notes",
   {
-    description: "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content.",
+    description:
+      "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content.",
     inputSchema: {
       query: z.string().describe("Search query"),
       folder: z.string().optional().describe("Folder name to scope search (optional)"),
@@ -495,23 +526,26 @@ server.registerTool(
   },
   async ({ query, folder, limit }) => {
     try {
-      const raw = runJxa(JXA_SEARCH_NOTES, { query, limit, ...(folder !== undefined ? { folder } : {}) });
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const raw = runJxa(JXA_SEARCH_NOTES, { query, limit, ...(folder !== undefined ? { folder } : {}) })
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 // ── Entry point ────────────────────────────────────────────────────────
 
 export const main = async () => {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-};
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+}
 
 // Boot only when executed directly; cli.ts and tests import this module without starting a server.
 if (import.meta.main) {
-  await main();
+  await main()
 }

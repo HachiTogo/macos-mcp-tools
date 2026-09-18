@@ -1,9 +1,10 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
-import { runJxa } from "../lib/jxa.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { z } from "zod"
+import { runJxa } from "../lib/jxa.js"
 
-import { PACKAGE_VERSION } from "../lib/version.js";
+import { PACKAGE_VERSION } from "../lib/version.js"
+
 // ── JXA scripts ────────────────────────────────────────────────────────
 
 const JXA_CONTACTS_READ = String.raw`
@@ -296,12 +297,13 @@ function run(argv) {
 const server = new McpServer({
   name: "apple-contacts",
   version: PACKAGE_VERSION,
-});
+})
 
 server.registerTool(
   "contacts_people",
   {
-    description: "Manage Apple Contacts people. Actions: read (list), search, get (full detail), create, update, delete.",
+    description:
+      "Manage Apple Contacts people. Actions: read (list), search, get (full detail), create, update, delete.",
     inputSchema: {
       action: z.enum(["read", "search", "get", "create", "update", "delete"]).describe("Operation to perform"),
       limit: z.number().int().min(1).max(500).default(100).optional().describe("Max contacts to return (read/search)"),
@@ -312,25 +314,31 @@ server.registerTool(
       last_name: z.string().optional().describe("Last name (create/update)"),
       organization: z.string().optional().describe("Organization (create/update)"),
       job_title: z.string().optional().describe("Job title (create/update)"),
-      emails: z.array(z.object({ label: z.string(), value: z.string() })).optional().describe("Email addresses (create/update — adds, does not remove)"),
-      phones: z.array(z.object({ label: z.string(), value: z.string() })).optional().describe("Phone numbers (create/update — adds, does not remove)"),
+      emails: z
+        .array(z.object({ label: z.string(), value: z.string() }))
+        .optional()
+        .describe("Email addresses (create/update — adds, does not remove)"),
+      phones: z
+        .array(z.object({ label: z.string(), value: z.string() }))
+        .optional()
+        .describe("Phone numbers (create/update — adds, does not remove)"),
       note: z.string().optional().describe("Note text (create/update)"),
       confirm: z.boolean().optional().describe("Must be true to confirm delete"),
     },
   },
   async (args) => {
     try {
-      let raw: string;
+      let raw: string
       switch (args.action) {
         case "read":
-          raw = runJxa(JXA_CONTACTS_READ, { limit: args.limit, offset: args.offset });
-          break;
+          raw = runJxa(JXA_CONTACTS_READ, { limit: args.limit, offset: args.offset })
+          break
         case "search":
-          raw = runJxa(JXA_CONTACTS_SEARCH, { query: args.query, limit: args.limit, offset: args.offset });
-          break;
+          raw = runJxa(JXA_CONTACTS_SEARCH, { query: args.query, limit: args.limit, offset: args.offset })
+          break
         case "get":
-          raw = runJxa(JXA_CONTACTS_GET, { id: args.id });
-          break;
+          raw = runJxa(JXA_CONTACTS_GET, { id: args.id })
+          break
         case "create":
           raw = runJxa(JXA_CONTACTS_CREATE, {
             first_name: args.first_name,
@@ -340,8 +348,8 @@ server.registerTool(
             emails: args.emails,
             phones: args.phones,
             note: args.note,
-          });
-          break;
+          })
+          break
         case "update":
           raw = runJxa(JXA_CONTACTS_UPDATE, {
             id: args.id,
@@ -352,28 +360,34 @@ server.registerTool(
             emails: args.emails,
             phones: args.phones,
             note: args.note,
-          });
-          break;
+          })
+          break
         case "delete":
-          raw = runJxa(JXA_CONTACTS_DELETE, { id: args.id, confirm: args.confirm });
-          break;
+          raw = runJxa(JXA_CONTACTS_DELETE, { id: args.id, confirm: args.confirm })
+          break
         default:
-          return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true };
+          return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
       }
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 server.registerTool(
   "contacts_groups",
   {
-    description: "Manage Apple Contacts groups. Actions: read (list all), get (members of a group), create, delete, add_member, remove_member.",
+    description:
+      "Manage Apple Contacts groups. Actions: read (list all), get (members of a group), create, delete, add_member, remove_member.",
     inputSchema: {
-      action: z.enum(["read", "get", "create", "delete", "add_member", "remove_member"]).describe("Operation to perform"),
+      action: z
+        .enum(["read", "get", "create", "delete", "add_member", "remove_member"])
+        .describe("Operation to perform"),
       name: z.string().optional().describe("Group name (get/create/delete/add_member/remove_member)"),
       person_id: z.string().optional().describe("Contact ID for add_member/remove_member"),
       confirm: z.boolean().optional().describe("Must be true to confirm delete"),
@@ -381,45 +395,48 @@ server.registerTool(
   },
   async (args) => {
     try {
-      let raw: string;
+      let raw: string
       switch (args.action) {
         case "read":
-          raw = runJxa(JXA_GROUPS_READ, {});
-          break;
+          raw = runJxa(JXA_GROUPS_READ, {})
+          break
         case "get":
-          raw = runJxa(JXA_GROUPS_GET, { name: args.name });
-          break;
+          raw = runJxa(JXA_GROUPS_GET, { name: args.name })
+          break
         case "create":
-          raw = runJxa(JXA_GROUPS_CREATE, { name: args.name });
-          break;
+          raw = runJxa(JXA_GROUPS_CREATE, { name: args.name })
+          break
         case "delete":
-          raw = runJxa(JXA_GROUPS_DELETE, { name: args.name, confirm: args.confirm });
-          break;
+          raw = runJxa(JXA_GROUPS_DELETE, { name: args.name, confirm: args.confirm })
+          break
         case "add_member":
-          raw = runJxa(JXA_GROUPS_ADD_MEMBER, { name: args.name, person_id: args.person_id });
-          break;
+          raw = runJxa(JXA_GROUPS_ADD_MEMBER, { name: args.name, person_id: args.person_id })
+          break
         case "remove_member":
-          raw = runJxa(JXA_GROUPS_REMOVE_MEMBER, { name: args.name, person_id: args.person_id });
-          break;
+          raw = runJxa(JXA_GROUPS_REMOVE_MEMBER, { name: args.name, person_id: args.person_id })
+          break
         default:
-          return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true };
+          return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
       }
-      const result = JSON.parse(raw);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      const result = JSON.parse(raw)
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] }
     } catch (error) {
-      return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
+        isError: true,
+      }
     }
-  }
-);
+  },
+)
 
 // ── Entry point ────────────────────────────────────────────────────────
 
 export const main = async () => {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-};
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+}
 
 // Boot only when executed directly; cli.ts and tests import this module without starting a server.
 if (import.meta.main) {
-  await main();
+  await main()
 }

@@ -5,10 +5,10 @@ import {
   compareEntriesForRecency,
   computeDurationSince,
   matchEntry,
+  type NormalizedEntry,
   normalizeAliases,
   normalizeEntry,
   normalizeText,
-  type NormalizedEntry,
 } from "./memory"
 
 const createEntry = (overrides: Partial<NormalizedEntry> = {}): NormalizedEntry => ({
@@ -39,11 +39,7 @@ describe("memory pure helpers", () => {
   })
 
   test("normalizeAliases trims, deduplicates, and sorts aliases", () => {
-    expect(normalizeAliases(["Zulu", " alpha ", "", "Beta", "alpha", "Zulu"])).toEqual([
-      "alpha",
-      "Beta",
-      "Zulu",
-    ])
+    expect(normalizeAliases(["Zulu", " alpha ", "", "Beta", "alpha", "Zulu"])).toEqual(["alpha", "Beta", "Zulu"])
   })
 
   test("chooseOccurrenceTimestamp prefers happened_at, then start_at, then created_at", () => {
@@ -86,9 +82,7 @@ describe("memory pure helpers", () => {
   })
 
   test("computeDurationSince returns deterministic elapsed days and hours", () => {
-    expect(
-      computeDurationSince("2026-03-10T06:00:00.000Z", new Date("2026-03-12T12:00:00.000Z")),
-    ).toEqual({
+    expect(computeDurationSince("2026-03-10T06:00:00.000Z", new Date("2026-03-12T12:00:00.000Z"))).toEqual({
       elapsed_days: 2,
       elapsed_hours: 54,
     })

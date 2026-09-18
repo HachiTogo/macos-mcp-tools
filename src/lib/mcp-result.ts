@@ -12,8 +12,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
  *   JSON-RPC protocol errors.
  */
 
-export const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
+export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)

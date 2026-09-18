@@ -1,10 +1,10 @@
+import { Database } from "bun:sqlite"
 import { mkdirSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
-import { Database } from "bun:sqlite"
 
 import { PACKAGE_VERSION } from "../lib/version"
 // ── Types ──────────────────────────────────────────────────────────────
@@ -116,10 +116,6 @@ type UpdateEntryArguments = {
   cost_currency?: string | null
   source?: string | null
   aliases?: string[]
-}
-
-type GetEntryArguments = {
-  id: string
 }
 
 type SearchEntriesArguments = EntryMatcher & {
@@ -314,8 +310,7 @@ export const computeDurationSince = (timestamp: string, now = new Date()) => {
 
 export const buildKeywordSearchText = (
   entry: Pick<NormalizedEntry, "title" | "body" | "subject" | "action" | "object">,
-) =>
-  normalizeText([entry.title, entry.body, entry.subject, entry.action, entry.object].filter(Boolean).join(" "))
+) => normalizeText([entry.title, entry.body, entry.subject, entry.action, entry.object].filter(Boolean).join(" "))
 
 export const matchEntry = (
   entry: Pick<NormalizedEntry, "title" | "body" | "subject" | "action" | "object" | "aliases">,
@@ -352,7 +347,11 @@ export const matchEntry = (
     } satisfies EntryMatchResult
   }
 
-  if (structuredQueries.length === 0 && normalizedKeywords.length > 0 && exactKeywordMatches === normalizedKeywords.length) {
+  if (
+    structuredQueries.length === 0 &&
+    normalizedKeywords.length > 0 &&
+    exactKeywordMatches === normalizedKeywords.length
+  ) {
     return {
       matched: true,
       reason: "exact",
@@ -388,26 +387,27 @@ export const matchEntry = (
   } satisfies EntryMatchResult
 }
 
-export const normalizeEntry = (row: EntryRow, aliases: string[]) => ({
-  id: row.id,
-  kind: row.kind,
-  title: row.title,
-  body: row.body,
-  subject: row.subject,
-  action: row.action,
-  object: row.object,
-  status: row.status,
-  happened_at: row.happened_at,
-  start_at: row.start_at,
-  end_at: row.end_at,
-  due_at: row.due_at,
-  cost_amount: row.cost_amount,
-  cost_currency: row.cost_currency,
-  source: row.source,
-  created_at: row.created_at,
-  updated_at: row.updated_at,
-  aliases: normalizeAliases(aliases),
-}) satisfies NormalizedEntry
+export const normalizeEntry = (row: EntryRow, aliases: string[]) =>
+  ({
+    id: row.id,
+    kind: row.kind,
+    title: row.title,
+    body: row.body,
+    subject: row.subject,
+    action: row.action,
+    object: row.object,
+    status: row.status,
+    happened_at: row.happened_at,
+    start_at: row.start_at,
+    end_at: row.end_at,
+    due_at: row.due_at,
+    cost_amount: row.cost_amount,
+    cost_currency: row.cost_currency,
+    source: row.source,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    aliases: normalizeAliases(aliases),
+  }) satisfies NormalizedEntry
 
 const compareIsoDescending = (left: string, right: string) => right.localeCompare(left)
 
@@ -436,9 +436,7 @@ export const compareEntriesForRecency = (
 // ── Database operations ────────────────────────────────────────────────
 
 const insertAliases = (db: Database, entryId: string, aliases: string[]) => {
-  const statement = db.query(
-    "INSERT INTO entry_aliases (id, entry_id, alias, normalized_alias) VALUES (?, ?, ?, ?)",
-  )
+  const statement = db.query("INSERT INTO entry_aliases (id, entry_id, alias, normalized_alias) VALUES (?, ?, ?, ?)")
 
   for (const alias of normalizeAliases(aliases)) {
     statement.run(crypto.randomUUID(), entryId, alias, normalizeText(alias))
@@ -485,7 +483,10 @@ const getEntryById = (db: Database, id: string) => {
   return normalizeEntry(row, aliasesByEntryId.get(id) ?? [])
 }
 
-const listEntries = (db: Database, filters: Pick<SearchEntriesArguments, "kind" | "status" | "happened_after" | "happened_before">) => {
+const listEntries = (
+  db: Database,
+  filters: Pick<SearchEntriesArguments, "kind" | "status" | "happened_after" | "happened_before">,
+) => {
   const whereClauses: string[] = []
   const values: string[] = []
 
@@ -595,7 +596,7 @@ const updateEntry = (argumentsValue: UpdateEntryArguments) => {
 
     if (argumentsValue.kind !== undefined) {
       if (argumentsValue.kind === null) {
-        throw new Error("Invalid kind: expected one of \"memory\", \"task\", \"event\", \"note\".")
+        throw new Error('Invalid kind: expected one of "memory", "task", "event", "note".')
       }
 
       addUpdate("kind", argumentsValue.kind)

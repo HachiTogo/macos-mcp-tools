@@ -1,89 +1,81 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { z } from "zod"
+import type { CalendarsToolArgs, CalendarToolArgs } from "../lib/eventkit/index.js"
 import {
+  CreateCalendarEventSchema,
   calendarRepository,
+  DeleteCalendarEventSchema,
   extractAndValidateArgs,
   formatDeleteMessage,
   formatListMarkdown,
   formatMultilineNotes,
   formatSuccessMessage,
   handleAsyncOperation,
-  CreateCalendarEventSchema,
-  DeleteCalendarEventSchema,
   ReadCalendarEventsSchema,
   ReadCalendarsSchema,
   UpdateCalendarEventSchema,
-} from "../lib/eventkit/index.js";
-import type { CalendarToolArgs, CalendarsToolArgs } from "../lib/eventkit/index.js";
+} from "../lib/eventkit/index.js"
 
-import { PACKAGE_VERSION } from "../lib/version.js";
+import { PACKAGE_VERSION } from "../lib/version.js"
+
 // ── Formatters ────────────────────────────────────────────────────────
 
 const formatEventMarkdown = (event: {
-  title: string;
-  calendar?: string;
-  id?: string;
-  startDate?: string;
-  endDate?: string;
-  notes?: string;
-  location?: string;
-  structuredLocation?: { title: string; latitude?: number; longitude?: number };
-  url?: string;
-  isAllDay?: boolean;
-  availability?: string;
-  alarms?: Array<{ relativeOffset?: number; absoluteDate?: string }>;
-  recurrenceRules?: Array<{ frequency: string; interval: number }>;
-  organizer?: { name?: string; url: string };
-  attendees?: Array<{ name?: string; url: string }>;
-  status?: string;
-  isDetached?: boolean;
-  occurrenceDate?: string;
-  creationDate?: string;
-  lastModifiedDate?: string;
-  externalId?: string;
+  title: string
+  calendar?: string
+  id?: string
+  startDate?: string
+  endDate?: string
+  notes?: string
+  location?: string
+  structuredLocation?: { title: string; latitude?: number; longitude?: number }
+  url?: string
+  isAllDay?: boolean
+  availability?: string
+  alarms?: Array<{ relativeOffset?: number; absoluteDate?: string }>
+  recurrenceRules?: Array<{ frequency: string; interval: number }>
+  organizer?: { name?: string; url: string }
+  attendees?: Array<{ name?: string; url: string }>
+  status?: string
+  isDetached?: boolean
+  occurrenceDate?: string
+  creationDate?: string
+  lastModifiedDate?: string
+  externalId?: string
 }): string[] => {
-  const lines: string[] = [];
-  lines.push(`- ${event.title}`);
-  if (event.calendar) lines.push(`  - Calendar: ${event.calendar}`);
-  if (event.id) lines.push(`  - ID: ${event.id}`);
-  if (event.startDate) lines.push(`  - Start: ${event.startDate}`);
-  if (event.endDate) lines.push(`  - End: ${event.endDate}`);
-  if (event.isAllDay !== undefined)
-    lines.push(`  - All Day: ${event.isAllDay}`);
-  if (event.location) lines.push(`  - Location: ${event.location}`);
-  if (event.structuredLocation)
-    lines.push(`  - Structured Location: ${event.structuredLocation.title}`);
-  if (event.availability) lines.push(`  - Availability: ${event.availability}`);
-  if (event.alarms && event.alarms.length > 0)
-    lines.push(`  - Alarms: ${event.alarms.length}`);
+  const lines: string[] = []
+  lines.push(`- ${event.title}`)
+  if (event.calendar) lines.push(`  - Calendar: ${event.calendar}`)
+  if (event.id) lines.push(`  - ID: ${event.id}`)
+  if (event.startDate) lines.push(`  - Start: ${event.startDate}`)
+  if (event.endDate) lines.push(`  - End: ${event.endDate}`)
+  if (event.isAllDay !== undefined) lines.push(`  - All Day: ${event.isAllDay}`)
+  if (event.location) lines.push(`  - Location: ${event.location}`)
+  if (event.structuredLocation) lines.push(`  - Structured Location: ${event.structuredLocation.title}`)
+  if (event.availability) lines.push(`  - Availability: ${event.availability}`)
+  if (event.alarms && event.alarms.length > 0) lines.push(`  - Alarms: ${event.alarms.length}`)
   if (event.recurrenceRules && event.recurrenceRules.length > 0)
-    lines.push(`  - Recurrence Rules: ${event.recurrenceRules.length}`);
-  if (event.organizer)
-    lines.push(`  - Organizer: ${event.organizer.name ?? event.organizer.url}`);
-  if (event.attendees && event.attendees.length > 0)
-    lines.push(`  - Attendees: ${event.attendees.length}`);
-  if (event.status) lines.push(`  - Status: ${event.status}`);
-  if (event.isDetached !== undefined)
-    lines.push(`  - Detached: ${event.isDetached}`);
-  if (event.occurrenceDate)
-    lines.push(`  - Occurrence Date: ${event.occurrenceDate}`);
-  if (event.externalId) lines.push(`  - External ID: ${event.externalId}`);
-  if (event.creationDate) lines.push(`  - Created: ${event.creationDate}`);
-  if (event.lastModifiedDate)
-    lines.push(`  - Modified: ${event.lastModifiedDate}`);
-  if (event.notes)
-    lines.push(`  - Notes: ${formatMultilineNotes(event.notes)}`);
-  if (event.url) lines.push(`  - URL: ${event.url}`);
-  return lines;
-};
+    lines.push(`  - Recurrence Rules: ${event.recurrenceRules.length}`)
+  if (event.organizer) lines.push(`  - Organizer: ${event.organizer.name ?? event.organizer.url}`)
+  if (event.attendees && event.attendees.length > 0) lines.push(`  - Attendees: ${event.attendees.length}`)
+  if (event.status) lines.push(`  - Status: ${event.status}`)
+  if (event.isDetached !== undefined) lines.push(`  - Detached: ${event.isDetached}`)
+  if (event.occurrenceDate) lines.push(`  - Occurrence Date: ${event.occurrenceDate}`)
+  if (event.externalId) lines.push(`  - External ID: ${event.externalId}`)
+  if (event.creationDate) lines.push(`  - Created: ${event.creationDate}`)
+  if (event.lastModifiedDate) lines.push(`  - Modified: ${event.lastModifiedDate}`)
+  if (event.notes) lines.push(`  - Notes: ${formatMultilineNotes(event.notes)}`)
+  if (event.url) lines.push(`  - URL: ${event.url}`)
+  return lines
+}
 
 // ── MCP Server ────────────────────────────────────────────────────────
 
 const server = new McpServer({
   name: "apple-events",
   version: PACKAGE_VERSION,
-});
+})
 
 server.registerTool(
   "calendar_events",
@@ -92,10 +84,23 @@ server.registerTool(
       "Manages calendar events (time blocks). Supports reading, creating, updating, and deleting calendar events.",
     inputSchema: {
       action: z.enum(["read", "create", "update", "delete"]).describe("The operation to perform"),
-      id: z.string().optional().describe("The unique identifier of the event (REQUIRED for update, delete; optional for read to get a single event, searched within two years of today)"),
+      id: z
+        .string()
+        .optional()
+        .describe(
+          "The unique identifier of the event (REQUIRED for update, delete; optional for read to get a single event, searched within two years of today)",
+        ),
       title: z.string().optional().describe("The title of the event (REQUIRED for create, optional for update)"),
-      startDate: z.string().optional().describe("Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601"),
-      endDate: z.string().optional().describe("End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601"),
+      startDate: z
+        .string()
+        .optional()
+        .describe(
+          "Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+        ),
+      endDate: z
+        .string()
+        .optional()
+        .describe("End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601"),
       note: z.string().optional().describe("Additional notes for the event"),
       location: z.string().optional().describe("Location text for the event"),
       structuredLocation: z
@@ -127,7 +132,10 @@ server.registerTool(
                 proximity: z.enum(["enter", "leave"]),
               })
               .optional(),
-            alarmType: z.enum(["display", "audio", "procedure", "email"]).optional().describe("READ-ONLY: Alarm presentation type"),
+            alarmType: z
+              .enum(["display", "audio", "procedure", "email"])
+              .optional()
+              .describe("READ-ONLY: Alarm presentation type"),
           }),
         )
         .optional()
@@ -148,10 +156,7 @@ server.registerTool(
         .optional()
         .describe("Recurrence rules for repeating events"),
       clearRecurrence: z.boolean().optional().describe("Set to true to remove recurrence rules from the event"),
-      span: z
-        .enum(["this-event", "future-events"])
-        .optional()
-        .describe("Scope for changes to recurring events"),
+      span: z.enum(["this-event", "future-events"]).optional().describe("Scope for changes to recurring events"),
       targetCalendar: z.string().optional().describe("The name of the calendar for create or update operations"),
       filterCalendar: z.string().optional().describe("Filter events by a specific calendar name"),
       filterAccount: z.string().optional().describe("Filter events by account name"),
@@ -162,11 +167,11 @@ server.registerTool(
     switch (args.action) {
       case "read":
         return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, ReadCalendarEventsSchema);
+          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, ReadCalendarEventsSchema)
 
           if (validatedArgs.id) {
-            const event = await calendarRepository.findEventById(validatedArgs.id);
-            return formatEventMarkdown(event).join("\n");
+            const event = await calendarRepository.findEventById(validatedArgs.id)
+            return formatEventMarkdown(event).join("\n")
           }
 
           const events = await calendarRepository.findEvents({
@@ -176,19 +181,14 @@ server.registerTool(
             search: validatedArgs.search,
             availability: validatedArgs.availability,
             accountName: validatedArgs.filterAccount,
-          });
+          })
 
-          return formatListMarkdown(
-            "Calendar Events",
-            events,
-            formatEventMarkdown,
-            "No calendar events found.",
-          );
-        }, "read calendar events");
+          return formatListMarkdown("Calendar Events", events, formatEventMarkdown, "No calendar events found.")
+        }, "read calendar events")
 
       case "create":
         return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, CreateCalendarEventSchema);
+          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, CreateCalendarEventSchema)
           const event = await calendarRepository.createEvent({
             title: validatedArgs.title,
             startDate: validatedArgs.startDate,
@@ -202,13 +202,13 @@ server.registerTool(
             availability: validatedArgs.availability,
             alarms: validatedArgs.alarms,
             recurrenceRules: validatedArgs.recurrenceRules,
-          });
-          return formatSuccessMessage("created", "event", event.title, event.id);
-        }, "create calendar event");
+          })
+          return formatSuccessMessage("created", "event", event.title, event.id)
+        }, "create calendar event")
 
       case "update":
         return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, UpdateCalendarEventSchema);
+          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, UpdateCalendarEventSchema)
           const event = await calendarRepository.updateEvent({
             id: validatedArgs.id,
             title: validatedArgs.title,
@@ -226,61 +226,58 @@ server.registerTool(
             recurrenceRules: validatedArgs.recurrenceRules,
             clearRecurrence: validatedArgs.clearRecurrence,
             span: validatedArgs.span,
-          });
-          return formatSuccessMessage("updated", "event", event.title, event.id);
-        }, "update calendar event");
+          })
+          return formatSuccessMessage("updated", "event", event.title, event.id)
+        }, "update calendar event")
 
       case "delete":
         return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, DeleteCalendarEventSchema);
-          await calendarRepository.deleteEvent(validatedArgs.id, validatedArgs.span);
+          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, DeleteCalendarEventSchema)
+          await calendarRepository.deleteEvent(validatedArgs.id, validatedArgs.span)
           return formatDeleteMessage("event", validatedArgs.id, {
             useQuotes: true,
             useIdPrefix: true,
             usePeriod: true,
             useColon: false,
-          });
-        }, "delete calendar event");
+          })
+        }, "delete calendar event")
 
       default:
-        return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true };
+        return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
     }
   },
-);
+)
 
 server.registerTool(
   "calendar_calendars",
   {
-    description:
-      "Reads calendar collections. Use to inspect available calendars before creating or updating events.",
+    description: "Reads calendar collections. Use to inspect available calendars before creating or updating events.",
     inputSchema: {
       action: z.enum(["read"]).describe("The operation to perform on calendars"),
     },
   },
   async (args) => {
     return handleAsyncOperation(async () => {
-      extractAndValidateArgs(args as CalendarsToolArgs, ReadCalendarsSchema);
-      const calendars = await calendarRepository.findAllCalendars();
+      extractAndValidateArgs(args as CalendarsToolArgs, ReadCalendarsSchema)
+      const calendars = await calendarRepository.findAllCalendars()
       return formatListMarkdown(
         "Calendars",
         calendars,
-        (calendar) => [
-          `- ${calendar.title} (${calendar.account}) (ID: ${calendar.id})`,
-        ],
+        (calendar) => [`- ${calendar.title} (${calendar.account}) (ID: ${calendar.id})`],
         "No calendars found.",
-      );
-    }, "read calendars");
+      )
+    }, "read calendars")
   },
-);
+)
 
 // ── Entry point ───────────────────────────────────────────────────────
 
 export const main = async () => {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-};
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+}
 
 // Boot only when executed directly; cli.ts and tests import this module without starting a server.
 if (import.meta.main) {
-  await main();
+  await main()
 }

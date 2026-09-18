@@ -5,9 +5,9 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
-import { PACKAGE_VERSION } from "../lib/version"
 import { z } from "zod"
 import { runJxa } from "../lib/jxa.js"
+import { PACKAGE_VERSION } from "../lib/version"
 
 // ── Constants ─────────────────────────────────────────────────────────
 
@@ -84,11 +84,9 @@ type SendResult = {
 
 // ── Date helpers ──────────────────────────────────────────────────────
 
-const appleNanosToUnix = (nanos: number): number =>
-  Math.floor(nanos / 1e9) + APPLE_EPOCH_OFFSET
+const appleNanosToUnix = (nanos: number): number => Math.floor(nanos / 1e9) + APPLE_EPOCH_OFFSET
 
-const appleNanosToIso = (nanos: number): string =>
-  new Date(appleNanosToUnix(nanos) * 1000).toISOString()
+const appleNanosToIso = (nanos: number): string => new Date(appleNanosToUnix(nanos) * 1000).toISOString()
 
 const appleNanosToLocal = (nanos: number): string =>
   new Date(appleNanosToUnix(nanos) * 1000).toLocaleString("en-US", { timeZone: TIME_ZONE })
@@ -135,7 +133,7 @@ export const extractTextFromBody = (blob: Uint8Array | null): string | null => {
   return after.subarray(textStart, textStart + textLen).toString("utf-8")
 }
 
-export const resolveText = (row: { text: string | null, attributedBody: Uint8Array | null }): string | null =>
+export const resolveText = (row: { text: string | null; attributedBody: Uint8Array | null }): string | null =>
   row.text || extractTextFromBody(row.attributedBody) || null
 
 // Escape LIKE metacharacters so a query like "50%" matches literally. Pair with ESCAPE '\\' in SQL.
@@ -158,7 +156,8 @@ const withDb = <T>(fn: (db: Database) => T): T => {
 
 const listChats = (limit: number): NormalizedChat[] =>
   withDb((db) => {
-    const rows = db.query(`
+    const rows = db
+      .query(`
       SELECT
         c.ROWID           AS chatId,
         c.chat_identifier AS chatIdentifier,
@@ -184,37 +183,27 @@ const listChats = (limit: number): NormalizedChat[] =>
       )
       ORDER BY lastMessageDate DESC
       LIMIT ?
-    `).all(limit) as ChatRow[]
+    `)
+      .all(limit) as ChatRow[]
 
     return rows.map((row) => {
       const lastText = resolveText({ text: row.lastMessageText, attributedBody: row.lastMessageBody })
       return {
-      chatId: row.chatIdentifier,
-      displayName: row.displayName || row.chatIdentifier,
-      isGroup: row.style === 43,
-      service: row.serviceName || "iMessage",
-      lastMessage: lastText
-        ? lastText.length > 100
-          ? lastText.slice(0, 100) + "…"
-          : lastText
-        : null,
-      lastMessageAt: row.lastMessageDate ? appleNanosToIso(row.lastMessageDate) : null,
-      participantCount: row.participantCount,
-      source: SOURCE_NAME,
-    }})
+        chatId: row.chatIdentifier,
+        displayName: row.displayName || row.chatIdentifier,
+        isGroup: row.style === 43,
+        service: row.serviceName || "iMessage",
+        lastMessage: lastText ? (lastText.length > 100 ? `${lastText.slice(0, 100)}…` : lastText) : null,
+        lastMessageAt: row.lastMessageDate ? appleNanosToIso(row.lastMessageDate) : null,
+        participantCount: row.participantCount,
+        source: SOURCE_NAME,
+      }
+    })
   })
 
-const getMessages = (
-  chatIdentifier: string,
-  limit: number,
-  fromDate?: string,
-  toDate?: string,
-): NormalizedMessage[] =>
+const getMessages = (chatIdentifier: string, limit: number, fromDate?: string, toDate?: string): NormalizedMessage[] =>
   withDb((db) => {
-    const conditions = [
-      "c.chat_identifier = ?",
-      "m.associated_message_type = 0",
-    ]
+    const conditions = ["c.chat_identifier = ?", "m.associated_message_type = 0"]
     const params: (string | number)[] = [chatIdentifier]
 
     if (fromDate) {
@@ -228,7 +217,8 @@ const getMessages = (
 
     params.push(limit)
 
-    const rows = db.query(`
+    const rows = db
+      .query(`
       SELECT
         m.ROWID                   AS rowid,
         m.guid                    AS guid,
@@ -246,13 +236,14 @@ const getMessages = (
       WHERE ${conditions.join(" AND ")}
       ORDER BY m.date DESC
       LIMIT ?
-    `).all(...params) as MessageRow[]
+    `)
+      .all(...params) as MessageRow[]
 
     return rows.reverse().map((row) => ({
       id: row.rowid,
       text: resolveText(row),
       isFromMe: row.isFromMe === 1,
-      sender: row.isFromMe === 1 ? "me" : (row.senderId || "unknown"),
+      sender: row.isFromMe === 1 ? "me" : row.senderId || "unknown",
       date: appleNanosToIso(row.date),
       dateLocal: appleNanosToLocal(row.date),
       isRead: row.isRead === 1,
@@ -304,12 +295,12 @@ export const searchMessages = (
     const results: (NormalizedMessage & { chatId: string })[] = []
     for (const row of statement.iterate(...params) as IterableIterator<MessageRow & { chatIdentifier: string }>) {
       const text = resolveText(row)
-      if (!text || !text.toLowerCase().includes(needle)) continue
+      if (!text?.toLowerCase().includes(needle)) continue
       results.push({
         id: row.rowid,
         text,
         isFromMe: row.isFromMe === 1,
-        sender: row.isFromMe === 1 ? "me" : (row.senderId || "unknown"),
+        sender: row.isFromMe === 1 ? "me" : row.senderId || "unknown",
         date: appleNanosToIso(row.date),
         dateLocal: appleNanosToLocal(row.date),
         isRead: row.isRead === 1,
@@ -323,13 +314,15 @@ export const searchMessages = (
 
 const getParticipants = (chatIdentifier: string): NormalizedParticipant[] =>
   withDb((db) => {
-    const rows = db.query(`
+    const rows = db
+      .query(`
       SELECT h.id AS handleId, h.service AS service
       FROM handle h
       JOIN chat_handle_join chj ON chj.handle_id = h.ROWID
       JOIN chat c ON c.ROWID = chj.chat_id
       WHERE c.chat_identifier = ?
-    `).all(chatIdentifier) as ParticipantRow[]
+    `)
+      .all(chatIdentifier) as ParticipantRow[]
 
     return rows.map((row) => ({
       handle: row.handleId,
@@ -407,9 +400,7 @@ const formatParticipants = (participants: NormalizedParticipant[], chatId: strin
 }
 
 const formatSendResult = (result: SendResult): string =>
-  result.status === "sent"
-    ? `Message sent to ${result.to}.`
-    : `Send failed: ${result.detail || "unknown error"}`
+  result.status === "sent" ? `Message sent to ${result.to}.` : `Send failed: ${result.detail || "unknown error"}`
 
 // ── MCP Server ────────────────────────────────────────────────────────
 
@@ -420,7 +411,13 @@ server.registerTool(
   {
     description: "List recent iMessage/SMS conversations with last message preview and participant count.",
     inputSchema: {
-      limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional()
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .default(DEFAULT_LIMIT)
+        .optional()
         .describe("Maximum conversations to return (1–200). Default: 50."),
     },
     annotations: { readOnlyHint: true },
@@ -434,7 +431,12 @@ server.registerTool(
       }
     } catch (error) {
       return {
-        content: [{ type: "text" as const, text: `Failed to list chats: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to list chats: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
         isError: true,
       }
     }
@@ -444,16 +446,29 @@ server.registerTool(
 server.registerTool(
   "get_messages",
   {
-    description: "Get message history for a specific conversation. Use chat_identifier values from list_chats (phone number, email, or group chat ID like 'chat123456').",
+    description:
+      "Get message history for a specific conversation. Use chat_identifier values from list_chats (phone number, email, or group chat ID like 'chat123456').",
     inputSchema: {
-      chat_id: z.string()
-        .describe("Chat identifier: phone number (e.g. '+13109236683'), email, or group ID (e.g. 'chat465552106698701545')."),
-      limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional()
+      chat_id: z
+        .string()
+        .describe(
+          "Chat identifier: phone number (e.g. '+13109236683'), email, or group ID (e.g. 'chat465552106698701545').",
+        ),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .default(DEFAULT_LIMIT)
+        .optional()
         .describe("Maximum messages to return (1–200). Default: 50."),
-      from_date: z.string().optional()
-        .describe("ISO 8601 date. Only return messages on or after this date. Example: '2026-01-15' or '2026-01-15T09:00:00Z'."),
-      to_date: z.string().optional()
-        .describe("ISO 8601 date. Only return messages before this date."),
+      from_date: z
+        .string()
+        .optional()
+        .describe(
+          "ISO 8601 date. Only return messages on or after this date. Example: '2026-01-15' or '2026-01-15T09:00:00Z'.",
+        ),
+      to_date: z.string().optional().describe("ISO 8601 date. Only return messages before this date."),
     },
     annotations: { readOnlyHint: true },
   },
@@ -466,7 +481,12 @@ server.registerTool(
       }
     } catch (error) {
       return {
-        content: [{ type: "text" as const, text: `Failed to get messages: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to get messages: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
         isError: true,
       }
     }
@@ -476,13 +496,18 @@ server.registerTool(
 server.registerTool(
   "search_messages",
   {
-    description: "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
+    description:
+      "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
     inputSchema: {
-      query: z.string().min(1)
-        .describe("Text to search for in message content."),
-      chat_id: z.string().optional()
-        .describe("Limit search to a specific chat identifier."),
-      limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional()
+      query: z.string().min(1).describe("Text to search for in message content."),
+      chat_id: z.string().optional().describe("Limit search to a specific chat identifier."),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .default(DEFAULT_LIMIT)
+        .optional()
         .describe("Maximum results to return (1–200). Default: 50."),
     },
     annotations: { readOnlyHint: true },
@@ -496,7 +521,12 @@ server.registerTool(
       }
     } catch (error) {
       return {
-        content: [{ type: "text" as const, text: `Failed to search messages: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to search messages: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
         isError: true,
       }
     }
@@ -508,8 +538,7 @@ server.registerTool(
   {
     description: "Get participants of a conversation. Useful for identifying group chat members.",
     inputSchema: {
-      chat_id: z.string()
-        .describe("Chat identifier from list_chats."),
+      chat_id: z.string().describe("Chat identifier from list_chats."),
     },
     annotations: { readOnlyHint: true },
   },
@@ -522,7 +551,12 @@ server.registerTool(
       }
     } catch (error) {
       return {
-        content: [{ type: "text" as const, text: `Failed to get participants: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to get participants: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
         isError: true,
       }
     }
@@ -532,12 +566,15 @@ server.registerTool(
 server.registerTool(
   "send_message",
   {
-    description: "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat465552106698701545') from list_chats.",
+    description:
+      "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat465552106698701545') from list_chats.",
     inputSchema: {
-      to: z.string()
-        .describe("Recipient: phone number (e.g. '+13109236683'), email, or group chat identifier (e.g. 'chat465552106698701545')."),
-      text: z.string().min(1)
-        .describe("Message text to send."),
+      to: z
+        .string()
+        .describe(
+          "Recipient: phone number (e.g. '+13109236683'), email, or group chat identifier (e.g. 'chat465552106698701545').",
+        ),
+      text: z.string().min(1).describe("Message text to send."),
     },
   },
   async ({ to, text }) => {

@@ -1,100 +1,104 @@
-import { describe, it, expect } from 'bun:test';
-import { CliUserError, createErrorMessage, nullToUndefined } from './helpers.js';
-import { ValidationError } from './schemas.js';
+import { describe, expect, it } from "bun:test"
+import { CliUserError, createErrorMessage, nullToUndefined } from "./helpers.js"
+import { ValidationError } from "./schemas.js"
 
-describe('helpers', () => {
-  describe('nullToUndefined', () => {
-    it('should convert null values to undefined for specified fields', () => {
+describe("helpers", () => {
+  describe("nullToUndefined", () => {
+    it("should convert null values to undefined for specified fields", () => {
       const obj = {
-        id: '123',
-        title: 'Test',
+        id: "123",
+        title: "Test",
         notes: null,
         url: null,
-        dueDate: '2024-01-01',
-      };
+        dueDate: "2024-01-01",
+      }
 
-      const result = nullToUndefined(obj, ['notes', 'url']);
+      const result = nullToUndefined(obj, ["notes", "url"])
 
-      expect(result.id).toBe('123');
-      expect(result.title).toBe('Test');
-      expect(result.notes).toBeUndefined();
-      expect(result.url).toBeUndefined();
-      expect(result.dueDate).toBe('2024-01-01');
-    });
+      expect(result.id).toBe("123")
+      expect(result.title).toBe("Test")
+      expect(result.notes).toBeUndefined()
+      expect(result.url).toBeUndefined()
+      expect(result.dueDate).toBe("2024-01-01")
+    })
 
-    it('should not modify non-null values', () => {
+    it("should not modify non-null values", () => {
       const obj = {
-        id: '123',
-        notes: 'Some notes',
-        url: 'https://example.com',
-      };
+        id: "123",
+        notes: "Some notes",
+        url: "https://example.com",
+      }
 
-      const result = nullToUndefined(obj, ['notes', 'url']);
+      const result = nullToUndefined(obj, ["notes", "url"])
 
-      expect(result.notes).toBe('Some notes');
-      expect(result.url).toBe('https://example.com');
-    });
+      expect(result.notes).toBe("Some notes")
+      expect(result.url).toBe("https://example.com")
+    })
 
-    it('should not modify fields not in the list', () => {
+    it("should not modify fields not in the list", () => {
       const obj = {
-        id: '123',
+        id: "123",
         notes: null,
         otherField: null,
-      };
+      }
 
-      const result = nullToUndefined(obj, ['notes']);
+      const result = nullToUndefined(obj, ["notes"])
 
-      expect(result.notes).toBeUndefined();
-      expect(result.otherField).toBeNull();
-    });
+      expect(result.notes).toBeUndefined()
+      expect(result.otherField).toBeNull()
+    })
 
-    it('should handle empty fields array', () => {
+    it("should handle empty fields array", () => {
       const obj = {
-        id: '123',
+        id: "123",
         notes: null,
-      };
+      }
 
-      const result = nullToUndefined(obj, []);
+      const result = nullToUndefined(obj, [])
 
-      expect(result.notes).toBeNull();
-    });
+      expect(result.notes).toBeNull()
+    })
 
-    it('should create a new object and not mutate the original', () => {
+    it("should create a new object and not mutate the original", () => {
       const obj = {
-        id: '123',
+        id: "123",
         notes: null,
-      };
+      }
 
-      const result = nullToUndefined(obj, ['notes']);
+      const result = nullToUndefined(obj, ["notes"])
 
-      expect(result).not.toBe(obj);
-      expect(obj.notes).toBeNull();
-      expect(result.notes).toBeUndefined();
-    });
-  });
+      expect(result).not.toBe(obj)
+      expect(obj.notes).toBeNull()
+      expect(result.notes).toBeUndefined()
+    })
+  })
 
-  describe('createErrorMessage', () => {
-    it('keeps the underlying message for unexpected errors', () => {
-      expect(createErrorMessage('read calendar events', new Error("Event with ID 'x' not found."))).toBe(
+  describe("createErrorMessage", () => {
+    it("keeps the underlying message for unexpected errors", () => {
+      expect(createErrorMessage("read calendar events", new Error("Event with ID 'x' not found."))).toBe(
         "Failed to read calendar events: Event with ID 'x' not found.",
-      );
-    });
+      )
+    })
 
-    it('passes permission errors through with the operation prefix', () => {
-      const message = 'Calendar permission denied. Grant access in System Settings > Privacy & Security';
-      expect(createErrorMessage('read calendar events', new Error(message))).toBe(
+    it("passes permission errors through with the operation prefix", () => {
+      const message = "Calendar permission denied. Grant access in System Settings > Privacy & Security"
+      expect(createErrorMessage("read calendar events", new Error(message))).toBe(
         `Failed to read calendar events: ${message}`,
-      );
-    });
+      )
+    })
 
-    it('returns validation and user errors verbatim', () => {
-      expect(createErrorMessage('create reminder', new ValidationError('title is required'))).toBe('title is required');
-      expect(createErrorMessage('create reminder', new CliUserError('List "Work" not found'))).toBe('List "Work" not found');
-    });
+    it("returns validation and user errors verbatim", () => {
+      expect(createErrorMessage("create reminder", new ValidationError("title is required"))).toBe("title is required")
+      expect(createErrorMessage("create reminder", new CliUserError('List "Work" not found'))).toBe(
+        'List "Work" not found',
+      )
+    })
 
-    it('never hides the detail behind a generic string when a real message exists', () => {
-      expect(createErrorMessage('update event', new Error('boom'))).not.toContain('System error occurred');
-      expect(createErrorMessage('update event', 'not an Error object')).toBe('Failed to update event: System error occurred');
-    });
-  });
-});
+    it("never hides the detail behind a generic string when a real message exists", () => {
+      expect(createErrorMessage("update event", new Error("boom"))).not.toContain("System error occurred")
+      expect(createErrorMessage("update event", "not an Error object")).toBe(
+        "Failed to update event: System error occurred",
+      )
+    })
+  })
+})

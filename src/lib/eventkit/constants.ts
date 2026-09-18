@@ -1,8 +1,8 @@
 export const FILE_SYSTEM = {
   MAX_DIRECTORY_SEARCH_DEPTH: 10,
-  PACKAGE_JSON_FILENAME: 'package.json',
-  SWIFT_BINARY_NAME: 'EventKitCLI',
-} as const;
+  PACKAGE_JSON_FILENAME: "package.json",
+  SWIFT_BINARY_NAME: "EventKitCLI",
+} as const
 
 export const VALIDATION = {
   MAX_TITLE_LENGTH: 200,
@@ -11,15 +11,15 @@ export const VALIDATION = {
   MAX_SEARCH_LENGTH: 100,
   MAX_URL_LENGTH: 500,
   MAX_LOCATION_LENGTH: 200,
-} as const;
+} as const
 
 export const TOOLS = {
-  REMINDERS_TASKS: 'reminders_tasks',
-  REMINDERS_LISTS: 'reminders_lists',
-  REMINDERS_SUBTASKS: 'reminders_subtasks',
-  CALENDAR_EVENTS: 'calendar_events',
-  CALENDAR_CALENDARS: 'calendar_calendars',
-} as const;
+  REMINDERS_TASKS: "reminders_tasks",
+  REMINDERS_LISTS: "reminders_lists",
+  REMINDERS_SUBTASKS: "reminders_subtasks",
+  CALENDAR_EVENTS: "calendar_events",
+  CALENDAR_CALENDARS: "calendar_calendars",
+} as const
 
 export const TIME = {
   WORKING_HOURS_START: 9,
@@ -35,16 +35,13 @@ export const TIME = {
   SUNDAY: 0,
   FRIDAY: 5,
   SATURDAY: 6,
-} as const;
+} as const
 
 export const MESSAGES = {
   ERROR: {
-    INPUT_VALIDATION_FAILED: (details: string) =>
-      `Input validation failed: ${details}`,
+    INPUT_VALIDATION_FAILED: (details: string) => `Input validation failed: ${details}`,
     UNKNOWN_TOOL: (name: string) => `Unknown tool: ${name}`,
-    UNKNOWN_ACTION: (tool: string, action: string) =>
-      `Unknown ${tool} action: ${action}`,
-    SYSTEM_ERROR: (operation: string) =>
-      `Failed to ${operation}: System error occurred`,
+    UNKNOWN_ACTION: (tool: string, action: string) => `Unknown ${tool} action: ${action}`,
+    SYSTEM_ERROR: (operation: string) => `Failed to ${operation}: System error occurred`,
   },
-} as const;
+} as const

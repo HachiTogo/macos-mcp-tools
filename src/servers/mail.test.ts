@@ -12,15 +12,15 @@ import {
   groupEmailsByAccount,
   isBatchFailure,
   isExcludedMailbox,
+  type NormalizedEmail,
   parseExtractEmailLinksArguments,
+  parseFetchEmailBodyArguments,
   parseForwardEmailArguments,
   parseMarkEmailsJunkArguments,
   parseMarkEmailsNotJunkArguments,
   parseMarkEmailsReadArguments,
-  parseFetchEmailBodyArguments,
   parseReplyEmailArguments,
   parseSendEmailArguments,
-  type NormalizedEmail,
 } from "./mail"
 
 const TEST_CONFIG = {
@@ -66,16 +66,12 @@ describe("email mailbox classification", () => {
   })
 
   test("classifies SafeGraph, HachiTogo, and unknown accounts", () => {
-    expect(
-      classifyAccountByMailboxUrl("imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX", TEST_CONFIG),
-    ).toEqual({
+    expect(classifyAccountByMailboxUrl("imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX", TEST_CONFIG)).toEqual({
       accountLabel: "SafeGraph",
       accountCategory: "work",
     })
 
-    expect(
-      classifyAccountByMailboxUrl("imap://F4F493BD-A783-40FE-B1CD-198F32F8A977/INBOX", TEST_CONFIG),
-    ).toEqual({
+    expect(classifyAccountByMailboxUrl("imap://F4F493BD-A783-40FE-B1CD-198F32F8A977/INBOX", TEST_CONFIG)).toEqual({
       accountLabel: "HachiTogo",
       accountCategory: "personal",
     })
@@ -87,12 +83,7 @@ describe("email mailbox classification", () => {
   })
 
   test("creates stable message handles from mailbox URLs and Mail ids", () => {
-    expect(
-      createEmailHandle(
-        "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
-        "101",
-      ),
-    ).toEqual({
+    expect(createEmailHandle("imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX", "101")).toEqual({
       accountId: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
       mailboxUrl: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
       mailId: "101",
@@ -155,13 +146,13 @@ describe("mark emails read helpers", () => {
     expect(
       parseMarkEmailsReadArguments({
         emails: [
-            createEmail({
-              id: "message-1@example.com",
-              subject: "Status update",
-              handle: createEmailHandle("imap://account/INBOX", "101"),
-            }),
-          ],
-        }),
+          createEmail({
+            id: "message-1@example.com",
+            subject: "Status update",
+            handle: createEmailHandle("imap://account/INBOX", "101"),
+          }),
+        ],
+      }),
     ).toEqual({
       emails: [
         {
@@ -375,9 +366,7 @@ describe("mark emails not-junk argument parsing", () => {
   })
 
   test("rejects empty emails array", () => {
-    expect(() => parseMarkEmailsNotJunkArguments({ emails: [] })).toThrow(
-      "expected at least one email",
-    )
+    expect(() => parseMarkEmailsNotJunkArguments({ emails: [] })).toThrow("expected at least one email")
   })
 
   test("rejects missing emails field", () => {
@@ -385,9 +374,7 @@ describe("mark emails not-junk argument parsing", () => {
   })
 
   test("rejects non-object email entries", () => {
-    expect(() => parseMarkEmailsNotJunkArguments({ emails: ["not-an-object"] })).toThrow(
-      "expected an object",
-    )
+    expect(() => parseMarkEmailsNotJunkArguments({ emails: ["not-an-object"] })).toThrow("expected an object")
   })
 })
 
@@ -502,9 +489,7 @@ describe("extract email links helpers", () => {
 
     const { links } = extractLinksFromSource(source)
 
-    expect(links).toEqual([
-      { url: "https://example.com/path?a=1&b=2", text: "Click here" },
-    ])
+    expect(links).toEqual([{ url: "https://example.com/path?a=1&b=2", text: "Click here" }])
   })
 
   test("falls back to bare URL extraction for text/plain only", () => {
@@ -548,11 +533,9 @@ describe("extract email links helpers", () => {
   })
 
   test("decodes HTML entities in anchor text", () => {
-    const source = [
-      "Content-Type: text/html; charset=utf-8",
-      "",
-      '<a href="https://example.com/X">A &amp; B</a>',
-    ].join("\r\n")
+    const source = ["Content-Type: text/html; charset=utf-8", "", '<a href="https://example.com/X">A &amp; B</a>'].join(
+      "\r\n",
+    )
 
     const { links } = extractLinksFromSource(source)
 
@@ -560,14 +543,8 @@ describe("extract email links helpers", () => {
   })
 
   test("truncates when link count exceeds MAX_LINKS", () => {
-    const anchors = Array.from({ length: 600 }, (_, i) =>
-      `<a href="https://example.com/${i}">Link ${i}</a>`,
-    ).join("")
-    const source = [
-      "Content-Type: text/html; charset=utf-8",
-      "",
-      `<html><body>${anchors}</body></html>`,
-    ].join("\r\n")
+    const anchors = Array.from({ length: 600 }, (_, i) => `<a href="https://example.com/${i}">Link ${i}</a>`).join("")
+    const source = ["Content-Type: text/html; charset=utf-8", "", `<html><body>${anchors}</body></html>`].join("\r\n")
 
     const { links, truncated } = extractLinksFromSource(source)
 
@@ -608,15 +585,11 @@ describe("send email argument parsing", () => {
   })
 
   test("rejects empty 'to' array", () => {
-    expect(() =>
-      parseSendEmailArguments({ to: [], subject: "Hi", body: "Body" }),
-    ).toThrow("at least one")
+    expect(() => parseSendEmailArguments({ to: [], subject: "Hi", body: "Body" })).toThrow("at least one")
   })
 
   test("rejects missing 'to' field", () => {
-    expect(() =>
-      parseSendEmailArguments({ subject: "Hi", body: "Body" }),
-    ).toThrow("non-empty array")
+    expect(() => parseSendEmailArguments({ subject: "Hi", body: "Body" })).toThrow("non-empty array")
   })
 
   test("rejects invalid email format in 'to'", () => {
@@ -641,15 +614,11 @@ describe("send email argument parsing", () => {
   })
 
   test("rejects empty subject", () => {
-    expect(() =>
-      parseSendEmailArguments({ to: ["alice@example.com"], subject: "", body: "Body" }),
-    ).toThrow("subject")
+    expect(() => parseSendEmailArguments({ to: ["alice@example.com"], subject: "", body: "Body" })).toThrow("subject")
   })
 
   test("rejects empty body", () => {
-    expect(() =>
-      parseSendEmailArguments({ to: ["alice@example.com"], subject: "Hi", body: "" }),
-    ).toThrow("body")
+    expect(() => parseSendEmailArguments({ to: ["alice@example.com"], subject: "Hi", body: "" })).toThrow("body")
   })
 
   test("rejects bad 'from' email format", () => {
@@ -711,9 +680,7 @@ describe("reply email argument parsing", () => {
   })
 
   test("rejects non-boolean replyAll", () => {
-    expect(() =>
-      parseReplyEmailArguments({ handle: validHandle, body: "Hi", replyAll: "yes" }),
-    ).toThrow("replyAll")
+    expect(() => parseReplyEmailArguments({ handle: validHandle, body: "Hi", replyAll: "yes" })).toThrow("replyAll")
   })
 
   test("rejects bad 'from' email format", () => {
@@ -760,9 +727,7 @@ describe("forward email argument parsing", () => {
   })
 
   test("rejects empty 'to' array", () => {
-    expect(() =>
-      parseForwardEmailArguments({ handle: validHandle, to: [] }),
-    ).toThrow("at least one")
+    expect(() => parseForwardEmailArguments({ handle: validHandle, to: [] })).toThrow("at least one")
   })
 
   test("rejects missing 'to' field", () => {
@@ -779,9 +744,7 @@ describe("forward email argument parsing", () => {
   })
 
   test("rejects missing handle", () => {
-    expect(() =>
-      parseForwardEmailArguments({ to: ["alice@example.com"] }),
-    ).toThrow("handle")
+    expect(() => parseForwardEmailArguments({ to: ["alice@example.com"] })).toThrow("handle")
   })
 
   test("rejects bad 'from' email format", () => {
@@ -798,7 +761,7 @@ describe("forward email argument parsing", () => {
 describe("mailbox exclusion", () => {
   test("excludes top-level junk, spam, trash, drafts and outbox mailboxes", () => {
     for (const name of ["Junk", "Spam", "Trash", "Drafts", "Outbox", "Deleted Messages", "Sent Messages"]) {
-      expect(isExcludedMailbox("imap://acct/" + name, name, "icloud")).toBe(true)
+      expect(isExcludedMailbox(`imap://acct/${name}`, name, "icloud")).toBe(true)
     }
   })
 
@@ -811,7 +774,9 @@ describe("mailbox exclusion", () => {
   test("keeps inbox and user folders", () => {
     expect(isExcludedMailbox("imap://acct/INBOX", "INBOX", "icloud")).toBe(false)
     expect(isExcludedMailbox("imap://acct/Receipts", "Receipts", "icloud")).toBe(false)
-    expect(isExcludedMailbox("imap://acct/Projects/Trashcan Redesign", "Projects/Trashcan Redesign", "icloud")).toBe(true)
+    expect(isExcludedMailbox("imap://acct/Projects/Trashcan Redesign", "Projects/Trashcan Redesign", "icloud")).toBe(
+      true,
+    )
   })
 
   test("excludes All Mail only for non-Gmail providers", () => {
