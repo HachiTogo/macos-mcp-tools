@@ -2,10 +2,10 @@
 
 ## Commands
 - Bun on macOS only. Entrypoint: `bun run src/cli.ts <mail|contacts|notes|memory|messages|events|reminders>`.
-- `bun test` (single file: `bun test src/servers/mail.test.ts`), `bun run typecheck`.
+- `bun test` (single file: `bun test src/servers/mail.test.ts`), `bun run typecheck`, `bun run lint` (Biome; `bun run format` fixes).
 - Opt-in integration: `bun run test:integration`; `test:integration:apps` also hits live Apple apps.
 - `bun run build:swift` builds `bin/EventKitCLI` from `swift/EventKitCLI.swift` (needs `swiftc`); `events` and `reminders` require it.
-- Do not invent extra verification steps. CI runs exactly `bun test`, `bun run typecheck`, `bun run test:integration`.
+- Do not invent extra verification steps. CI runs exactly `bun run lint`, `bun test`, `bun run typecheck`, `bun run test:integration`.
 
 ## Structure
 - Single package. `src/cli.ts` is the only entrypoint and dynamically imports one stdio MCP server per subcommand.
@@ -19,7 +19,7 @@
 - Every merged PR or PR stack carries one SemVer-compliant version bump sized to the scope and breadth of the change: patch for fixes, minor for features or breaking pre-1.0 changes, major once past 1.0. One bump per stack, not per slice.
 - Keep each PR near 300 lines of code changed, excluding comments and tests. One reviewable concern per PR.
 - Larger work splits into stacked PRs with `gh stack` (see `gh stack --help`): `gh stack init`, commit a slice, `gh stack add <branch>` per further slice, `gh stack submit`, `gh stack sync` after merges. Each slice must pass CI and stand alone.
-- Style: TypeScript strict, ES modules, no semicolons. Match the surrounding file.
+- Style: TypeScript strict, ES modules, no semicolons, enforced by Biome (`biome.jsonc`). Run `bun run format` before committing.
 - Add or update unit tests for helper logic you touch. Update `README.md` when tool names or arguments change.
 - Commit messages use conventional prefixes (`feat:`, `fix:`, `docs:`).
 
