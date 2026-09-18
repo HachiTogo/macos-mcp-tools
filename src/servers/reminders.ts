@@ -48,6 +48,7 @@ import type {
   SubtasksToolArgs,
   Subtask,
 } from "../lib/eventkit/index.js";
+import { PACKAGE_VERSION } from "../lib/version.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -330,7 +331,7 @@ const formatSubtasksListMarkdown = (
 
 const server = new McpServer({
   name: "apple-reminders",
-  version: "0.0.1",
+  version: PACKAGE_VERSION,
 });
 
 // ── reminders_tasks ───────────────────────────────────────────────────

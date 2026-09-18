@@ -5,6 +5,7 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { PACKAGE_VERSION } from "../lib/version"
 import { z } from "zod"
 import { runJxa } from "../lib/jxa.js"
 
@@ -401,7 +402,7 @@ const formatSendResult = (result: SendResult): string =>
 
 // ── MCP Server ────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "apple-messages", version: "0.1.0" })
+const server = new McpServer({ name: "apple-messages", version: PACKAGE_VERSION })
 
 server.registerTool(
   "list_chats",

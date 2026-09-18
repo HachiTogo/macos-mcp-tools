@@ -6,6 +6,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { Database } from "bun:sqlite"
 
+import { PACKAGE_VERSION } from "../lib/version"
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type EntryKind = "memory" | "task" | "event" | "note"
@@ -704,7 +705,7 @@ const selectBestMatch = (entries: NormalizedEntry[], matcher: EntryMatcher) => {
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "memory", version: "0.1.0" })
+const server = new McpServer({ name: "memory", version: PACKAGE_VERSION })
 
 const nullableString = z.union([z.string(), z.null()]).optional()
 const nullableNumber = z.union([z.number(), z.null()]).optional()

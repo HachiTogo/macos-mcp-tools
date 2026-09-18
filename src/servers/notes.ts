@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { runJxa } from "../lib/jxa.js";
+import { PACKAGE_VERSION } from "../lib/version.js";
 
 // ── JXA scripts ────────────────────────────────────────────────────────
 
@@ -275,7 +276,7 @@ function run(argv) {
 
 const server = new McpServer({
   name: "apple-notes",
-  version: "0.0.1",
+  version: PACKAGE_VERSION,
 });
 
 server.registerTool(
