@@ -6,6 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
+import { jsonResult, runTool, textResult } from "../lib/mcp-result"
 import { PACKAGE_VERSION } from "../lib/version"
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -522,16 +523,6 @@ const listEntries = (
   return rows.map((row) => normalizeEntry(row, aliasesByEntryId.get(row.id) ?? []))
 }
 
-const formatToolResult = (payload: Record<string, unknown>) => ({
-  content: [
-    {
-      type: "text" as const,
-      text: JSON.stringify(payload, null, 2),
-    },
-  ],
-  structuredContent: payload,
-})
-
 // ── Business logic ─────────────────────────────────────────────────────
 
 const createEntry = (argumentsValue: CreateEntryArguments) => {
@@ -733,17 +724,11 @@ server.registerTool(
       aliases: z.array(z.string()).optional(),
     },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("create_entry", () => {
       const entry = createEntry(args as CreateEntryArguments)
-      return formatToolResult({ source: SOURCE_NAME, entry })
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult({ source: SOURCE_NAME, entry })
+    }),
 )
 
 server.registerTool(
@@ -769,26 +754,19 @@ server.registerTool(
       aliases: z.array(z.string()).optional(),
     },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("update_entry", () => {
       const entry = updateEntry(args as UpdateEntryArguments)
 
       if (!entry) {
         return {
-          content: [{ type: "text" as const, text: `Entry not found: ${args.id}` }],
-          structuredContent: { source: SOURCE_NAME, entry: null },
+          ...textResult(`Entry not found: ${args.id}`, { source: SOURCE_NAME, entry: null }),
           isError: true,
         }
       }
 
-      return formatToolResult({ source: SOURCE_NAME, entry })
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult({ source: SOURCE_NAME, entry })
+    }),
 )
 
 server.registerTool(
@@ -800,26 +778,19 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("get_entry", () => {
       const entry = getEntryById(getDatabase(), args.id)
 
       if (!entry) {
         return {
-          content: [{ type: "text" as const, text: `Entry not found: ${args.id}` }],
-          structuredContent: { source: SOURCE_NAME, entry: null },
+          ...textResult(`Entry not found: ${args.id}`, { source: SOURCE_NAME, entry: null }),
           isError: true,
         }
       }
 
-      return formatToolResult({ source: SOURCE_NAME, entry })
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult({ source: SOURCE_NAME, entry })
+    }),
 )
 
 server.registerTool(
@@ -839,20 +810,14 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("search_entries", () => {
       const limit = args.limit ?? DEFAULT_LIMIT
       const searchArgs: SearchEntriesArguments = { ...args, limit }
       const entries = listEntries(getDatabase(), searchArgs)
       const results = selectSearchResults(entries, searchArgs, limit)
-      return formatToolResult({ source: SOURCE_NAME, query: searchArgs, entries: results })
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult({ source: SOURCE_NAME, query: searchArgs, entries: results })
+    }),
 )
 
 server.registerTool(
@@ -867,23 +832,17 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("query_last_occurrence", () => {
       const entries = listEntries(getDatabase(), {})
       const match = selectBestMatch(entries, args as QueryResultArguments)
 
       if (!match) {
-        return formatToolResult({ source: SOURCE_NAME, query: args, status: "no_match" })
+        return jsonResult({ source: SOURCE_NAME, query: args, status: "no_match" })
       }
 
-      return formatToolResult({ source: SOURCE_NAME, query: args, status: "matched", ...match })
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+      return jsonResult({ source: SOURCE_NAME, query: args, status: "matched", ...match })
+    }),
 )
 
 server.registerTool(
@@ -898,29 +857,23 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async (args) => {
-    try {
+  async (args) =>
+    runTool("query_duration_since", () => {
       const entries = listEntries(getDatabase(), {})
       const match = selectBestMatch(entries, args as QueryResultArguments)
 
       if (!match) {
-        return formatToolResult({ source: SOURCE_NAME, query: args, status: "no_match" })
+        return jsonResult({ source: SOURCE_NAME, query: args, status: "no_match" })
       }
 
-      return formatToolResult({
+      return jsonResult({
         source: SOURCE_NAME,
         query: args,
         status: "matched",
         ...match,
         ...computeDurationSince(match.timestamp),
       })
-    } catch (error) {
-      return {
-        content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }],
-        isError: true,
-      }
-    }
-  },
+    }),
 )
 
 // ── Entry point ────────────────────────────────────────────────────────
