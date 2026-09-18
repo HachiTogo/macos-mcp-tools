@@ -130,19 +130,38 @@ for s in mail contacts notes memory messages events reminders; do claude mcp add
 }
 ```
 
-### 5. Updating
-
-A global install does not update itself. After a new release:
+### 5. Check your setup
 
 ```bash
-bun install -g @hachitogo/macos-mcp-tools@latest
+"$(bun pm bin -g)/macos-mcp-tools" doctor
 ```
 
-Then quit and reopen the host. Check what is installed versus published with:
+`doctor` checks everything that has caused "server disconnected" reports: Bun and macOS versions, installed version versus npm, the `EventKitCLI` binary and whether it matches your CPU, Full Disk Access for Mail and Messages, Calendar and Reminders access, `pdftotext`, and every `macos-mcp-tools` entry in your Claude Desktop and Claude Code configs (absolute path, file exists, not launched through `bunx`). Each problem comes with the fix. Exit code is 1 when something failed, so it works in scripts.
+
+```text
+@hachitogo/macos-mcp-tools 0.5.0 doctor
+
+✔ Runtime                      Bun 1.3.14, macOS 26.5.2, arm64
+✔ Package version              0.5.0 (latest on npm)
+✔ EventKitCLI binary           /Users/you/.cache/.bun/install/global/node_modules/@hachitogo/macos-mcp-tools/bin/EventKitCLI
+✔ EventKitCLI architecture     arm64 (this Mac is arm64)
+✖ Full Disk Access (Mail)      cannot read /Users/you/Library/Mail/V10/MailData/Envelope Index: unable to open database file
+                               fix: System Settings > Privacy & Security > Full Disk Access: enable the app that launches the servers (e.g. Claude), then restart it
+✖ Claude Desktop: apple_mail   launches through bunx; concurrent server startup corrupts its shared temp install
+                               fix: bun install -g @hachitogo/macos-mcp-tools@latest and set "command" to the absolute path from `bun pm bin -g`/macos-mcp-tools
+```
+
+Calendar and Reminders access is granted per launching app, so a warning there from Terminal does not mean the host is affected.
+
+### 6. Updating
+
+A global install does not update itself. After a new release, clear Bun's cached registry metadata first, then reinstall:
 
 ```bash
-"$(bun pm bin -g)/macos-mcp-tools" --help | head -1; bun pm view @hachitogo/macos-mcp-tools dist-tags
+bun pm cache rm && bun install -g @hachitogo/macos-mcp-tools@latest
 ```
+
+Then quit and reopen the host. The cache clear matters: Bun keeps the package manifest it last saw, so for some minutes after a publish `@latest` (and even an exact new version) can resolve to the previous release with no warning. Run `doctor` afterwards; its "Package version" line compares what is installed with npm.
 
 ## Servers
 
