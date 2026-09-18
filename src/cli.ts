@@ -51,4 +51,5 @@ if (!isSubcommand(subcommand)) {
 }
 
 // Dynamic import so only the requested server is loaded
-await SERVERS[subcommand].load()
+const { main } = await SERVERS[subcommand].load()
+await main()
