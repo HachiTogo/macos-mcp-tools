@@ -5,8 +5,14 @@ const SERVERS = {
   mail: { summary: "Apple Mail (read, search, mark read/junk, attachments)", load: () => import("./servers/mail.js") },
   contacts: { summary: "Apple Contacts (people and groups CRUD)", load: () => import("./servers/contacts.js") },
   notes: { summary: "Apple Notes (folders, notes CRUD, search)", load: () => import("./servers/notes.js") },
-  memory: { summary: "Memory store (structured entries with search and duration queries)", load: () => import("./servers/memory.js") },
-  messages: { summary: "Apple Messages (iMessage/SMS read, search, send)", load: () => import("./servers/messages.js") },
+  memory: {
+    summary: "Memory store (structured entries with search and duration queries)",
+    load: () => import("./servers/memory.js"),
+  },
+  messages: {
+    summary: "Apple Messages (iMessage/SMS read, search, send)",
+    load: () => import("./servers/messages.js"),
+  },
   events: { summary: "Apple Calendar (events and calendars CRUD)", load: () => import("./servers/events.js") },
   reminders: { summary: "Apple Reminders (tasks, lists, subtasks CRUD)", load: () => import("./servers/reminders.js") },
 } as const

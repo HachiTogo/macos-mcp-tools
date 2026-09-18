@@ -1,13 +1,14 @@
-import { Database, SQLQueryBindings } from "bun:sqlite"
+import { Database, type SQLQueryBindings } from "bun:sqlite"
 import { spawnSync } from "node:child_process"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
-import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, rmSync, mkdtempSync } from "node:fs"
-import { join, resolve, dirname } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
 import { PACKAGE_VERSION } from "../lib/version"
+
 type TableColumnRow = {
   name: string
 }
@@ -198,13 +199,7 @@ export type MarkEmailsNotJunkResult = {
   id: string
   subject?: string
   handle: EmailHandle
-  status:
-    | "marked_not_junk"
-    | "already_not_junk"
-    | "not_found"
-    | "invalid_handle"
-    | "no_inbox_mailbox"
-    | "error"
+  status: "marked_not_junk" | "already_not_junk" | "not_found" | "invalid_handle" | "no_inbox_mailbox" | "error"
   detail?: string
 }
 
@@ -319,7 +314,10 @@ const loadEmailConfig = (): EmailConfig => {
     const raw = readFileSync(CONFIG_PATH, "utf8")
     const parsed = JSON.parse(raw) as Partial<EmailConfig>
     return {
-      accounts: parsed.accounts && typeof parsed.accounts === "object" ? parsed.accounts as Record<string, EmailAccountConfig> : {},
+      accounts:
+        parsed.accounts && typeof parsed.accounts === "object"
+          ? (parsed.accounts as Record<string, EmailAccountConfig>)
+          : {},
       displayOrder: Array.isArray(parsed.displayOrder) ? parsed.displayOrder : [],
     }
   } catch {
@@ -328,7 +326,9 @@ const loadEmailConfig = (): EmailConfig => {
 }
 
 const discoverAndWriteConfig = (database: Database): EmailConfig => {
-  const mailboxRows = database.query("SELECT url AS mailboxUrl FROM mailboxes WHERE url IS NOT NULL").all() as MailboxUrlRow[]
+  const mailboxRows = database
+    .query("SELECT url AS mailboxUrl FROM mailboxes WHERE url IS NOT NULL")
+    .all() as MailboxUrlRow[]
   const allUrls = mailboxRows.map((row) => row.mailboxUrl).filter(Boolean) as string[]
 
   // Collect unique account keys
@@ -361,7 +361,7 @@ const discoverAndWriteConfig = (database: Database): EmailConfig => {
 
   try {
     mkdirSync(dirname(CONFIG_PATH), { recursive: true })
-    writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", "utf8")
+    writeFileSync(CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`, "utf8")
   } catch {
     // Non-fatal: config write failure shouldn't break email reading
   }
@@ -1351,7 +1351,9 @@ const buildUnreadMessagesQuery = (schema: SchemaInfo) => {
   }
 
   if (canResolveMappedSender) {
-    joins.push("LEFT JOIN (SELECT sender, MIN(address) AS address FROM sender_addresses GROUP BY sender) sender_address_lookup ON sender_address_lookup.sender = sender_lookup.ROWID")
+    joins.push(
+      "LEFT JOIN (SELECT sender, MIN(address) AS address FROM sender_addresses GROUP BY sender) sender_address_lookup ON sender_address_lookup.sender = sender_lookup.ROWID",
+    )
     joins.push("LEFT JOIN addresses mapped_sender ON mapped_sender.ROWID = sender_address_lookup.address")
   }
 
@@ -1386,13 +1388,11 @@ const buildUnreadMessagesQuery = (schema: SchemaInfo) => {
     canResolveMappedSender ? "NULLIF(TRIM(mapped_sender.address), '')" : undefined,
   ].filter(Boolean)
 
-  const resolvedSenderNameExpression = resolvedSenderNameParts.length > 0
-    ? `COALESCE(${resolvedSenderNameParts.join(", ")})`
-    : "NULL"
+  const resolvedSenderNameExpression =
+    resolvedSenderNameParts.length > 0 ? `COALESCE(${resolvedSenderNameParts.join(", ")})` : "NULL"
 
-  const resolvedSenderAddressExpression = resolvedSenderAddressParts.length > 0
-    ? `COALESCE(${resolvedSenderAddressParts.join(", ")})`
-    : "NULL"
+  const resolvedSenderAddressExpression =
+    resolvedSenderAddressParts.length > 0 ? `COALESCE(${resolvedSenderAddressParts.join(", ")})` : "NULL"
 
   return `
     SELECT
@@ -1419,7 +1419,10 @@ const buildUnreadMessagesQuery = (schema: SchemaInfo) => {
   `
 }
 
-const buildSearchMessagesQuery = (schema: SchemaInfo, args: SearchEmailArguments): { sql: string; params: SQLQueryBindings[] } => {
+const buildSearchMessagesQuery = (
+  schema: SchemaInfo,
+  args: SearchEmailArguments,
+): { sql: string; params: SQLQueryBindings[] } => {
   const canResolveSubject = schema.messages.has("subject") && schema.subjects.has("subject")
   const canResolveDirectSender = schema.messages.has("sender") && schema.addresses.has("address")
   const canJoinSenderLookup = schema.messages.has("sender") && schema.senders.size > 0
@@ -1448,7 +1451,9 @@ const buildSearchMessagesQuery = (schema: SchemaInfo, args: SearchEmailArguments
   }
 
   if (canResolveMappedSender) {
-    joins.push("LEFT JOIN (SELECT sender, MIN(address) AS address FROM sender_addresses GROUP BY sender) sender_address_lookup ON sender_address_lookup.sender = sender_lookup.ROWID")
+    joins.push(
+      "LEFT JOIN (SELECT sender, MIN(address) AS address FROM sender_addresses GROUP BY sender) sender_address_lookup ON sender_address_lookup.sender = sender_lookup.ROWID",
+    )
     joins.push("LEFT JOIN addresses mapped_sender ON mapped_sender.ROWID = sender_address_lookup.address")
   }
 
@@ -1483,13 +1488,11 @@ const buildSearchMessagesQuery = (schema: SchemaInfo, args: SearchEmailArguments
     canResolveMappedSender ? "NULLIF(TRIM(mapped_sender.address), '')" : undefined,
   ].filter(Boolean)
 
-  const resolvedSenderNameExpression = resolvedSenderNameParts.length > 0
-    ? `COALESCE(${resolvedSenderNameParts.join(", ")})`
-    : "NULL"
+  const resolvedSenderNameExpression =
+    resolvedSenderNameParts.length > 0 ? `COALESCE(${resolvedSenderNameParts.join(", ")})` : "NULL"
 
-  const resolvedSenderAddressExpression = resolvedSenderAddressParts.length > 0
-    ? `COALESCE(${resolvedSenderAddressParts.join(", ")})`
-    : "NULL"
+  const resolvedSenderAddressExpression =
+    resolvedSenderAddressParts.length > 0 ? `COALESCE(${resolvedSenderAddressParts.join(", ")})` : "NULL"
 
   const params: SQLQueryBindings[] = []
   const whereClauses: string[] = [
@@ -1633,14 +1636,12 @@ const buildMessageUrl = (messageIdHeader: string | null | undefined): string => 
   if (!trimmed) return ""
   // message_id_header is stored with angle brackets: <id@domain>
   // message: URL format: message:%3Cid@domain%3E
-  const bare = trimmed.startsWith("<") && trimmed.endsWith(">")
-    ? trimmed.slice(1, -1)
-    : trimmed
+  const bare = trimmed.startsWith("<") && trimmed.endsWith(">") ? trimmed.slice(1, -1) : trimmed
   if (!bare) return ""
   return `message:%3C${bare}%3E`
 }
 
-const isEmailLike = (value: string | undefined) => Boolean(value && value.includes("@"))
+const isEmailLike = (value: string | undefined) => Boolean(value?.includes("@"))
 
 const normalizeSubject = (row: EmailRow) => {
   const resolvedSubject = cleanText(row.resolvedSubject)
@@ -1669,10 +1670,11 @@ const normalizeSender = (row: EmailRow) => {
   const senderAddressCandidate = cleanText(row.resolvedSenderAddress)
   const senderReferenceCandidate = cleanText(row.senderReferenceText)
 
-  const senderAddress = senderAddressCandidate
-    ?? (isEmailLike(senderNameCandidate) ? senderNameCandidate : undefined)
-    ?? (isEmailLike(senderReferenceCandidate) ? senderReferenceCandidate : undefined)
-    ?? ""
+  const senderAddress =
+    senderAddressCandidate ??
+    (isEmailLike(senderNameCandidate) ? senderNameCandidate : undefined) ??
+    (isEmailLike(senderReferenceCandidate) ? senderReferenceCandidate : undefined) ??
+    ""
 
   const senderName = senderNameCandidate && senderNameCandidate !== senderAddress ? senderNameCandidate : ""
 
@@ -1685,13 +1687,26 @@ const normalizeSender = (row: EmailRow) => {
 // Mailbox names are "/"-separated paths (see getMailboxName). A mailbox is excluded when any
 // segment starts with one of these names, so both top-level "Junk" and nested "[Gmail]/Spam" match.
 const EXCLUDED_MAILBOX_SEGMENTS = [
-  "junk", "spam", "trash", "deleted messages",
-  "sent messages", "sent mail", "drafts", "outbox",
+  "junk",
+  "spam",
+  "trash",
+  "deleted messages",
+  "sent messages",
+  "sent mail",
+  "drafts",
+  "outbox",
 ] as const
 
-export const isExcludedMailbox = (mailboxUrl: string, mailboxName: string, provider: "gmail" | "icloud" | string = "icloud") => {
+export const isExcludedMailbox = (
+  _mailboxUrl: string,
+  mailboxName: string,
+  provider: "gmail" | "icloud" | string = "icloud",
+) => {
   const normalized = mailboxName.toLowerCase()
-  const segments = normalized.split("/").map((segment) => segment.trim()).filter(Boolean)
+  const segments = normalized
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter(Boolean)
 
   const excluded: string[] = [...EXCLUDED_MAILBOX_SEGMENTS]
   // For non-Gmail accounts, also exclude "all mail" to avoid duplicates
@@ -1699,7 +1714,10 @@ export const isExcludedMailbox = (mailboxUrl: string, mailboxName: string, provi
     excluded.push("all mail")
   }
 
-  return segments.some((segment) => excluded.some((name) => segment.startsWith(name))) || normalized.trim().endsWith("[gmail]")
+  return (
+    segments.some((segment) => excluded.some((name) => segment.startsWith(name))) ||
+    normalized.trim().endsWith("[gmail]")
+  )
 }
 
 const normalizeEmail = (row: EmailRow, providerByAccount: Map<string, "gmail" | "icloud">, config: EmailConfig) => {
@@ -1717,7 +1735,8 @@ const normalizeEmail = (row: EmailRow, providerByAccount: Map<string, "gmail" | 
     return undefined
   }
 
-  const displayMailboxName = (provider === "gmail" && mailboxName.toLowerCase().includes("all mail")) ? "INBOX" : mailboxName
+  const displayMailboxName =
+    provider === "gmail" && mailboxName.toLowerCase().includes("all mail") ? "INBOX" : mailboxName
   const messageId = cleanText(row.messageIdText) ?? ""
   const accountClassification = classifyAccountByMailboxUrl(mailboxUrl, config)
   const receivedAt = toIsoStringFromUnixSeconds(row.receivedAtUnix)
@@ -1789,12 +1808,17 @@ export const groupEmailsByAccount = (emails: NormalizedEmail[], config: EmailCon
     const index = order.indexOf(label)
     return index === -1 ? Number.MAX_SAFE_INTEGER : index
   }
-  return [...groups.values()].sort((left, right) =>
-    rank(left.accountLabel) - rank(right.accountLabel) || left.accountLabel.localeCompare(right.accountLabel),
+  return [...groups.values()].sort(
+    (left, right) =>
+      rank(left.accountLabel) - rank(right.accountLabel) || left.accountLabel.localeCompare(right.accountLabel),
   )
 }
 
-export const formatEmailsForContent = (emails: NormalizedEmail[], argumentsValue: UnreadEmailArguments, config: EmailConfig) => {
+export const formatEmailsForContent = (
+  emails: NormalizedEmail[],
+  argumentsValue: UnreadEmailArguments,
+  config: EmailConfig,
+) => {
   const summaryParts = [`Found ${emails.length} unread email${emails.length === 1 ? "" : "s"}`]
 
   if (argumentsValue.provider) {
@@ -2108,7 +2132,8 @@ export const parseSendEmailArguments = (value: unknown): SendEmailArguments => {
 
   const to = validateEmailArray(objectValue.to, "to", { allowEmpty: false })
   const cc = objectValue.cc === undefined ? undefined : validateEmailArray(objectValue.cc, "cc", { allowEmpty: true })
-  const bcc = objectValue.bcc === undefined ? undefined : validateEmailArray(objectValue.bcc, "bcc", { allowEmpty: true })
+  const bcc =
+    objectValue.bcc === undefined ? undefined : validateEmailArray(objectValue.bcc, "bcc", { allowEmpty: true })
 
   const subject = getOptionalString(objectValue, "subject")
   if (!subject) {
@@ -2179,7 +2204,8 @@ export const parseForwardEmailArguments = (value: unknown): ForwardEmailArgument
 
   const to = validateEmailArray(objectValue.to, "to", { allowEmpty: false })
   const cc = objectValue.cc === undefined ? undefined : validateEmailArray(objectValue.cc, "cc", { allowEmpty: true })
-  const bcc = objectValue.bcc === undefined ? undefined : validateEmailArray(objectValue.bcc, "bcc", { allowEmpty: true })
+  const bcc =
+    objectValue.bcc === undefined ? undefined : validateEmailArray(objectValue.bcc, "bcc", { allowEmpty: true })
 
   const body = getOptionalString(objectValue, "body")
   if (body !== undefined && body.length > MAX_EMAIL_BODY_LENGTH) {
@@ -2516,7 +2542,7 @@ const validateArgumentsObject = (value: unknown, allowedKeys: string[]) => {
 
   for (const key of keys) {
     if (!allowedKeys.includes(key)) {
-      throw new Error(`Invalid arguments: unexpected field \"${key}\".`)
+      throw new Error(`Invalid arguments: unexpected field "${key}".`)
     }
   }
 
@@ -2539,7 +2565,16 @@ const parseUnreadEmailArguments = (value: unknown): UnreadEmailArguments => {
 }
 
 const parseSearchEmailArguments = (value: unknown): SearchEmailArguments => {
-  const objectValue = validateArgumentsObject(value, ["subject", "sender", "after", "before", "mailbox", "provider", "unreadOnly", "limit"])
+  const objectValue = validateArgumentsObject(value, [
+    "subject",
+    "sender",
+    "after",
+    "before",
+    "mailbox",
+    "provider",
+    "unreadOnly",
+    "limit",
+  ])
   const subject = getOptionalString(objectValue, "subject")
   const sender = getOptionalString(objectValue, "sender")
   const after = getOptionalString(objectValue, "after")
@@ -2562,10 +2597,10 @@ const parseSearchEmailArguments = (value: unknown): SearchEmailArguments => {
     provider = lower as "gmail" | "icloud"
   }
 
-  if (after && isNaN(Date.parse(after))) {
+  if (after && Number.isNaN(Date.parse(after))) {
     throw new Error(`Invalid 'after' date: '${after}'. Use ISO 8601 format.`)
   }
-  if (before && isNaN(Date.parse(before))) {
+  if (before && Number.isNaN(Date.parse(before))) {
     throw new Error(`Invalid 'before' date: '${before}'. Use ISO 8601 format.`)
   }
 
@@ -2683,9 +2718,7 @@ const fetchEmailSourceWithJxa = (handle: EmailHandle): { found: boolean; source:
 
 const decodeQuotedPrintable = (value: string): string => {
   const softBreaksRemoved = value.replace(/=\r?\n/g, "")
-  return softBreaksRemoved.replace(/=([0-9A-Fa-f]{2})/g, (_match, hex) =>
-    String.fromCharCode(parseInt(hex, 16)),
-  )
+  return softBreaksRemoved.replace(/=([0-9A-Fa-f]{2})/g, (_match, hex) => String.fromCharCode(parseInt(hex, 16)))
 }
 
 const decodeBase64Body = (value: string): string => {
@@ -2709,10 +2742,7 @@ const decodeHtmlEntities = (value: string): string => {
     .replace(/&#(\d+);/g, (_match, dec) => String.fromCodePoint(parseInt(dec, 10)))
 }
 
-const findMimePart = (
-  source: string,
-  contentTypePattern: RegExp,
-): { body: string; encoding: string } | null => {
+const findMimePart = (source: string, contentTypePattern: RegExp): { body: string; encoding: string } | null => {
   const typeMatch = contentTypePattern.exec(source)
   if (!typeMatch) {
     return null
@@ -2746,9 +2776,7 @@ const decodePartBody = (body: string, encoding: string): string => {
   return body
 }
 
-export const extractLinksFromSource = (
-  source: string,
-): { links: EmailLink[]; truncated: boolean } => {
+export const extractLinksFromSource = (source: string): { links: EmailLink[]; truncated: boolean } => {
   const htmlPart = findMimePart(source, /Content-Type\s*:\s*text\/html/i)
   const links: EmailLink[] = []
   const seen = new Set<string>()
@@ -2765,8 +2793,7 @@ export const extractLinksFromSource = (
   if (htmlPart) {
     const html = decodePartBody(htmlPart.body, htmlPart.encoding)
     const anchorRegex = /<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi
-    let match: RegExpExecArray | null
-    while ((match = anchorRegex.exec(html)) !== null) {
+    for (const match of html.matchAll(anchorRegex)) {
       const href = (match[1] ?? match[2] ?? match[3] ?? "").trim()
       if (!href) continue
       if (href.startsWith("mailto:")) continue
@@ -2784,8 +2811,7 @@ export const extractLinksFromSource = (
     const plainPart = findMimePart(source, /Content-Type\s*:\s*text\/plain/i)
     const haystack = plainPart ? decodePartBody(plainPart.body, plainPart.encoding) : source
     const urlRegex = /\bhttps?:\/\/[^\s<>"']+/g
-    let match: RegExpExecArray | null
-    while ((match = urlRegex.exec(haystack)) !== null) {
+    for (const match of haystack.matchAll(urlRegex)) {
       const url = match[0]
       pushLink(url, url)
     }
@@ -2800,9 +2826,7 @@ export const extractLinksFromSource = (
 const createExtractEmailLinksResult = async (argumentsValue: ExtractEmailLinksArguments) => {
   try {
     const { found, source } = fetchEmailSourceWithJxa(argumentsValue.handle)
-    const { links, truncated } = found
-      ? extractLinksFromSource(source)
-      : { links: [] as EmailLink[], truncated: false }
+    const { links, truncated } = found ? extractLinksFromSource(source) : { links: [] as EmailLink[], truncated: false }
 
     const result: ExtractEmailLinksResult = {
       handle: argumentsValue.handle,
@@ -2821,10 +2845,7 @@ const createExtractEmailLinksResult = async (argumentsValue: ExtractEmailLinksAr
       }
       const header = `Found ${links.length} link${links.length === 1 ? "" : "s"}${truncated ? " (truncated)" : ""}`
       const lines = links.map((link) => `- [${link.text}](${link.url})`)
-      return [
-        { type: "text", text: header },
-        ...lines.map((line) => ({ type: "text", text: line })),
-      ]
+      return [{ type: "text", text: header }, ...lines.map((line) => ({ type: "text", text: line }))]
     })()
 
     return {
@@ -2916,7 +2937,11 @@ const createFetchEmailAttachmentResult = async (argumentsValue: FetchEmailAttach
         "-e",
         FETCH_EMAIL_ATTACHMENT_JXA,
         "--",
-        JSON.stringify({ handle: argumentsValue.handle, attachmentName: argumentsValue.attachmentName, savePath: tmpFilePath }),
+        JSON.stringify({
+          handle: argumentsValue.handle,
+          attachmentName: argumentsValue.attachmentName,
+          savePath: tmpFilePath,
+        }),
       ],
       { encoding: "utf8" },
     )
@@ -3017,18 +3042,24 @@ const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEmailArgum
     .slice(0, argumentsValue.limit)
 
   // Surface unconfigured accounts
-  const allAccountKeys = new Set(rows.map((row) => getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")).filter(Boolean))
+  const allAccountKeys = new Set(
+    rows.map((row) => getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")).filter(Boolean),
+  )
   const unconfiguredKeys = [...allAccountKeys].filter((key) => !config.accounts[key])
   const warnings: string[] = []
   if (unconfiguredKeys.length > 0) {
-    warnings.push(`⚠️ ${unconfiguredKeys.length} unconfigured account(s): ${unconfiguredKeys.join(", ")}. Edit config/email.json to classify them.`)
+    warnings.push(
+      `⚠️ ${unconfiguredKeys.length} unconfigured account(s): ${unconfiguredKeys.join(", ")}. Edit config/email.json to classify them.`,
+    )
   }
 
   return {
     content: [
       {
         type: "text",
-        text: (warnings.length > 0 ? warnings.join("\n") + "\n\n" : "") + formatEmailsForContent(emails, argumentsValue, config),
+        text:
+          (warnings.length > 0 ? `${warnings.join("\n")}\n\n` : "") +
+          formatEmailsForContent(emails, argumentsValue, config),
       },
     ],
     structuredContent: {
@@ -3051,9 +3082,10 @@ const createUnreadEmailsResult = async (argumentsValue: UnreadEmailArguments) =>
     database = new Database(MAIL_DB_PATH, { readonly: true })
     return runUnreadEmailRead(database, argumentsValue)
   } catch (error) {
-    const message = error instanceof EmailToolError
-      ? error.message
-      : `Email read failed: ${error instanceof Error ? error.message : String(error)}`
+    const message =
+      error instanceof EmailToolError
+        ? error.message
+        : `Email read failed: ${error instanceof Error ? error.message : String(error)}`
 
     return {
       content: [
@@ -3155,9 +3187,10 @@ const createSearchEmailResult = async (args: SearchEmailArguments) => {
       },
     }
   } catch (error) {
-    const message = error instanceof EmailToolError
-      ? error.message
-      : `Email search failed: ${error instanceof Error ? error.message : String(error)}`
+    const message =
+      error instanceof EmailToolError
+        ? error.message
+        : `Email search failed: ${error instanceof Error ? error.message : String(error)}`
 
     return {
       content: [
@@ -3183,7 +3216,13 @@ const createSearchEmailResult = async (args: SearchEmailArguments) => {
 
 // Per-item statuses that mean nothing was changed for that email. A batch result is an error only when
 // every item failed; partial success is reported through the per-item statuses instead.
-const FAILED_BATCH_STATUSES: ReadonlySet<string> = new Set(["not_found", "invalid_handle", "error", "no_junk_mailbox", "no_inbox_mailbox"])
+const FAILED_BATCH_STATUSES: ReadonlySet<string> = new Set([
+  "not_found",
+  "invalid_handle",
+  "error",
+  "no_junk_mailbox",
+  "no_inbox_mailbox",
+])
 
 export const isBatchFailure = (results: ReadonlyArray<{ status: string }>) =>
   results.length > 0 && results.every((result) => FAILED_BATCH_STATUSES.has(result.status))
@@ -3437,11 +3476,9 @@ const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments) => {
 }
 
 const sendEmailWithJxa = (args: SendEmailArguments): SendEmailResult => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", SEND_EMAIL_JXA, "--", JSON.stringify(args)],
-    { encoding: "utf8" },
-  )
+  const command = spawnSync("osascript", ["-l", "JavaScript", "-e", SEND_EMAIL_JXA, "--", JSON.stringify(args)], {
+    encoding: "utf8",
+  })
 
   if (command.error) {
     throw command.error
@@ -3459,11 +3496,9 @@ const sendEmailWithJxa = (args: SendEmailArguments): SendEmailResult => {
 }
 
 const replyEmailWithJxa = (args: ReplyEmailArguments): ReplyEmailResult => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", REPLY_EMAIL_JXA, "--", JSON.stringify(args)],
-    { encoding: "utf8" },
-  )
+  const command = spawnSync("osascript", ["-l", "JavaScript", "-e", REPLY_EMAIL_JXA, "--", JSON.stringify(args)], {
+    encoding: "utf8",
+  })
 
   if (command.error) {
     throw command.error
@@ -3478,11 +3513,9 @@ const replyEmailWithJxa = (args: ReplyEmailArguments): ReplyEmailResult => {
 }
 
 const forwardEmailWithJxa = (args: ForwardEmailArguments): ForwardEmailResult => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", FORWARD_EMAIL_JXA, "--", JSON.stringify(args)],
-    { encoding: "utf8" },
-  )
+  const command = spawnSync("osascript", ["-l", "JavaScript", "-e", FORWARD_EMAIL_JXA, "--", JSON.stringify(args)], {
+    encoding: "utf8",
+  })
 
   if (command.error) {
     throw command.error
@@ -3576,13 +3609,15 @@ const handleSchema = z.object({
   mailId: z.string(),
 })
 
-const emailsArraySchema = z.array(
-  z.object({
-    id: z.string(),
-    subject: z.string().optional(),
-    handle: handleSchema,
-  }),
-).min(1)
+const emailsArraySchema = z
+  .array(
+    z.object({
+      id: z.string(),
+      subject: z.string().optional(),
+      handle: handleSchema,
+    }),
+  )
+  .min(1)
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
@@ -3593,12 +3628,16 @@ server.registerTool(
   {
     description: "Read unread Apple Mail messages without fetching bodies.",
     inputSchema: {
-      limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional()
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .default(DEFAULT_LIMIT)
+        .optional()
         .describe("Maximum number of messages to return (1–100). Default: 25."),
-      provider: z.enum(["gmail", "icloud"]).optional()
-        .describe("Filter to a specific email provider."),
-      mailbox: z.string().optional()
-        .describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
+      provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
+      mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
     },
   },
   async (args) => {
@@ -3611,7 +3650,8 @@ server.registerTool(
 server.registerTool(
   "mark_emails_read",
   {
-    description: "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    description:
+      "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as read."),
     },
@@ -3641,7 +3681,8 @@ server.registerTool(
 server.registerTool(
   "extract_email_links",
   {
-    description: "Extract all hyperlinks from an Apple Mail message as `{ url, text }` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
+    description:
+      "Extract all hyperlinks from an Apple Mail message as `{ url, text }` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
@@ -3656,7 +3697,8 @@ server.registerTool(
 server.registerTool(
   "mark_emails_junk",
   {
-    description: "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    description:
+      "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as junk."),
     },
@@ -3671,7 +3713,8 @@ server.registerTool(
 server.registerTool(
   "mark_emails_not_junk",
   {
-    description: "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    description:
+      "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as not junk."),
     },
@@ -3686,18 +3729,34 @@ server.registerTool(
 server.registerTool(
   "flag_emails",
   {
-    description: "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flagIndex', 'flaggedStatus', or 'backgroundColor'.",
+    description:
+      "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flagIndex', 'flaggedStatus', or 'backgroundColor'.",
     inputSchema: {
-      emails: z.array(
-        z.object({
-          id: z.string(),
-          subject: z.string().optional(),
-          handle: handleSchema,
-          flagIndex: z.number().int().min(-1).max(6).optional().describe("Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray"),
-          flaggedStatus: z.boolean().optional().describe("Set flagged status directly. true=flagged, false=unflagged."),
-          backgroundColor: z.enum(["blue", "gray", "green", "none", "orange", "purple", "red", "yellow"]).optional().describe("Message background color in Mail.app."),
-        }),
-      ).min(1).describe("Array of email objects to flag."),
+      emails: z
+        .array(
+          z.object({
+            id: z.string(),
+            subject: z.string().optional(),
+            handle: handleSchema,
+            flagIndex: z
+              .number()
+              .int()
+              .min(-1)
+              .max(6)
+              .optional()
+              .describe("Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray"),
+            flaggedStatus: z
+              .boolean()
+              .optional()
+              .describe("Set flagged status directly. true=flagged, false=unflagged."),
+            backgroundColor: z
+              .enum(["blue", "gray", "green", "none", "orange", "purple", "red", "yellow"])
+              .optional()
+              .describe("Message background color in Mail.app."),
+          }),
+        )
+        .min(1)
+        .describe("Array of email objects to flag."),
     },
   },
   async (args) => {
@@ -3729,7 +3788,9 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
       attachmentName: z.string().describe("Name of the attachment to fetch."),
-      format: z.enum(["text", "base64"]).optional()
+      format: z
+        .enum(["text", "base64"])
+        .optional()
         .describe("Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'."),
     },
   },
@@ -3743,24 +3804,32 @@ server.registerTool(
 server.registerTool(
   "search_emails",
   {
-    description: "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts. At least one search criterion (subject, sender, after, before) is required.",
+    description:
+      "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts. At least one search criterion (subject, sender, after, before) is required.",
     inputSchema: {
-      subject: z.string().optional()
-        .describe("Substring to match in the email subject line."),
-      sender: z.string().optional()
-        .describe("Substring to match in the sender email address or display name."),
-      after: z.string().optional()
-        .describe("ISO 8601 date string. Only return emails received on or after this date. Example: '2025-01-15' or '2025-01-15T09:00:00Z'."),
-      before: z.string().optional()
+      subject: z.string().optional().describe("Substring to match in the email subject line."),
+      sender: z.string().optional().describe("Substring to match in the sender email address or display name."),
+      after: z
+        .string()
+        .optional()
+        .describe(
+          "ISO 8601 date string. Only return emails received on or after this date. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
+        ),
+      before: z
+        .string()
+        .optional()
         .describe("ISO 8601 date string. Only return emails received before this date. Example: '2025-03-01'."),
-      limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional()
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .default(DEFAULT_LIMIT)
+        .optional()
         .describe("Maximum number of results to return (1–100). Default: 25."),
-      provider: z.enum(["gmail", "icloud"]).optional()
-        .describe("Filter to a specific email provider."),
-      mailbox: z.string().optional()
-        .describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
-      unreadOnly: z.boolean().optional()
-        .describe("If true, only return unread emails. Defaults to false."),
+      provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
+      mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
+      unreadOnly: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
     },
   },
   async (args) => {
@@ -3773,20 +3842,15 @@ server.registerTool(
 server.registerTool(
   "send_email",
   {
-    description: "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
+    description:
+      "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
     inputSchema: {
-      to: z.array(z.string().email()).min(1)
-        .describe("Recipient email addresses. At least one required."),
-      cc: z.array(z.string().email()).optional()
-        .describe("CC recipient email addresses."),
-      bcc: z.array(z.string().email()).optional()
-        .describe("BCC recipient email addresses."),
-      subject: z.string().min(1)
-        .describe("Email subject line."),
-      body: z.string().min(1)
-        .describe("Plain text email body."),
-      from: z.string().email().optional()
-        .describe("Optional sender email address. Must match an enabled account."),
+      to: z.array(z.string().email()).min(1).describe("Recipient email addresses. At least one required."),
+      cc: z.array(z.string().email()).optional().describe("CC recipient email addresses."),
+      bcc: z.array(z.string().email()).optional().describe("BCC recipient email addresses."),
+      subject: z.string().min(1).describe("Email subject line."),
+      body: z.string().min(1).describe("Plain text email body."),
+      from: z.string().email().optional().describe("Optional sender email address. Must match an enabled account."),
     },
   },
   async (args) => {
@@ -3802,12 +3866,9 @@ server.registerTool(
     description: "Reply to an existing Apple Mail message by handle. Set replyAll=true to reply to all recipients.",
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message being replied to."),
-      body: z.string().min(1)
-        .describe("Plain text reply body. Prepended above the quoted original."),
-      replyAll: z.boolean().optional()
-        .describe("If true, reply to all recipients of the original message."),
-      from: z.string().email().optional()
-        .describe("Optional sender email address override."),
+      body: z.string().min(1).describe("Plain text reply body. Prepended above the quoted original."),
+      replyAll: z.boolean().optional().describe("If true, reply to all recipients of the original message."),
+      from: z.string().email().optional().describe("Optional sender email address override."),
     },
   },
   async (args) => {
@@ -3823,16 +3884,11 @@ server.registerTool(
     description: "Forward an existing Apple Mail message to new recipients.",
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message being forwarded."),
-      to: z.array(z.string().email()).min(1)
-        .describe("Recipient email addresses. At least one required."),
-      cc: z.array(z.string().email()).optional()
-        .describe("CC recipient email addresses."),
-      bcc: z.array(z.string().email()).optional()
-        .describe("BCC recipient email addresses."),
-      body: z.string().optional()
-        .describe("Optional message to prepend above the forwarded content."),
-      from: z.string().email().optional()
-        .describe("Optional sender email address override."),
+      to: z.array(z.string().email()).min(1).describe("Recipient email addresses. At least one required."),
+      cc: z.array(z.string().email()).optional().describe("CC recipient email addresses."),
+      bcc: z.array(z.string().email()).optional().describe("BCC recipient email addresses."),
+      body: z.string().optional().describe("Optional message to prepend above the forwarded content."),
+      from: z.string().email().optional().describe("Optional sender email address override."),
     },
   },
   async (args) => {

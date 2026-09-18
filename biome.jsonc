@@ -1,0 +1,40 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "files": {
+    // Only source and the two JS shims. package.json, lockfile, docs and the Swift binary stay untouched.
+    "includes": ["src/**", "swift/*.mjs", "bin/*.js", "biome.jsonc", "tsconfig.json"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      // AGENTS.md: "no semicolons". Double quotes match the pre-existing majority of the repo.
+      "semicolons": "asNeeded",
+      "quoteStyle": "double",
+      "trailingCommas": "all"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "complexity": {
+        // Embedded JXA scripts are String.raw by convention so backslashes read literally; keep that
+        // even where a given script happens to contain none.
+        "noUselessStringRaw": "off"
+      },
+      "style": {
+        // Six pre-existing assertions; revisit when the surrounding code is refactored.
+        "noNonNullAssertion": "off"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": { "source": { "organizeImports": "on" } }
+  }
+}

@@ -42,6 +42,8 @@
     "test:integration": "RUN_INTEGRATION_TESTS=1 bun test src/integration",
     "test:integration:apps": "RUN_INTEGRATION_TESTS=1 RUN_APP_INTEGRATION_TESTS=1 bun test src/integration",
     "typecheck": "bunx tsc --noEmit",
+    "lint": "bunx --bun biome check .",
+    "format": "bunx --bun biome check --write .",
     "build:swift": "bun swift/build.mjs"
   },
   "dependencies": {
@@ -49,6 +51,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.14",
     "@types/bun": "^1.3.14"
   },
   "engines": {

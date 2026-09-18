@@ -8,9 +8,10 @@ const buildBody = (text: string, lengthForm: "short" | "u16" = "short"): Uint8Ar
   const header = new Uint8Array([0x04, 0x0b, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x74, 0x79, 0x70, 0x65, 0x64, 0x00])
   const marker = new TextEncoder().encode("NSString")
   const plus = new Uint8Array([0x01, 0x94, 0x84, 0x01, 0x2b])
-  const length = lengthForm === "short"
-    ? new Uint8Array([encoded.length])
-    : new Uint8Array([0x81, encoded.length & 0xff, encoded.length >> 8])
+  const length =
+    lengthForm === "short"
+      ? new Uint8Array([encoded.length])
+      : new Uint8Array([0x81, encoded.length & 0xff, encoded.length >> 8])
   return new Uint8Array([...header, ...marker, ...plus, ...length, ...encoded, 0x86])
 }
 

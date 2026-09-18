@@ -52,7 +52,9 @@ const startServer = async (serverName: ServerName): Promise<TestServer> => {
   } catch (error) {
     await transport.close().catch(() => undefined)
     rmSync(dataDir, { recursive: true, force: true })
-    throw new Error(`Failed to start ${serverName} server: ${error instanceof Error ? error.message : String(error)}\n${stderr}`)
+    throw new Error(
+      `Failed to start ${serverName} server: ${error instanceof Error ? error.message : String(error)}\n${stderr}`,
+    )
   }
 
   return { client, transport, dataDir, getStderr: () => stderr }
@@ -69,9 +71,10 @@ const stopServer = async (server: TestServer | undefined) => {
 
 const getStructuredContent = <T extends Record<string, unknown>>(result: unknown): T => {
   const topLevel = result as { structuredContent?: unknown; toolResult?: unknown }
-  const nested = topLevel.toolResult && typeof topLevel.toolResult === "object"
-    ? (topLevel.toolResult as { structuredContent?: unknown }).structuredContent
-    : undefined
+  const nested =
+    topLevel.toolResult && typeof topLevel.toolResult === "object"
+      ? (topLevel.toolResult as { structuredContent?: unknown }).structuredContent
+      : undefined
   const structuredContent = topLevel.structuredContent ?? nested
 
   expect(structuredContent).toBeDefined()

@@ -1,5 +1,5 @@
-import { describe, it, expect, mock } from 'bun:test';
-import { z } from 'zod';
+import { describe, expect, it, mock } from "bun:test"
+import { z } from "zod"
 import {
   CreateCalendarEventSchema,
   CreateReminderListSchema,
@@ -18,762 +18,626 @@ import {
   UpdateReminderSchema,
   ValidationError,
   validateInput,
-} from './schemas.js';
+} from "./schemas.js"
 
-describe('ValidationSchemas', () => {
-  describe('Base validation schemas', () => {
-    describe('SafeTextSchema', () => {
-      it('should validate safe text', () => {
-        expect(() => SafeTextSchema.parse('Valid text')).not.toThrow();
-        expect(() =>
-          SafeTextSchema.parse('Text with numbers 123'),
-        ).not.toThrow();
-        expect(() =>
-          SafeTextSchema.parse('Text with punctuation!'),
-        ).not.toThrow();
-      });
+describe("ValidationSchemas", () => {
+  describe("Base validation schemas", () => {
+    describe("SafeTextSchema", () => {
+      it("should validate safe text", () => {
+        expect(() => SafeTextSchema.parse("Valid text")).not.toThrow()
+        expect(() => SafeTextSchema.parse("Text with numbers 123")).not.toThrow()
+        expect(() => SafeTextSchema.parse("Text with punctuation!")).not.toThrow()
+      })
 
-      it('should reject empty text', () => {
-        expect(() => SafeTextSchema.parse('')).toThrow();
-      });
+      it("should reject empty text", () => {
+        expect(() => SafeTextSchema.parse("")).toThrow()
+      })
 
-      it('should reject text that is too long', () => {
-        const longText = 'a'.repeat(201);
-        expect(() => SafeTextSchema.parse(longText)).toThrow();
-      });
+      it("should reject text that is too long", () => {
+        const longText = "a".repeat(201)
+        expect(() => SafeTextSchema.parse(longText)).toThrow()
+      })
 
-      it('should reject text with invalid characters', () => {
-        expect(() =>
-          SafeTextSchema.parse('Text with control char \x00'),
-        ).toThrow();
-      });
-    });
+      it("should reject text with invalid characters", () => {
+        expect(() => SafeTextSchema.parse("Text with control char \x00")).toThrow()
+      })
+    })
 
-    describe('SafeNoteSchema', () => {
-      it('should validate optional safe notes', () => {
-        expect(() => SafeNoteSchema.parse(undefined)).not.toThrow();
-        expect(() => SafeNoteSchema.parse('Valid note')).not.toThrow();
-      });
+    describe("SafeNoteSchema", () => {
+      it("should validate optional safe notes", () => {
+        expect(() => SafeNoteSchema.parse(undefined)).not.toThrow()
+        expect(() => SafeNoteSchema.parse("Valid note")).not.toThrow()
+      })
 
-      it('should reject notes that are too long', () => {
-        const longNote = 'a'.repeat(20001);
-        expect(() => SafeNoteSchema.parse(longNote)).toThrow();
-      });
+      it("should reject notes that are too long", () => {
+        const longNote = "a".repeat(20001)
+        expect(() => SafeNoteSchema.parse(longNote)).toThrow()
+      })
 
-      it('should allow multiline notes', () => {
-        const multilineNote = 'Line 1\nLine 2\r\nLine 3';
-        expect(() => SafeNoteSchema.parse(multilineNote)).not.toThrow();
-      });
+      it("should allow multiline notes", () => {
+        const multilineNote = "Line 1\nLine 2\r\nLine 3"
+        expect(() => SafeNoteSchema.parse(multilineNote)).not.toThrow()
+      })
 
-      it('should use custom fieldName in error messages', () => {
-        const longText = 'a'.repeat(20001);
+      it("should use custom fieldName in error messages", () => {
+        const longText = "a".repeat(20001)
         try {
-          SafeNoteSchema.parse(longText);
-          throw new Error('Should have thrown');
+          SafeNoteSchema.parse(longText)
+          throw new Error("Should have thrown")
         } catch (error) {
-          expect((error as Error).message).toContain('Note');
+          expect((error as Error).message).toContain("Note")
         }
-      });
-    });
+      })
+    })
 
-    describe('RequiredListNameSchema', () => {
-      it('should validate required list names', () => {
-        expect(() => RequiredListNameSchema.parse('Work')).not.toThrow();
-        expect(() => RequiredListNameSchema.parse('Personal')).not.toThrow();
-      });
+    describe("RequiredListNameSchema", () => {
+      it("should validate required list names", () => {
+        expect(() => RequiredListNameSchema.parse("Work")).not.toThrow()
+        expect(() => RequiredListNameSchema.parse("Personal")).not.toThrow()
+      })
 
-      it('should reject empty list names', () => {
-        expect(() => RequiredListNameSchema.parse('')).toThrow();
-      });
+      it("should reject empty list names", () => {
+        expect(() => RequiredListNameSchema.parse("")).toThrow()
+      })
 
-      it('should reject list names that are too long', () => {
-        const longName = 'a'.repeat(101);
-        expect(() => RequiredListNameSchema.parse(longName)).toThrow();
-      });
-    });
+      it("should reject list names that are too long", () => {
+        const longName = "a".repeat(101)
+        expect(() => RequiredListNameSchema.parse(longName)).toThrow()
+      })
+    })
 
-    describe('SafeDateSchema', () => {
-      it('should validate ISO date formats', () => {
-        expect(() => SafeDateSchema.parse('2024-01-15')).not.toThrow();
-        expect(() => SafeDateSchema.parse('2024-01-15 10:30:00')).not.toThrow();
-        expect(() =>
-          SafeDateSchema.parse('2024-01-15T10:30:00Z'),
-        ).not.toThrow();
-      });
+    describe("SafeDateSchema", () => {
+      it("should validate ISO date formats", () => {
+        expect(() => SafeDateSchema.parse("2024-01-15")).not.toThrow()
+        expect(() => SafeDateSchema.parse("2024-01-15 10:30:00")).not.toThrow()
+        expect(() => SafeDateSchema.parse("2024-01-15T10:30:00Z")).not.toThrow()
+      })
 
-      it('should accept undefined dates', () => {
-        expect(() => SafeDateSchema.parse(undefined)).not.toThrow();
-      });
+      it("should accept undefined dates", () => {
+        expect(() => SafeDateSchema.parse(undefined)).not.toThrow()
+      })
 
-      it('should reject invalid date formats', () => {
-        expect(() => SafeDateSchema.parse('01/15/2024')).toThrow();
-        expect(() => SafeDateSchema.parse('not-a-date')).toThrow();
+      it("should reject invalid date formats", () => {
+        expect(() => SafeDateSchema.parse("01/15/2024")).toThrow()
+        expect(() => SafeDateSchema.parse("not-a-date")).toThrow()
         // Note: DATE_PATTERN only checks basic format, doesn't validate date ranges
-        expect(() => SafeDateSchema.parse('2024-13-45')).not.toThrow();
-      });
-    });
+        expect(() => SafeDateSchema.parse("2024-13-45")).not.toThrow()
+      })
+    })
 
-    describe('SafeUrlSchema', () => {
-      it('should validate safe URLs', () => {
-        expect(() => SafeUrlSchema.parse('https://example.com')).not.toThrow();
-        expect(() =>
-          SafeUrlSchema.parse('https://api.example.com/v1/users'),
-        ).not.toThrow();
-      });
+    describe("SafeUrlSchema", () => {
+      it("should validate safe URLs", () => {
+        expect(() => SafeUrlSchema.parse("https://example.com")).not.toThrow()
+        expect(() => SafeUrlSchema.parse("https://api.example.com/v1/users")).not.toThrow()
+      })
 
-      it('should accept undefined URLs', () => {
-        expect(() => SafeUrlSchema.parse(undefined)).not.toThrow();
-      });
+      it("should accept undefined URLs", () => {
+        expect(() => SafeUrlSchema.parse(undefined)).not.toThrow()
+      })
 
-      it('should reject URLs that are too long', () => {
-        const longUrl = `https://example.com/${'a'.repeat(500)}`;
-        expect(() => SafeUrlSchema.parse(longUrl)).toThrow();
-      });
+      it("should reject URLs that are too long", () => {
+        const longUrl = `https://example.com/${"a".repeat(500)}`
+        expect(() => SafeUrlSchema.parse(longUrl)).toThrow()
+      })
 
-      it('should reject private/internal URLs', () => {
-        expect(() => SafeUrlSchema.parse('http://127.0.0.1')).toThrow();
-        expect(() => SafeUrlSchema.parse('http://192.168.1.1')).toThrow();
-        expect(() => SafeUrlSchema.parse('http://10.0.0.1')).toThrow();
-        expect(() => SafeUrlSchema.parse('http://localhost')).toThrow();
-      });
+      it("should reject private/internal URLs", () => {
+        expect(() => SafeUrlSchema.parse("http://127.0.0.1")).toThrow()
+        expect(() => SafeUrlSchema.parse("http://192.168.1.1")).toThrow()
+        expect(() => SafeUrlSchema.parse("http://10.0.0.1")).toThrow()
+        expect(() => SafeUrlSchema.parse("http://localhost")).toThrow()
+      })
 
-      it('should reject invalid URL formats', () => {
-        expect(() => SafeUrlSchema.parse('not-a-url')).toThrow();
-        expect(() => SafeUrlSchema.parse('ftp://example.com')).toThrow();
-      });
+      it("should reject invalid URL formats", () => {
+        expect(() => SafeUrlSchema.parse("not-a-url")).toThrow()
+        expect(() => SafeUrlSchema.parse("ftp://example.com")).toThrow()
+      })
 
-      describe('SSRF Protection', () => {
-        describe('IPv4 loopback protection', () => {
-          it('should block 127.0.0.1', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://127.0.0.1/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('https://127.0.0.1/api'),
-            ).toThrow();
-          });
+      describe("SSRF Protection", () => {
+        describe("IPv4 loopback protection", () => {
+          it("should block 127.0.0.1", () => {
+            expect(() => SafeUrlSchema.parse("http://127.0.0.1/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("https://127.0.0.1/api")).toThrow()
+          })
 
-          it('should block 127.0.0.1 with port', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://127.0.0.1:8080/admin'),
-            ).toThrow();
-          });
+          it("should block 127.0.0.1 with port", () => {
+            expect(() => SafeUrlSchema.parse("http://127.0.0.1:8080/admin")).toThrow()
+          })
 
-          it('should block 127.0.1.1 (Debian/Ubuntu default)', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://127.0.1.1/admin'),
-            ).toThrow();
-          });
+          it("should block 127.0.1.1 (Debian/Ubuntu default)", () => {
+            expect(() => SafeUrlSchema.parse("http://127.0.1.1/admin")).toThrow()
+          })
 
-          it('should block entire 127.0.0.0/8 range', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://127.1.1.1/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://127.255.255.255/admin'),
-            ).toThrow();
-          });
-        });
+          it("should block entire 127.0.0.0/8 range", () => {
+            expect(() => SafeUrlSchema.parse("http://127.1.1.1/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://127.255.255.255/admin")).toThrow()
+          })
+        })
 
-        describe('IPv6 loopback protection', () => {
-          it('should block ::1 without brackets', () => {
-            expect(() => SafeUrlSchema.parse('http://::1/admin')).toThrow();
-          });
+        describe("IPv6 loopback protection", () => {
+          it("should block ::1 without brackets", () => {
+            expect(() => SafeUrlSchema.parse("http://::1/admin")).toThrow()
+          })
 
-          it('should block ::1 with brackets', () => {
-            expect(() => SafeUrlSchema.parse('http://[::1]/admin')).toThrow();
-          });
+          it("should block ::1 with brackets", () => {
+            expect(() => SafeUrlSchema.parse("http://[::1]/admin")).toThrow()
+          })
 
-          it('should block ::1 with port', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[::1]:8080/admin'),
-            ).toThrow();
-          });
+          it("should block ::1 with port", () => {
+            expect(() => SafeUrlSchema.parse("http://[::1]:8080/admin")).toThrow()
+          })
 
-          it('should block :: (unspecified address)', () => {
-            expect(() => SafeUrlSchema.parse('http://::/admin')).toThrow();
-            expect(() => SafeUrlSchema.parse('http://[::]/admin')).toThrow();
-          });
+          it("should block :: (unspecified address)", () => {
+            expect(() => SafeUrlSchema.parse("http://::/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://[::]/admin")).toThrow()
+          })
 
-          it('should block 0:0:0:0:0:0:0:1 (full ::1)', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[0:0:0:0:0:0:0:1]/admin'),
-            ).toThrow();
-          });
-        });
+          it("should block 0:0:0:0:0:0:0:1 (full ::1)", () => {
+            expect(() => SafeUrlSchema.parse("http://[0:0:0:0:0:0:0:1]/admin")).toThrow()
+          })
+        })
 
-        describe('Cloud metadata endpoint protection', () => {
-          it('should block AWS metadata endpoint', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://169.254.169.254/latest/meta-data/'),
-            ).toThrow();
-          });
+        describe("Cloud metadata endpoint protection", () => {
+          it("should block AWS metadata endpoint", () => {
+            expect(() => SafeUrlSchema.parse("http://169.254.169.254/latest/meta-data/")).toThrow()
+          })
 
-          it('should block AWS metadata endpoint with HTTPS', () => {
-            expect(() =>
-              SafeUrlSchema.parse('https://169.254.169.254/latest/meta-data/'),
-            ).toThrow();
-          });
+          it("should block AWS metadata endpoint with HTTPS", () => {
+            expect(() => SafeUrlSchema.parse("https://169.254.169.254/latest/meta-data/")).toThrow()
+          })
 
-          it('should block Alibaba Cloud metadata endpoint', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://100.100.100.200/latest/meta-data/'),
-            ).toThrow();
-          });
+          it("should block Alibaba Cloud metadata endpoint", () => {
+            expect(() => SafeUrlSchema.parse("http://100.100.100.200/latest/meta-data/")).toThrow()
+          })
 
-          it('should block GCP metadata hostname', () => {
-            expect(() =>
-              SafeUrlSchema.parse(
-                'http://metadata.google.internal/computeMetadata/v1/',
-              ),
-            ).toThrow();
-          });
+          it("should block GCP metadata hostname", () => {
+            expect(() => SafeUrlSchema.parse("http://metadata.google.internal/computeMetadata/v1/")).toThrow()
+          })
 
-          it('should block Azure metadata endpoint', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://169.254.169.254/metadata/instance'),
-            ).toThrow();
-          });
-        });
+          it("should block Azure metadata endpoint", () => {
+            expect(() => SafeUrlSchema.parse("http://169.254.169.254/metadata/instance")).toThrow()
+          })
+        })
 
-        describe('IPv4 link-local protection', () => {
-          it('should block 169.254.1.1', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://169.254.1.1/resource'),
-            ).toThrow();
-          });
+        describe("IPv4 link-local protection", () => {
+          it("should block 169.254.1.1", () => {
+            expect(() => SafeUrlSchema.parse("http://169.254.1.1/resource")).toThrow()
+          })
 
-          it('should block entire 169.254.0.0/16 range', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://169.254.0.1/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://169.254.255.255/admin'),
-            ).toThrow();
-          });
-        });
+          it("should block entire 169.254.0.0/16 range", () => {
+            expect(() => SafeUrlSchema.parse("http://169.254.0.1/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://169.254.255.255/admin")).toThrow()
+          })
+        })
 
-        describe('IPv6 link-local protection', () => {
-          it('should block fe80::1 without brackets', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://fe80::1/resource'),
-            ).toThrow();
-          });
+        describe("IPv6 link-local protection", () => {
+          it("should block fe80::1 without brackets", () => {
+            expect(() => SafeUrlSchema.parse("http://fe80::1/resource")).toThrow()
+          })
 
-          it('should block fe80::1 with brackets', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[fe80::1]/resource'),
-            ).toThrow();
-          });
+          it("should block fe80::1 with brackets", () => {
+            expect(() => SafeUrlSchema.parse("http://[fe80::1]/resource")).toThrow()
+          })
 
-          it('should block entire fe80::/10 range', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[fe80::ffff:ffff:ffff:ffff]/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://[febf::ffff]/admin'),
-            ).toThrow();
-          });
+          it("should block entire fe80::/10 range", () => {
+            expect(() => SafeUrlSchema.parse("http://[fe80::ffff:ffff:ffff:ffff]/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://[febf::ffff]/admin")).toThrow()
+          })
 
-          it('should block fc00::/7 unique local (ULA)', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[fc00::1]/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://[fd00::1]/admin'),
-            ).toThrow();
-          });
-        });
+          it("should block fc00::/7 unique local (ULA)", () => {
+            expect(() => SafeUrlSchema.parse("http://[fc00::1]/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://[fd00::1]/admin")).toThrow()
+          })
+        })
 
-        describe('IPv6 documentation prefix', () => {
-          it('should block 2001:db8::/32 range', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[2001:db8::1]/admin'),
-            ).toThrow();
-          });
-        });
+        describe("IPv6 documentation prefix", () => {
+          it("should block 2001:db8::/32 range", () => {
+            expect(() => SafeUrlSchema.parse("http://[2001:db8::1]/admin")).toThrow()
+          })
+        })
 
-        describe('Private network protection', () => {
-          it('should block 192.168.0.0/16', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://192.168.0.1/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://192.168.255.255/admin'),
-            ).toThrow();
-          });
+        describe("Private network protection", () => {
+          it("should block 192.168.0.0/16", () => {
+            expect(() => SafeUrlSchema.parse("http://192.168.0.1/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://192.168.255.255/admin")).toThrow()
+          })
 
-          it('should block 10.0.0.0/8', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://10.0.0.1/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://10.255.255.255/admin'),
-            ).toThrow();
-          });
+          it("should block 10.0.0.0/8", () => {
+            expect(() => SafeUrlSchema.parse("http://10.0.0.1/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://10.255.255.255/admin")).toThrow()
+          })
 
-          it('should block 172.16.0.0/12', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://172.16.0.1/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://172.31.255.255/admin'),
-            ).toThrow();
-          });
+          it("should block 172.16.0.0/12", () => {
+            expect(() => SafeUrlSchema.parse("http://172.16.0.1/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://172.31.255.255/admin")).toThrow()
+          })
 
-          it('should not block 172.32.0.1 (outside private range)', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://172.32.0.1/admin'),
-            ).not.toThrow();
-          });
-        });
+          it("should not block 172.32.0.1 (outside private range)", () => {
+            expect(() => SafeUrlSchema.parse("http://172.32.0.1/admin")).not.toThrow()
+          })
+        })
 
-        describe('Reserved and special addresses', () => {
-          it('should block 0.0.0.0', () => {
-            expect(() => SafeUrlSchema.parse('http://0.0.0.0/admin')).toThrow();
-          });
+        describe("Reserved and special addresses", () => {
+          it("should block 0.0.0.0", () => {
+            expect(() => SafeUrlSchema.parse("http://0.0.0.0/admin")).toThrow()
+          })
 
-          it('should block 224.0.0.0/4 multicast', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://224.0.0.1/admin'),
-            ).toThrow();
-          });
+          it("should block 224.0.0.0/4 multicast", () => {
+            expect(() => SafeUrlSchema.parse("http://224.0.0.1/admin")).toThrow()
+          })
 
-          it('should block ff00::/8 IPv6 multicast', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://[ff00::1]/admin'),
-            ).toThrow();
-          });
-        });
+          it("should block ff00::/8 IPv6 multicast", () => {
+            expect(() => SafeUrlSchema.parse("http://[ff00::1]/admin")).toThrow()
+          })
+        })
 
-        describe('Public URLs allowed', () => {
-          it('should allow example.com', () => {
-            expect(() =>
-              SafeUrlSchema.parse('https://example.com/page'),
-            ).not.toThrow();
-          });
+        describe("Public URLs allowed", () => {
+          it("should allow example.com", () => {
+            expect(() => SafeUrlSchema.parse("https://example.com/page")).not.toThrow()
+          })
 
-          it('should allow api.example.com subdomain', () => {
-            expect(() =>
-              SafeUrlSchema.parse('https://api.example.com/v1/users'),
-            ).not.toThrow();
-          });
+          it("should allow api.example.com subdomain", () => {
+            expect(() => SafeUrlSchema.parse("https://api.example.com/v1/users")).not.toThrow()
+          })
 
-          it('should allow public IP addresses', () => {
-            expect(() =>
-              SafeUrlSchema.parse('https://1.1.1.1/api'),
-            ).not.toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('https://8.8.8.8/resolve'),
-            ).not.toThrow();
-          });
+          it("should allow public IP addresses", () => {
+            expect(() => SafeUrlSchema.parse("https://1.1.1.1/api")).not.toThrow()
+            expect(() => SafeUrlSchema.parse("https://8.8.8.8/resolve")).not.toThrow()
+          })
 
-          it('should allow IPv6 public addresses', () => {
-            expect(() =>
-              SafeUrlSchema.parse(
-                'https://[2606:2800:220:1:248:1893:25c8:1946]/',
-              ),
-            ).not.toThrow();
-          });
+          it("should allow IPv6 public addresses", () => {
+            expect(() => SafeUrlSchema.parse("https://[2606:2800:220:1:248:1893:25c8:1946]/")).not.toThrow()
+          })
 
-          it('should allow URLs with paths and query strings', () => {
-            expect(() =>
-              SafeUrlSchema.parse('https://example.com/api/v1/users?limit=10'),
-            ).not.toThrow();
-          });
+          it("should allow URLs with paths and query strings", () => {
+            expect(() => SafeUrlSchema.parse("https://example.com/api/v1/users?limit=10")).not.toThrow()
+          })
 
-          it('should allow URLs with ports', () => {
-            expect(() =>
-              SafeUrlSchema.parse('https://example.com:8443/api'),
-            ).not.toThrow();
-          });
-        });
+          it("should allow URLs with ports", () => {
+            expect(() => SafeUrlSchema.parse("https://example.com:8443/api")).not.toThrow()
+          })
+        })
 
-        describe('Hostname-based bypass protection', () => {
-          it('should block localhost', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://localhost/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('https://localhost:3000/api'),
-            ).toThrow();
-          });
+        describe("Hostname-based bypass protection", () => {
+          it("should block localhost", () => {
+            expect(() => SafeUrlSchema.parse("http://localhost/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("https://localhost:3000/api")).toThrow()
+          })
 
-          it('should block localhost.localdomain', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://localhost.localdomain/admin'),
-            ).toThrow();
-          });
+          it("should block localhost.localdomain", () => {
+            expect(() => SafeUrlSchema.parse("http://localhost.localdomain/admin")).toThrow()
+          })
 
-          it('should block local.internal variants', () => {
-            expect(() => SafeUrlSchema.parse('http://local/admin')).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://internal/admin'),
-            ).toThrow();
-          });
-        });
+          it("should block local.internal variants", () => {
+            expect(() => SafeUrlSchema.parse("http://local/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://internal/admin")).toThrow()
+          })
+        })
 
-        describe('Protocol restrictions', () => {
-          it('should reject non-HTTP protocols', () => {
-            expect(() => SafeUrlSchema.parse('file:///etc/passwd')).toThrow();
-            expect(() => SafeUrlSchema.parse('ftp://example.com')).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('jar:http://evil.com!/'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('dict://127.0.0.1:11211/'),
-            ).toThrow();
-          });
+        describe("Protocol restrictions", () => {
+          it("should reject non-HTTP protocols", () => {
+            expect(() => SafeUrlSchema.parse("file:///etc/passwd")).toThrow()
+            expect(() => SafeUrlSchema.parse("ftp://example.com")).toThrow()
+            expect(() => SafeUrlSchema.parse("jar:http://evil.com!/")).toThrow()
+            expect(() => SafeUrlSchema.parse("dict://127.0.0.1:11211/")).toThrow()
+          })
 
-          it('should only allow http and https', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://example.com'),
-            ).not.toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('https://example.com'),
-            ).not.toThrow();
-          });
-        });
+          it("should only allow http and https", () => {
+            expect(() => SafeUrlSchema.parse("http://example.com")).not.toThrow()
+            expect(() => SafeUrlSchema.parse("https://example.com")).not.toThrow()
+          })
+        })
 
-        describe('URL encoding bypass attempts', () => {
-          it('should reject URL-encoded localhost variants', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://%6C%6F%63%61%6C%68%6F%73%74/admin'),
-            ).toThrow();
-            expect(() =>
-              SafeUrlSchema.parse('http://l%6Fcalhost/admin'),
-            ).toThrow();
-          });
+        describe("URL encoding bypass attempts", () => {
+          it("should reject URL-encoded localhost variants", () => {
+            expect(() => SafeUrlSchema.parse("http://%6C%6F%63%61%6C%68%6F%73%74/admin")).toThrow()
+            expect(() => SafeUrlSchema.parse("http://l%6Fcalhost/admin")).toThrow()
+          })
 
-          it('should reject URL-encoded IP addresses', () => {
-            expect(() =>
-              SafeUrlSchema.parse('http://127%2E0%2E0%2E1/admin'),
-            ).toThrow();
-          });
-        });
-      });
-    });
-  });
+          it("should reject URL-encoded IP addresses", () => {
+            expect(() => SafeUrlSchema.parse("http://127%2E0%2E0%2E1/admin")).toThrow()
+          })
+        })
+      })
+    })
+  })
 
-  describe('Tool-specific schemas', () => {
-    describe('Tag validation', () => {
-      it('allows tags with optional leading #', () => {
+  describe("Tool-specific schemas", () => {
+    describe("Tag validation", () => {
+      it("allows tags with optional leading #", () => {
         expect(() =>
           CreateReminderSchema.parse({
-            title: 'Tagged reminder',
-            tags: ['work', '#urgent'],
+            title: "Tagged reminder",
+            tags: ["work", "#urgent"],
           }),
-        ).not.toThrow();
-      });
-    });
+        ).not.toThrow()
+      })
+    })
 
-    describe('Action schemas validation patterns', () => {
+    describe("Action schemas validation patterns", () => {
       const testCases = [
         {
-          name: 'CreateReminderSchema',
+          name: "CreateReminderSchema",
           schema: CreateReminderSchema,
           validInput: {
-            title: 'Test reminder',
-            dueDate: '2024-01-15',
-            note: 'Test note',
-            url: 'https://example.com',
-            targetList: 'Work',
+            title: "Test reminder",
+            dueDate: "2024-01-15",
+            note: "Test note",
+            url: "https://example.com",
+            targetList: "Work",
           },
-          minimalInput: { title: 'Test reminder' },
-          requiredFields: ['title'],
+          minimalInput: { title: "Test reminder" },
+          requiredFields: ["title"],
         },
         {
-          name: 'UpdateReminderSchema',
+          name: "UpdateReminderSchema",
           schema: UpdateReminderSchema,
           validInput: {
-            id: '123',
-            title: 'Updated title',
-            dueDate: '2024-01-15',
-            note: 'Updated note',
-            url: 'https://example.com',
+            id: "123",
+            title: "Updated title",
+            dueDate: "2024-01-15",
+            note: "Updated note",
+            url: "https://example.com",
             completed: false,
-            targetList: 'Work',
+            targetList: "Work",
           },
-          minimalInput: { id: '123' },
-          requiredFields: ['id'],
+          minimalInput: { id: "123" },
+          requiredFields: ["id"],
         },
         {
-          name: 'DeleteReminderSchema',
+          name: "DeleteReminderSchema",
           schema: DeleteReminderSchema,
-          validInput: { id: '123' },
-          minimalInput: { id: '123' },
-          requiredFields: ['id'],
+          validInput: { id: "123" },
+          minimalInput: { id: "123" },
+          requiredFields: ["id"],
         },
         {
-          name: 'CreateReminderListSchema',
+          name: "CreateReminderListSchema",
           schema: CreateReminderListSchema,
-          validInput: { name: 'New List' },
-          minimalInput: { name: 'New List' },
-          requiredFields: ['name'],
+          validInput: { name: "New List" },
+          minimalInput: { name: "New List" },
+          requiredFields: ["name"],
         },
-      ];
+      ]
 
       for (const { name, schema, validInput, minimalInput, requiredFields } of testCases) {
         describe(name, () => {
-          it('validates full input', () => {
-            expect(() => schema.parse(validInput)).not.toThrow();
-          });
+          it("validates full input", () => {
+            expect(() => schema.parse(validInput)).not.toThrow()
+          })
 
-          it('validates minimal input with only required fields', () => {
-            expect(() => schema.parse(minimalInput)).not.toThrow();
-          });
+          it("validates minimal input with only required fields", () => {
+            expect(() => schema.parse(minimalInput)).not.toThrow()
+          })
 
-          it('rejects input missing required fields', () => {
+          it("rejects input missing required fields", () => {
             for (const field of requiredFields) {
-              const invalidInput = { ...minimalInput } as Record<string, unknown>;
-              delete invalidInput[field];
-              expect(() => schema.parse(invalidInput)).toThrow();
+              const invalidInput = { ...minimalInput } as Record<string, unknown>
+              delete invalidInput[field]
+              expect(() => schema.parse(invalidInput)).toThrow()
             }
-          });
-        });
+          })
+        })
       }
-    });
+    })
 
-    describe('Reminders schema alignment', () => {
-      it('CreateReminderSchema keeps EventKit-aligned fields', () => {
+    describe("Reminders schema alignment", () => {
+      it("CreateReminderSchema keeps EventKit-aligned fields", () => {
         const parsed = CreateReminderSchema.parse({
-          title: 'Aligned reminder',
-          startDate: '2024-01-15T09:00:00Z',
-          dueDate: '2024-01-15T10:00:00Z',
-          location: 'Office',
+          title: "Aligned reminder",
+          startDate: "2024-01-15T09:00:00Z",
+          dueDate: "2024-01-15T10:00:00Z",
+          location: "Office",
           alarms: [{ relativeOffset: -900 }],
-          recurrenceRules: [
-            { frequency: 'weekly', interval: 1, daysOfWeek: [2, 4] },
-          ],
-        }) as Record<string, unknown>;
+          recurrenceRules: [{ frequency: "weekly", interval: 1, daysOfWeek: [2, 4] }],
+        }) as Record<string, unknown>
 
-        expect(parsed.startDate).toBe('2024-01-15T09:00:00Z');
-        expect(parsed.location).toBe('Office');
-        expect(parsed.alarms).toEqual([{ relativeOffset: -900 }]);
-        expect(parsed.recurrenceRules).toEqual([
-          { frequency: 'weekly', interval: 1, daysOfWeek: [2, 4] },
-        ]);
-      });
+        expect(parsed.startDate).toBe("2024-01-15T09:00:00Z")
+        expect(parsed.location).toBe("Office")
+        expect(parsed.alarms).toEqual([{ relativeOffset: -900 }])
+        expect(parsed.recurrenceRules).toEqual([{ frequency: "weekly", interval: 1, daysOfWeek: [2, 4] }])
+      })
 
-      it('UpdateReminderSchema keeps completionDate and other aligned fields', () => {
+      it("UpdateReminderSchema keeps completionDate and other aligned fields", () => {
         const parsed = UpdateReminderSchema.parse({
-          id: 'rem-1',
+          id: "rem-1",
           completed: true,
-          completionDate: '2024-01-16T10:00:00Z',
-          startDate: '2024-01-15T09:00:00Z',
-          dueDate: '2024-01-15T10:00:00Z',
-          location: 'Office',
-          alarms: [{ absoluteDate: '2024-01-15T10:15:00Z' }],
-          recurrenceRules: [
-            { frequency: 'monthly', interval: 1, daysOfMonth: [1, 15] },
-          ],
-        }) as Record<string, unknown>;
+          completionDate: "2024-01-16T10:00:00Z",
+          startDate: "2024-01-15T09:00:00Z",
+          dueDate: "2024-01-15T10:00:00Z",
+          location: "Office",
+          alarms: [{ absoluteDate: "2024-01-15T10:15:00Z" }],
+          recurrenceRules: [{ frequency: "monthly", interval: 1, daysOfMonth: [1, 15] }],
+        }) as Record<string, unknown>
 
-        expect(parsed.completionDate).toBe('2024-01-16T10:00:00Z');
-        expect(parsed.startDate).toBe('2024-01-15T09:00:00Z');
-        expect(parsed.location).toBe('Office');
-        expect(parsed.alarms).toEqual([
-          { absoluteDate: '2024-01-15T10:15:00Z' },
-        ]);
-        expect(parsed.recurrenceRules).toEqual([
-          { frequency: 'monthly', interval: 1, daysOfMonth: [1, 15] },
-        ]);
-      });
-    });
+        expect(parsed.completionDate).toBe("2024-01-16T10:00:00Z")
+        expect(parsed.startDate).toBe("2024-01-15T09:00:00Z")
+        expect(parsed.location).toBe("Office")
+        expect(parsed.alarms).toEqual([{ absoluteDate: "2024-01-15T10:15:00Z" }])
+        expect(parsed.recurrenceRules).toEqual([{ frequency: "monthly", interval: 1, daysOfMonth: [1, 15] }])
+      })
+    })
 
-    describe('Calendar schema alignment', () => {
-      it('CreateCalendarEventSchema keeps alarms/recurrenceRules/availability/structuredLocation', () => {
+    describe("Calendar schema alignment", () => {
+      it("CreateCalendarEventSchema keeps alarms/recurrenceRules/availability/structuredLocation", () => {
         const parsed = CreateCalendarEventSchema.parse({
-          title: 'Aligned event',
-          startDate: '2025-11-04T09:00:00+08:00',
-          endDate: '2025-11-04T10:00:00+08:00',
-          availability: 'busy',
+          title: "Aligned event",
+          startDate: "2025-11-04T09:00:00+08:00",
+          endDate: "2025-11-04T10:00:00+08:00",
+          availability: "busy",
           alarms: [{ relativeOffset: -1800 }],
-          recurrenceRules: [
-            { frequency: 'weekly', interval: 1, daysOfWeek: [2] },
-          ],
-          structuredLocation: { title: 'Office', latitude: 1, longitude: 2 },
-        }) as Record<string, unknown>;
+          recurrenceRules: [{ frequency: "weekly", interval: 1, daysOfWeek: [2] }],
+          structuredLocation: { title: "Office", latitude: 1, longitude: 2 },
+        }) as Record<string, unknown>
 
-        expect(parsed.availability).toBe('busy');
-        expect(parsed.alarms).toEqual([{ relativeOffset: -1800 }]);
-        expect(parsed.recurrenceRules).toEqual([
-          { frequency: 'weekly', interval: 1, daysOfWeek: [2] },
-        ]);
+        expect(parsed.availability).toBe("busy")
+        expect(parsed.alarms).toEqual([{ relativeOffset: -1800 }])
+        expect(parsed.recurrenceRules).toEqual([{ frequency: "weekly", interval: 1, daysOfWeek: [2] }])
         expect(parsed.structuredLocation).toEqual({
-          title: 'Office',
+          title: "Office",
           latitude: 1,
           longitude: 2,
-        });
-      });
+        })
+      })
 
-      it('UpdateCalendarEventSchema keeps span for recurring changes', () => {
+      it("UpdateCalendarEventSchema keeps span for recurring changes", () => {
         const parsed = UpdateCalendarEventSchema.parse({
-          id: 'evt-1',
-          span: 'future-events',
-        }) as Record<string, unknown>;
-        expect(parsed.span).toBe('future-events');
-      });
+          id: "evt-1",
+          span: "future-events",
+        }) as Record<string, unknown>
+        expect(parsed.span).toBe("future-events")
+      })
 
-      it('UpdateCalendarEventSchema allows clearing structuredLocation', () => {
+      it("UpdateCalendarEventSchema allows clearing structuredLocation", () => {
         const parsed = UpdateCalendarEventSchema.parse({
-          id: 'evt-1',
+          id: "evt-1",
           structuredLocation: null,
-        }) as Record<string, unknown>;
+        }) as Record<string, unknown>
 
-        expect(parsed.structuredLocation).toBeNull();
-      });
+        expect(parsed.structuredLocation).toBeNull()
+      })
 
-      it('DeleteCalendarEventSchema keeps span for recurring deletes', () => {
+      it("DeleteCalendarEventSchema keeps span for recurring deletes", () => {
         const parsed = DeleteCalendarEventSchema.parse({
-          id: 'evt-1',
-          span: 'future-events',
-        }) as Record<string, unknown>;
-        expect(parsed.span).toBe('future-events');
-      });
+          id: "evt-1",
+          span: "future-events",
+        }) as Record<string, unknown>
+        expect(parsed.span).toBe("future-events")
+      })
 
-      it('ReadCalendarEventsSchema keeps availability filter', () => {
+      it("ReadCalendarEventsSchema keeps availability filter", () => {
         const parsed = ReadCalendarEventsSchema.parse({
-          availability: 'free',
-        }) as Record<string, unknown>;
-        expect(parsed.availability).toBe('free');
-      });
-    });
+          availability: "free",
+        }) as Record<string, unknown>
+        expect(parsed.availability).toBe("free")
+      })
+    })
 
-    describe('ReadRemindersSchema', () => {
-      it('should validate read reminders input with all optional fields', () => {
+    describe("ReadRemindersSchema", () => {
+      it("should validate read reminders input with all optional fields", () => {
         const validInput = {
-          id: '123',
-          filterList: 'Work',
+          id: "123",
+          filterList: "Work",
           showCompleted: true,
-          search: 'meeting',
-          dueWithin: 'today',
-        };
+          search: "meeting",
+          dueWithin: "today",
+        }
 
-        expect(() => ReadRemindersSchema.parse(validInput)).not.toThrow();
-        expect(() => ReadRemindersSchema.parse({})).not.toThrow();
-      });
-    });
+        expect(() => ReadRemindersSchema.parse(validInput)).not.toThrow()
+        expect(() => ReadRemindersSchema.parse({})).not.toThrow()
+      })
+    })
 
-    describe('UpdateReminderListSchema', () => {
-      it('should validate update list input with both required fields', () => {
+    describe("UpdateReminderListSchema", () => {
+      it("should validate update list input with both required fields", () => {
         const validInput = {
-          name: 'Old Name',
-          newName: 'New Name',
-        };
+          name: "Old Name",
+          newName: "New Name",
+        }
 
-        expect(() => UpdateReminderListSchema.parse(validInput)).not.toThrow();
-        expect(() => UpdateReminderListSchema.parse({ name: 'Old' })).toThrow();
-        expect(() =>
-          UpdateReminderListSchema.parse({ newName: 'New' }),
-        ).toThrow();
-      });
-    });
-  });
+        expect(() => UpdateReminderListSchema.parse(validInput)).not.toThrow()
+        expect(() => UpdateReminderListSchema.parse({ name: "Old" })).toThrow()
+        expect(() => UpdateReminderListSchema.parse({ newName: "New" })).toThrow()
+      })
+    })
+  })
 
-  describe('validateInput', () => {
-    it('should return parsed data for valid input', () => {
-      const schema = z.object({ name: z.string(), age: z.number() });
-      const input = { name: 'John', age: 30 };
+  describe("validateInput", () => {
+    it("should return parsed data for valid input", () => {
+      const schema = z.object({ name: z.string(), age: z.number() })
+      const input = { name: "John", age: 30 }
 
-      const result = validateInput(schema, input);
+      const result = validateInput(schema, input)
 
-      expect(result).toEqual(input);
-    });
+      expect(result).toEqual(input)
+    })
 
-    it('should throw ValidationError for invalid input', () => {
-      const schema = z.object({ name: z.string(), age: z.number() });
-      const input = { name: 'John', age: 'thirty' };
+    it("should throw ValidationError for invalid input", () => {
+      const schema = z.object({ name: z.string(), age: z.number() })
+      const input = { name: "John", age: "thirty" }
 
-      expect(() => validateInput(schema, input)).toThrow(ValidationError);
-    });
+      expect(() => validateInput(schema, input)).toThrow(ValidationError)
+    })
 
-    it('should include detailed error information', () => {
+    it("should include detailed error information", () => {
       const schema = z.object({
         name: z.string().min(2),
         age: z.number().min(0),
         email: z.string().email(),
-      });
-      const input = { name: 'J', age: -5, email: 'invalid-email' };
+      })
+      const input = { name: "J", age: -5, email: "invalid-email" }
 
       try {
-        validateInput(schema, input);
-        throw new Error('Should have thrown ValidationError');
+        validateInput(schema, input)
+        throw new Error("Should have thrown ValidationError")
       } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        const validationError = error as ValidationError;
-        expect(validationError.details).toBeDefined();
-        expect(
-          Object.keys(validationError.details as Record<string, string[]>),
-        ).toHaveLength(3);
+        expect(error).toBeInstanceOf(ValidationError)
+        const validationError = error as ValidationError
+        expect(validationError.details).toBeDefined()
+        expect(Object.keys(validationError.details as Record<string, string[]>)).toHaveLength(3)
       }
-    });
+    })
 
-    it('should handle ValidationError instances specially', () => {
-      const schema = SafeTextSchema;
-      const input = ''; // Invalid: empty string
+    it("should handle ValidationError instances specially", () => {
+      const schema = SafeTextSchema
+      const input = "" // Invalid: empty string
 
       try {
-        validateInput(schema, input);
-        throw new Error('Should have thrown ValidationError');
+        validateInput(schema, input)
+        throw new Error("Should have thrown ValidationError")
       } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        expect((error as Error).message).toContain('cannot be empty');
+        expect(error).toBeInstanceOf(ValidationError)
+        expect((error as Error).message).toContain("cannot be empty")
       }
-    });
-  });
+    })
+  })
 
-  describe('ValidationError', () => {
-    it('should create error with message', () => {
-      const error = new ValidationError('Test validation error');
+  describe("ValidationError", () => {
+    it("should create error with message", () => {
+      const error = new ValidationError("Test validation error")
 
-      expect(error.message).toBe('Test validation error');
-      expect(error.name).toBe('ValidationError');
-    });
+      expect(error.message).toBe("Test validation error")
+      expect(error.name).toBe("ValidationError")
+    })
 
-    it('should create error with message and details', () => {
-      const details = { field1: ['Required'], field2: ['Invalid format'] };
-      const error = new ValidationError('Validation failed', details);
+    it("should create error with message and details", () => {
+      const details = { field1: ["Required"], field2: ["Invalid format"] }
+      const error = new ValidationError("Validation failed", details)
 
-      expect(error.message).toBe('Validation failed');
-      expect(error.details).toBe(details);
-    });
+      expect(error.message).toBe("Validation failed")
+      expect(error.details).toBe(details)
+    })
 
-    it('should handle undefined details', () => {
-      const error = new ValidationError('Test error');
+    it("should handle undefined details", () => {
+      const error = new ValidationError("Test error")
 
-      expect(error.details).toBeUndefined();
-    });
-  });
+      expect(error.details).toBeUndefined()
+    })
+  })
 
-  describe('validateInput error handling', () => {
-    it('should handle non-ZodError exceptions', () => {
-      const schema = z.object({ name: z.string() });
+  describe("validateInput error handling", () => {
+    it("should handle non-ZodError exceptions", () => {
+      const schema = z.object({ name: z.string() })
       // Save original parse and replace with a mock that throws a non-ZodError
-      const originalParse = schema.parse.bind(schema);
+      const originalParse = schema.parse.bind(schema)
       schema.parse = mock(() => {
-        throw new Error('Unknown error');
-      }) as typeof schema.parse;
+        throw new Error("Unknown error")
+      }) as typeof schema.parse
 
-      expect(() => validateInput(schema, { name: 'test' })).toThrow(
-        ValidationError,
-      );
+      expect(() => validateInput(schema, { name: "test" })).toThrow(ValidationError)
 
       const thrownError = (() => {
         try {
-          validateInput(schema, { name: 'test' });
-          return null;
+          validateInput(schema, { name: "test" })
+          return null
         } catch (error) {
-          return error;
+          return error
         }
-      })();
+      })()
 
-      expect(thrownError).toBeInstanceOf(ValidationError);
-      expect((thrownError as ValidationError).message).toBe(
-        'Input validation failed: Unknown error',
-      );
+      expect(thrownError).toBeInstanceOf(ValidationError)
+      expect((thrownError as ValidationError).message).toBe("Input validation failed: Unknown error")
 
-      schema.parse = originalParse;
-    });
-  });
-});
+      schema.parse = originalParse
+    })
+  })
+})
