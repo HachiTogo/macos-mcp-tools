@@ -1682,20 +1682,24 @@ const normalizeSender = (row: EmailRow) => {
   }
 }
 
-const isExcludedMailbox = (mailboxUrl: string, mailboxName: string, provider: "gmail" | "icloud" | string = "icloud") => {
+// Mailbox names are "/"-separated paths (see getMailboxName). A mailbox is excluded when any
+// segment starts with one of these names, so both top-level "Junk" and nested "[Gmail]/Spam" match.
+const EXCLUDED_MAILBOX_SEGMENTS = [
+  "junk", "spam", "trash", "deleted messages",
+  "sent messages", "sent mail", "drafts", "outbox",
+] as const
+
+export const isExcludedMailbox = (mailboxUrl: string, mailboxName: string, provider: "gmail" | "icloud" | string = "icloud") => {
   const normalized = mailboxName.toLowerCase()
+  const segments = normalized.split("/").map((segment) => segment.trim()).filter(Boolean)
 
-  const excludedFragments = [
-    "/junk", "/spam", "/trash", "deleted messages",
-    "sent messages", "sent mail", "/drafts", "/outbox",
-  ]
-
+  const excluded: string[] = [...EXCLUDED_MAILBOX_SEGMENTS]
   // For non-Gmail accounts, also exclude "all mail" to avoid duplicates
   if (provider !== "gmail") {
-    excludedFragments.push("all mail")
+    excluded.push("all mail")
   }
 
-  return excludedFragments.some((fragment) => normalized.includes(fragment)) || normalized.trim().endsWith("[gmail]")
+  return segments.some((segment) => excluded.some((name) => segment.startsWith(name))) || normalized.trim().endsWith("[gmail]")
 }
 
 const normalizeEmail = (row: EmailRow, providerByAccount: Map<string, "gmail" | "icloud">, config: EmailConfig) => {
@@ -1759,7 +1763,7 @@ const formatEmailLine = (email: NormalizedEmail, index: number) => {
   return `${index + 1}. [${receivedAt}] ${sender} — ${email.subject} (${mailbox})`
 }
 
-const groupEmailsByAccount = (emails: NormalizedEmail[], config: EmailConfig) => {
+export const groupEmailsByAccount = (emails: NormalizedEmail[], config: EmailConfig) => {
   const groups = new Map<string, EmailGroup>()
 
   for (const email of emails) {
@@ -1779,12 +1783,15 @@ const groupEmailsByAccount = (emails: NormalizedEmail[], config: EmailConfig) =>
   }
 
   const order = config.displayOrder
-  return [...groups.values()].sort((left, right) => {
-    const leftIndex = order.indexOf(left.accountLabel)
-    const rightIndex = order.indexOf(right.accountLabel)
-    // Unknown labels sort to end
-    return (leftIndex === -1 ? Infinity : leftIndex) - (rightIndex === -1 ? Infinity : rightIndex)
-  })
+  // Labels missing from displayOrder sort after configured ones, alphabetically. A finite sentinel
+  // avoids Infinity - Infinity = NaN, which made the sort unspecified whenever displayOrder was empty.
+  const rank = (label: string) => {
+    const index = order.indexOf(label)
+    return index === -1 ? Number.MAX_SAFE_INTEGER : index
+  }
+  return [...groups.values()].sort((left, right) =>
+    rank(left.accountLabel) - rank(right.accountLabel) || left.accountLabel.localeCompare(right.accountLabel),
+  )
 }
 
 export const formatEmailsForContent = (emails: NormalizedEmail[], argumentsValue: UnreadEmailArguments, config: EmailConfig) => {
@@ -3174,6 +3181,13 @@ const createSearchEmailResult = async (args: SearchEmailArguments) => {
   }
 }
 
+// Per-item statuses that mean nothing was changed for that email. A batch result is an error only when
+// every item failed; partial success is reported through the per-item statuses instead.
+const FAILED_BATCH_STATUSES: ReadonlySet<string> = new Set(["not_found", "invalid_handle", "error", "no_junk_mailbox", "no_inbox_mailbox"])
+
+export const isBatchFailure = (results: ReadonlyArray<{ status: string }>) =>
+  results.length > 0 && results.every((result) => FAILED_BATCH_STATUSES.has(result.status))
+
 const createMarkEmailsReadResult = async (argumentsValue: MarkEmailsReadArguments) => {
   try {
     const results = markEmailsReadWithJxa(argumentsValue.emails)
@@ -3188,6 +3202,7 @@ const createMarkEmailsReadResult = async (argumentsValue: MarkEmailsReadArgument
       structuredContent: {
         results,
       },
+      ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
@@ -3312,6 +3327,7 @@ const createMarkEmailsJunkResult = async (argumentsValue: MarkEmailsJunkArgument
       structuredContent: {
         results,
       },
+      ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
@@ -3352,6 +3368,7 @@ const createMarkEmailsNotJunkResult = async (argumentsValue: MarkEmailsNotJunkAr
       structuredContent: {
         results,
       },
+      ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
@@ -3392,6 +3409,7 @@ const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments) => {
       structuredContent: {
         results,
       },
+      ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
