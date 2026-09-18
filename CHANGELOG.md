@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-18
+
+### Changed
+- **All servers**: one response contract, defined in `src/lib/mcp-result.ts`. Human-readable text stays as before; every successful response now also carries its payload in `structuredContent` (contacts and notes gained this); every failure is an `isError` result whose text reads `<tool> failed: <message>`. Previously notes and contacts returned the bare error message, messages used `Failed to <verb>: ...`, and events/reminders used `Failed to <operation>: ...`. Agents matching on error text should update.
+- **Events / Reminders**: validation errors are also prefixed with the operation name.
+- Code style is now enforced by Biome (`bun run lint`, `bun run format`); the whole repo was formatted to the documented no-semicolon, double-quote style. CI fails on lint or format drift.
+
+### Added
+- `src/lib/mcp-result.ts` helpers (`textResult`, `jsonResult`, `errorResult`, `runTool`, `errorMessage`) with unit tests.
+- `@biomejs/biome` 2.5.14 as a pinned dev dependency, configured in `biome.jsonc`.
+
 ## [0.3.1] - 2026-09-18
 
 ### Fixed
