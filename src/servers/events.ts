@@ -17,6 +17,7 @@ import {
   UpdateCalendarEventSchema,
 } from "../lib/eventkit/index.js"
 
+import { errorResult } from "../lib/mcp-result.js"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Formatters ────────────────────────────────────────────────────────
@@ -243,7 +244,7 @@ server.registerTool(
         }, "delete calendar event")
 
       default:
-        return { content: [{ type: "text" as const, text: "Unknown action" }], isError: true }
+        return errorResult("calendar_events", new Error(`Unknown action: ${String(args.action)}`))
     }
   },
 )
