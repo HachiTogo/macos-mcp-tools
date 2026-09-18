@@ -7,6 +7,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { runJxa } from "../lib/jxa.js"
+import { errorMessage, runTool, textResult } from "../lib/mcp-result.js"
 import { PACKAGE_VERSION } from "../lib/version"
 
 // ── Constants ─────────────────────────────────────────────────────────
@@ -422,25 +423,11 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ limit }) => {
-    try {
+  async ({ limit }) =>
+    runTool("list_chats", () => {
       const chats = listChats(limit ?? DEFAULT_LIMIT)
-      return {
-        content: [{ type: "text" as const, text: formatChatList(chats) }],
-        structuredContent: { source: SOURCE_NAME, chats },
-      }
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to list chats: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-        isError: true,
-      }
-    }
-  },
+      return textResult(formatChatList(chats), { source: SOURCE_NAME, chats })
+    }),
 )
 
 server.registerTool(
@@ -472,25 +459,11 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ chat_id, limit, from_date, to_date }) => {
-    try {
+  async ({ chat_id, limit, from_date, to_date }) =>
+    runTool("get_messages", () => {
       const messages = getMessages(chat_id, limit ?? DEFAULT_LIMIT, from_date, to_date)
-      return {
-        content: [{ type: "text" as const, text: formatMessages(messages, chat_id) }],
-        structuredContent: { source: SOURCE_NAME, chatId: chat_id, messages },
-      }
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to get messages: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-        isError: true,
-      }
-    }
-  },
+      return textResult(formatMessages(messages, chat_id), { source: SOURCE_NAME, chatId: chat_id, messages })
+    }),
 )
 
 server.registerTool(
@@ -512,25 +485,11 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ query, chat_id, limit }) => {
-    try {
+  async ({ query, chat_id, limit }) =>
+    runTool("search_messages", () => {
       const results = searchMessages(query, limit ?? DEFAULT_LIMIT, chat_id)
-      return {
-        content: [{ type: "text" as const, text: formatSearchResults(results, query) }],
-        structuredContent: { source: SOURCE_NAME, query, results },
-      }
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to search messages: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-        isError: true,
-      }
-    }
-  },
+      return textResult(formatSearchResults(results, query), { source: SOURCE_NAME, query, results })
+    }),
 )
 
 server.registerTool(
@@ -542,25 +501,15 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ chat_id }) => {
-    try {
+  async ({ chat_id }) =>
+    runTool("get_participants", () => {
       const participants = getParticipants(chat_id)
-      return {
-        content: [{ type: "text" as const, text: formatParticipants(participants, chat_id) }],
-        structuredContent: { source: SOURCE_NAME, chatId: chat_id, participants },
-      }
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to get participants: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-        isError: true,
-      }
-    }
-  },
+      return textResult(formatParticipants(participants, chat_id), {
+        source: SOURCE_NAME,
+        chatId: chat_id,
+        participants,
+      })
+    }),
 )
 
 server.registerTool(
@@ -578,20 +527,15 @@ server.registerTool(
     },
   },
   async ({ to, text }) => {
+    let result: SendResult
     try {
-      const result = sendMessage(to, text)
-      return {
-        content: [{ type: "text" as const, text: formatSendResult(result) }],
-        structuredContent: result,
-        ...(result.status === "error" ? { isError: true } : {}),
-      }
+      result = sendMessage(to, text)
     } catch (error) {
-      const result: SendResult = { status: "error", to, detail: error instanceof Error ? error.message : String(error) }
-      return {
-        content: [{ type: "text" as const, text: formatSendResult(result) }],
-        structuredContent: result,
-        isError: true,
-      }
+      result = { status: "error", to, detail: errorMessage(error) }
+    }
+    return {
+      ...textResult(formatSendResult(result), result),
+      ...(result.status === "error" ? { isError: true } : {}),
     }
   },
 )
