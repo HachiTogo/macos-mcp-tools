@@ -41,12 +41,12 @@ flowchart LR
 
 ## Requirements
 
-- macOS
+- macOS 14 (Sonoma) or newer, on Apple Silicon or Intel
 - [Bun](https://bun.sh) 1.0+
 - Optional: `pdftotext` for PDF attachment text extraction
 - Full Disk Access for the host process (required by the mail server to read `~/Library/Mail/V10/MailData/Envelope Index` and by the messages server to read `~/Library/Messages/chat.db`)
 - Automation permission for Mail, Contacts, Notes and Messages; macOS prompts on first use of each
-- Xcode Command Line Tools, only to build the EventKitCLI Swift binary with `bun run build:swift`. Installs from npm ship a prebuilt `bin/EventKitCLI`; a git checkout does not, because the binary is built by CI rather than committed. The prebuilt binary is Apple Silicon (arm64) only; Intel Macs must build their own.
+- Xcode Command Line Tools, only to build the EventKitCLI Swift binary with `bun run build:swift`. Installs from npm ship a prebuilt universal `bin/EventKitCLI` covering both architectures; a git checkout does not, because the binary is built by CI rather than committed.
 
 Install Bun with Homebrew:
 
@@ -136,7 +136,7 @@ for s in mail contacts notes memory messages events reminders; do claude mcp add
 "$(bun pm bin -g)/macos-mcp-tools" doctor
 ```
 
-`doctor` checks everything that has caused "server disconnected" reports: Bun and macOS versions, installed version versus npm, the `EventKitCLI` binary and whether it matches your CPU, Full Disk Access for Mail and Messages, Calendar and Reminders access, `pdftotext`, and every `macos-mcp-tools` entry in your Claude Desktop and Claude Code configs (absolute path, file exists, not launched through `bunx`). Each problem comes with the fix. Exit code is 1 when something failed, so it works in scripts.
+`doctor` checks everything that has caused "server disconnected" reports: Bun and macOS versions (it fails below macOS 14, which `EventKitCLI` requires), installed version versus npm, the `EventKitCLI` binary and whether it matches your CPU, Full Disk Access for Mail and Messages, Calendar and Reminders access, `pdftotext`, and every `macos-mcp-tools` entry in your Claude Desktop and Claude Code configs (absolute path, file exists, not launched through `bunx`). Each problem comes with the fix. Exit code is 1 when something failed, so it works in scripts.
 
 ```text
 @hachitogo/macos-mcp-tools 0.5.0 doctor
@@ -162,6 +162,20 @@ bun pm cache rm && bun install -g @hachitogo/macos-mcp-tools@latest
 ```
 
 Then quit and reopen the host. The cache clear matters: Bun keeps the package manifest it last saw, so for some minutes after a publish `@latest` (and even an exact new version) can resolve to the previous release with no warning. Run `doctor` afterwards; its "Package version" line compares what is installed with npm.
+
+> **Expect a permission prompt after each update.** Calendar and Reminders access is granted to `EventKitCLI`, and macOS identifies it by its code signature. See "The EventKitCLI binary" below for why that changes on every release.
+
+## The EventKitCLI binary
+
+`events` and `reminders` do not use AppleScript. They shell out to `bin/EventKitCLI`, a small Swift program that talks to Apple's EventKit framework directly, because AppleScript cannot express recurrence rules, alarms, structured locations or attendees.
+
+**What ships.** GitHub Actions compiles it from `swift/EventKitCLI.swift` during the release and puts it in the npm tarball, so the binary you install was built from the source in the tagged commit. It is a universal binary (arm64 + x86_64) with a macOS 14 deployment target. Nothing is compiled on your machine at install time.
+
+**How it is signed.** With an ad-hoc signature (`codesign --sign -`) plus Hardened Runtime and an entitlements file. Hardened Runtime is not optional here: without it macOS will not show the Calendar or Reminders permission dialog when the binary runs as a subprocess of a GUI app such as Claude Desktop. The project is not signed with an Apple Developer ID and is not notarized.
+
+**Why macOS asks for permission again after an update.** An ad-hoc signature has no stable identity, so macOS identifies the binary by the hash of its contents. Every release recompiles it, the hash changes, and TCC treats it as a program it has never seen. Grant Calendar and Reminders access again in System Settings → Privacy & Security when prompted. This is a consequence of not having a Developer ID; it is not a bug, and re-granting is safe.
+
+If the prompt does not appear at all, `doctor` reports the Calendar and Reminders permission status and tells you which app to enable.
 
 ## Servers
 

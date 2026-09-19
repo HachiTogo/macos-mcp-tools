@@ -128,5 +128,15 @@ Local `npm publish` is not part of the process and is blocked by the settings ab
 
 ## Requirements
 
-- macOS (required for JXA/AppleScript)
+- macOS 14 or newer (required for JXA/AppleScript, and the floor for `EventKitCLI`)
 - Bun runtime 1.0.0+
+- Xcode Command Line Tools, for `bun run build:swift`
+
+`bun run build:swift` compiles one slice per architecture with an explicit
+`-target <arch>-apple-macos14.0`, lipos them into a universal binary, signs it ad-hoc with
+Hardened Runtime and the entitlements file, then verifies the signature and that both slices are
+present. Hardened Runtime is what lets macOS show the EventKit permission dialog when the binary
+runs under a GUI host. Because the signature is ad-hoc, every rebuild changes the binary's identity
+as far as TCC is concerned, so you will be asked for Calendar and Reminders access again after each
+build. That also applies to users after each release; README explains it under "The EventKitCLI
+binary".
