@@ -9,6 +9,7 @@
   "files": [
     "bin/macos-tools.js",
     "src/cli.ts",
+    "src/doctor.ts",
     "src/lib/jxa.ts",
     "src/lib/version.ts",
     "src/lib/mcp-result.ts",
