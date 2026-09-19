@@ -102,8 +102,9 @@ provenance. CI cannot make a version live on its own.
 Between steps 3 and 4 the GitHub release exists but npm still serves the previous version. Approve
 promptly so the two do not disagree for long.
 
-Re-pushing an existing tag is safe: staging is skipped when that version is already live or already
-awaiting approval.
+Re-pushing a tag whose version is already live is safe; staging is skipped. Re-pushing one that is
+still awaiting approval fails, because a staged version already occupies that version number. Reject
+the staged version first, or bump.
 
 **One-time setup (package owner)**, on npmjs.com under the package's Settings:
 
