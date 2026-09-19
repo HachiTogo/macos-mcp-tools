@@ -81,7 +81,9 @@ bun run test:integration  # Run opt-in integration tests
 
 ## Releasing
 
-Publishing is automated. There is no npm token anywhere; the release workflow authenticates with npm trusted publishing (GitHub OIDC) and publishes with provenance.
+Publishing is automated up to a deliberate human gate. There is no npm token anywhere: the release
+workflow authenticates with npm trusted publishing (GitHub OIDC) and stages the release with
+provenance. CI cannot make a version live on its own.
 
 1. Every merged PR or PR stack bumps `package.json` and adds a CHANGELOG section (see AGENTS.md).
 2. After the merge, tag the merge commit with the same version and push the tag:
@@ -90,11 +92,32 @@ Publishing is automated. There is no npm token anywhere; the release workflow au
    git fetch origin main && git tag -a v0.5.0 origin/main -m "v0.5.0" && git push origin v0.5.0
    ```
 
-3. `.github/workflows/release.yml` verifies the tag matches `package.json`, runs lint, tests, typecheck and integration, packs, publishes to npm with `--provenance`, and creates the GitHub release with the tarball attached. Re-pushing an existing tag is safe: the publish step is skipped when that version is already on npm.
+3. `.github/workflows/release.yml` verifies the tag matches `package.json`, runs lint, tests,
+   typecheck and integration, packs, stages the release on npm with `--provenance`, and creates the
+   GitHub release with the tarball attached. The job summary links to the approval step.
+4. **Approve it.** The staged version is not installable until a maintainer promotes it. On
+   npmjs.com open the package → **Staged Packages** → Approve, or run `npm stage list` and then
+   `npm stage approve <stage-id>`. Either route prompts for 2FA.
 
-**One-time setup (package owner):** on npmjs.com open the package → Settings → Publishing access → Trusted Publisher → GitHub Actions, and enter organization `HachiTogo`, repository `macos-mcp-tools`, workflow filename `release.yml`, environment blank. Until this is done the publish step fails with an authentication error and the GitHub release is not created; nothing is left half-published.
+Between steps 3 and 4 the GitHub release exists but npm still serves the previous version. Approve
+promptly so the two do not disagree for long.
 
-Local `npm publish` is no longer part of the process. If it is ever needed as a fallback, publish the tarball attached to the GitHub release, not a fresh local pack, so npm and GitHub carry identical bytes.
+Re-pushing an existing tag is safe: staging is skipped when that version is already live or already
+awaiting approval.
+
+**One-time setup (package owner)**, on npmjs.com under the package's Settings:
+
+- **Trusted publishing** → GitHub Actions, with organization `HachiTogo`, repository
+  `macos-mcp-tools`, workflow filename `release.yml`, environment blank. Leave direct publishing
+  unchecked so that CI can only stage.
+- **Publishing access** → require two-factor authentication and disallow bypass-2FA tokens. This
+  governs token auth only and does not affect trusted publishing.
+
+Until trusted publishing is configured the staging step fails with a 404 from the registry (npm's
+response for an unauthorized write) and the GitHub release is not created; nothing is left
+half-published.
+
+Local `npm publish` is not part of the process and is blocked by the settings above.
 
 ## Requirements
 

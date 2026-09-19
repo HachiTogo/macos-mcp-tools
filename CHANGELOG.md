@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-09-18
+## [0.5.0] - 2026-09-19
 
 ### Added
 - **`doctor` subcommand** (`macos-mcp-tools doctor`): checks runtime versions, installed version vs npm, the `EventKitCLI` binary and its architecture, Full Disk Access for Mail and Messages, Calendar/Reminders access, `pdftotext`, and every `macos-mcp-tools` entry in Claude Desktop and Claude Code configs (absolute, existing path, not via `bunx`/`npx`). Prints a fix for each problem; exit code 1 on failure.
 
 ### Changed
-- **Release pipeline**: pushing a `v*` tag now publishes to npm from GitHub Actions using trusted publishing (OIDC) with provenance, after verifying the tag matches `package.json` and running the full CI suite. No npm token exists in the repository or on maintainer machines. Re-running a tag skips the publish when that version already exists. See CONTRIBUTING "Releasing" for the one-time npmjs.com setup.
+- **Release pipeline**: pushing a `v*` tag now stages the release on npm from GitHub Actions using trusted publishing (OIDC) with provenance, after verifying the tag matches `package.json` and running the full CI suite. No npm token exists in the repository or on maintainer machines, and CI cannot make a version live: a maintainer promotes the staged version with 2FA from npmjs.com or `npm stage approve`. Re-pushing a tag skips staging when that version is already live or already awaiting approval. See CONTRIBUTING "Releasing" for the one-time npmjs.com setup.
 - **README**: the Updating step now clears Bun's cached package manifest before reinstalling (without it, `@latest` can silently keep the previous release for minutes after a publish) and points to `doctor`.
 
 ## [0.4.1] - 2026-09-18
