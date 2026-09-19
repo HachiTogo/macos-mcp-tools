@@ -42,6 +42,26 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      # Installed before the tests, not just before publishing: `bun test` includes the package
+      # manifest check, which shells out to `npm pack`. Running it under the same npm that packs
+      # and stages below is what makes it a check on the tarball users actually get.
+      # npm >= 11.15.0 is required for staged publishing; Node 24 ships a recent npm and the
+      # explicit upgrade guards against an older bundled copy on the runner image.
+      - name: Install Node for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest && npm --version
+
+      # bin/EventKitCLI is no longer committed, so this step is what puts it in the published
+      # tarball: build:swift compiles, signs and verifies it, and both `npm pack` and
+      # `npm stage publish` below pick it up from the working directory.
+      - name: Build EventKit binary
+        run: bun run build:swift
+
       - name: Lint and format check
         run: bun run lint
 
@@ -53,17 +73,6 @@ jobs:
 
       - name: Run isolated integration tests
         run: bun run test:integration
-
-      # npm >= 11.15.0 is required for staged publishing; Node 24 ships a recent npm and the
-      # explicit upgrade guards against an older bundled copy on the runner image.
-      - name: Install Node for npm publish
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-
-      - name: Upgrade npm
-        run: npm install -g npm@latest && npm --version
 
       # Only used as the GitHub release asset. `npm stage publish` packs the working directory
       # itself and takes no tarball argument, so this tarball is not the one that gets staged;
