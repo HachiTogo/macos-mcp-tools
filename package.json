@@ -12,6 +12,7 @@
     "src/lib/jxa.ts",
     "src/lib/version.ts",
     "src/lib/mcp-result.ts",
+    "src/lib/doctor.ts",
     "src/servers/mail.ts",
     "src/servers/contacts.ts",
     "src/servers/notes.ts",
