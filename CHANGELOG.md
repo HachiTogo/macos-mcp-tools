@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-19
+
+### Changed
+- **`bin/EventKitCLI` is built by CI, not committed.** The binary is now gitignored and produced by `bun run build:swift` during the release workflow, so the published tarball's binary is built from the Swift source in the same commit rather than from whatever a maintainer last compiled locally. Contributors must run `bun run build:swift` once after cloning; `bun test` requires it. **On upgrade, macOS will ask for Calendar and Reminders permission again** — the binary is ad-hoc signed, so a rebuild changes its code signature and macOS treats it as new code.
+- **`package.json` `files` uses globs.** The 26-entry hand-maintained allowlist became `src/**/*.ts` minus tests and integration fixtures, so source files added under `src/` ship without editing `package.json`. The allowlist had already dropped files from a release (0.0.3). The tarball is unchanged by this: the same 33 files ship.
+- **`bun run build:swift` verifies what it produced**, failing if the signature does not validate or the binary reports no architecture.
+
+### Added
+- `src/package-manifest.test.ts`: packs the package and asserts that every tracked non-test source file, the entrypoint, the EventKit binary and the Swift build inputs are in the tarball, and that no test file is. Runs under `bun test`.
+
 ## [0.5.0] - 2026-09-19
 
 ### Added

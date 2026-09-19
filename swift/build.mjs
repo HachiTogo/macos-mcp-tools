@@ -90,9 +90,27 @@ async function main() {
       console.log(csOut)
     }
     console.log("Binary signed with hardened runtime and entitlements.")
-    console.log("Swift binary build complete!")
   } catch (error) {
     console.error("Compilation failed!")
+    console.error(error)
+    process.exit(1)
+  }
+
+  // Verify the artifact rather than run it: every code path in EventKitCLI goes through an
+  // EventKit permission check, which CI runners cannot grant, so "does it launch" is not a
+  // question a workflow can ask. These checks do catch what actually breaks a release build:
+  // a corrupt signature, or a binary compiled for the wrong architecture.
+  try {
+    await execAsync(`codesign --verify --strict "${outputFile}"`)
+    const { stdout: archOut } = await execAsync(`lipo -archs "${outputFile}"`)
+    const architectures = archOut.trim()
+    if (architectures.length === 0) {
+      throw new Error("lipo reported no architectures")
+    }
+    console.log(`Signature verified. Architectures: ${architectures}`)
+    console.log("Swift binary build complete!")
+  } catch (error) {
+    console.error("The binary was built but failed verification!")
     console.error(error)
     process.exit(1)
   }

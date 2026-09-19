@@ -3,3 +3,6 @@ dist/
 *.db
 config/email.json
 config/
+
+# Built by `bun run build:swift`; CI builds it into the npm tarball.
+bin/EventKitCLI

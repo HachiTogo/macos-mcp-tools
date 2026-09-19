@@ -21,6 +21,12 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      # bin/EventKitCLI is no longer committed; every checkout, including this one, builds it.
+      # macos-latest ships swiftc, and build:swift verifies the signature and architecture it
+      # produced. The tests below expect the binary to exist.
+      - name: Build EventKit binary
+        run: bun run build:swift
+
       - name: Lint and format check
         run: bun run lint
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { execFileSync } from "node:child_process"
+import { existsSync } from "node:fs"
 
 // `package.json` `files` uses globs so that source files added under `src/` ship without anyone
 // remembering to update it; a hand-maintained allowlist has already dropped files from a release
@@ -30,16 +31,24 @@ describe("npm package manifest", () => {
     expect(sources.filter((file) => !packed.includes(file))).toEqual([])
   })
 
-  test("ships the entrypoint, the EventKit binary and the Swift build inputs", () => {
+  test("ships the entrypoint and the Swift build inputs", () => {
     const required = [
       "bin/macos-tools.js",
-      "bin/EventKitCLI",
       "swift/EventKitCLI.swift",
       "swift/EventKitCLI.entitlements",
       "swift/Info.plist",
       "swift/build.mjs",
     ]
     expect(required.filter((file) => !packed.includes(file))).toEqual([])
+  })
+
+  // The binary is a build output, not a tracked file, so a checkout that has never run
+  // `bun run build:swift` fails here. Say so, rather than leaving a bare assertion failure.
+  test("ships the EventKit binary", () => {
+    if (!existsSync("bin/EventKitCLI")) {
+      throw new Error("bin/EventKitCLI does not exist. Run `bun run build:swift` first (CI builds it before tests).")
+    }
+    expect(packed).toContain("bin/EventKitCLI")
   })
 
   test("ships no tests or integration fixtures", () => {

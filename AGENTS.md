@@ -4,14 +4,14 @@
 - Bun on macOS only. Entrypoint: `bun run src/cli.ts <mail|contacts|notes|memory|messages|events|reminders>`.
 - `bun test` (single file: `bun test src/servers/mail.test.ts`), `bun run typecheck`, `bun run lint` (Biome; `bun run format` fixes).
 - Opt-in integration: `bun run test:integration`; `test:integration:apps` also hits live Apple apps.
-- `bun run build:swift` builds `bin/EventKitCLI` from `swift/EventKitCLI.swift` (needs `swiftc`); `events` and `reminders` require it.
-- Do not invent extra verification steps. CI runs exactly `bun run lint`, `bun test`, `bun run typecheck`, `bun run test:integration`.
+- `bun run build:swift` builds the untracked `bin/EventKitCLI` (needs `swiftc`); `events`, `reminders` and `bun test` require it.
+- Do not invent extra verification steps. CI builds the binary, then runs exactly `bun run lint`, `bun test`, `bun run typecheck`, `bun run test:integration`.
 
 ## Structure
 - Single package. `src/cli.ts` is the only entrypoint and dynamically imports one stdio MCP server per subcommand.
 - Servers: `src/servers/{mail,contacts,notes,memory,messages,events,reminders}.ts`.
 - Shared JXA helper: `src/lib/jxa.ts`. EventKit bridge: `src/lib/eventkit/`, which shells out to `bin/EventKitCLI`.
-- `package.json` `files` globs `src/**/*.ts`, so new source files ship automatically; `src/package-manifest.test.ts` fails if one does not.
+- `package.json` `files` globs `src/**/*.ts`, so new files ship automatically; `src/package-manifest.test.ts` fails if one does not.
 
 ## Development Guidance
 - Every change lands through a GitHub pull request against `main`. Never push directly to `main`.

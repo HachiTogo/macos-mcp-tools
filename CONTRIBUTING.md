@@ -12,6 +12,11 @@ cd macos-mcp-tools
 # Install dependencies
 bun install
 
+# Build the EventKit binary (needs Xcode Command Line Tools).
+# bin/EventKitCLI is a build output, not a tracked file, so a fresh clone has none
+# and `bun test` fails until you build it once.
+bun run build:swift
+
 # Run tests
 bun test
 
@@ -92,9 +97,10 @@ provenance. CI cannot make a version live on its own.
    git fetch origin main && git tag -a v0.5.0 origin/main -m "v0.5.0" && git push origin v0.5.0
    ```
 
-3. `.github/workflows/release.yml` verifies the tag matches `package.json`, runs lint, tests,
-   typecheck and integration, packs, stages the release on npm with `--provenance`, and creates the
-   GitHub release with the tarball attached. The job summary links to the approval step.
+3. `.github/workflows/release.yml` verifies the tag matches `package.json`, builds and verifies
+   `bin/EventKitCLI` from the tagged Swift source, runs lint, tests, typecheck and integration,
+   packs, stages the release on npm with `--provenance`, and creates the GitHub release with the
+   tarball attached. The job summary links to the approval step.
 4. **Approve it.** The staged version is not installable until a maintainer promotes it. On
    npmjs.com open the package → **Staged Packages** → Approve, or run `npm stage list` and then
    `npm stage approve <stage-id>`. Either route prompts for 2FA.
