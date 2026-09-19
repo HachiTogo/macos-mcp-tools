@@ -11,7 +11,7 @@
 - Single package. `src/cli.ts` is the only entrypoint and dynamically imports one stdio MCP server per subcommand.
 - Servers: `src/servers/{mail,contacts,notes,memory,messages,events,reminders}.ts`.
 - Shared JXA helper: `src/lib/jxa.ts`. EventKit bridge: `src/lib/eventkit/`, which shells out to `bin/EventKitCLI`.
-- `package.json` `files` is an explicit allowlist. Add new source files there or releases will omit them.
+- `package.json` `files` globs `src/**/*.ts`, so new source files ship automatically; `src/package-manifest.test.ts` fails if one does not.
 
 ## Development Guidance
 - Every change lands through a GitHub pull request against `main`. Never push directly to `main`.
