@@ -17,9 +17,23 @@ function trackedSourceFiles(): string[] {
     .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts") && !file.startsWith("src/integration/"))
 }
 
+type PackedTarball = { files?: { path: string }[] }
+
+// npm 11 reports one array entry per tarball; npm 12 reports an object keyed by package name.
+// Contributors run whatever npm they have, so read both rather than pinning the local toolchain,
+// and throw on anything else instead of quietly reporting an empty package.
 function packedFiles(): string[] {
-  const [tarball] = JSON.parse(run("npm", ["pack", "--dry-run", "--json"])) as { files: { path: string }[] }[]
-  return tarball.files.map((file) => file.path)
+  const parsed: unknown = JSON.parse(run("npm", ["pack", "--dry-run", "--json"]))
+  const tarballs: PackedTarball[] = Array.isArray(parsed)
+    ? parsed
+    : Object.values(parsed as Record<string, PackedTarball>)
+  const files = tarballs.flatMap((tarball) => tarball.files ?? [])
+  if (files.length === 0) {
+    throw new Error(
+      `npm pack --dry-run --json (npm ${run("npm", ["--version"]).trim()}) listed no files; its output shape may have changed again`,
+    )
+  }
+  return files.map((file) => file.path)
 }
 
 describe("npm package manifest", () => {

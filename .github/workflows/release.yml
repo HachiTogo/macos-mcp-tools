@@ -45,16 +45,19 @@ jobs:
       # Installed before the tests, not just before publishing: `bun test` includes the package
       # manifest check, which shells out to `npm pack`. Running it under the same npm that packs
       # and stages below is what makes it a check on the tarball users actually get.
-      # npm >= 11.15.0 is required for staged publishing; Node 24 ships a recent npm and the
-      # explicit upgrade guards against an older bundled copy on the runner image.
+      #
+      # The version is pinned, not `@latest`. Staged publishing needs >= 11.15.0, but `@latest`
+      # floated to npm 12 mid-flight and changed `npm pack --json` from an array to an object,
+      # which broke the v0.6.0 release. Publishing toolchains get pinned like any other dependency.
+      # ci.yml pins the same version so a PR exercises what the release will use.
       - name: Install Node for npm publish
         uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - name: Upgrade npm
-        run: npm install -g npm@latest && npm --version
+      - name: Install pinned npm
+        run: npm install -g npm@12.0.2 && npm --version
 
       # bin/EventKitCLI is no longer committed, so this step is what puts it in the published
       # tarball: build:swift compiles, signs and verifies it, and both `npm pack` and

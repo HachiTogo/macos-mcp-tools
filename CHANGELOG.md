@@ -18,9 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`EventKitCLI` is built with an explicit macOS 14 deployment target.** It previously inherited the build host's target, which after the move to CI meant the published binary silently required whatever macOS the release runner ran — macOS 26 for the 0.6.0 pipeline. macOS 14 is the real floor: the EventKit APIs in use were introduced there. `LSMinimumSystemVersion` in `Info.plist` was `10.15` and is now `14.0`.
 - `bun run build:swift` verifies that the binary contains both architectures, not merely that it contains one.
 - The binary roughly doubles in size (728 KB to 1.45 MB); the packed tarball is 0.48 MB.
+- **The release workflow pins npm** (12.0.2) instead of installing `npm@latest`, and CI pins the same version, so a green PR means the release will pack the same way.
+
+### Fixed
+- **The release workflow could not publish.** `npm install -g npm@latest` floated onto npm 12, which changed `npm pack --json` from an array of tarballs to an object keyed by package name. The package manifest test parsed only the old shape, so the v0.6.0 release run failed at the test step. It now reads both shapes — contributors run whatever npm they have — and throws a named error rather than reporting an empty package if the shape changes again. Nothing was published or released by the failed run.
 
 
 ## [0.6.0] - 2026-09-19
+
+> Never published. The v0.6.0 release run failed before it reached npm (see 0.7.0, "Fixed"), and by
+> the time the pipeline was repaired `package.json` had moved on. Everything below ships in 0.7.0.
+
 
 ### Changed
 - **`bin/EventKitCLI` is built by CI, not committed.** The binary is now gitignored and produced by `bun run build:swift` during the release workflow, so the published tarball's binary is built from the Swift source in the same commit rather than from whatever a maintainer last compiled locally. Contributors must run `bun run build:swift` once after cloning; `bun test` requires it. **On upgrade, macOS will ask for Calendar and Reminders permission again** — the binary is ad-hoc signed, so a rebuild changes its code signature and macOS treats it as new code.
