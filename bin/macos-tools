@@ -1,0 +1,69 @@
+#!/bin/sh
+# Launcher for macos-mcp-tools.
+#
+# This is a shell script rather than `#!/usr/bin/env bun` because MCP hosts are GUI applications.
+# They do not inherit your shell PATH -- a GUI process typically gets /usr/bin:/bin:/usr/sbin:/sbin
+# -- and bun installs to none of those, so `env bun` only resolved when a host happened to pass a
+# fuller PATH. /bin/sh always exists, so this always starts, and then looks for bun where bun
+# actually installs itself.
+#
+# It also gives `npx` and `npm install -g` users a real message. The servers are TypeScript; node
+# cannot run them, and without this they failed on a syntax error or a bare "env: bun: not found".
+
+# Resolve symlinks: both `bun install -g` and `npm install -g` link this file into a bin directory,
+# so $0 is usually a symlink and the package root is relative to the real file.
+script="$0"
+while [ -L "$script" ]; do
+  target=$(readlink "$script")
+  case "$target" in
+    /*) script="$target" ;;
+    *) script="$(dirname "$script")/$target" ;;
+  esac
+done
+root="$(cd "$(dirname "$script")/.." && pwd)"
+
+find_bun() {
+  if command -v bun >/dev/null 2>&1; then
+    command -v bun
+    return 0
+  fi
+  for candidate in \
+    "${BUN_INSTALL:-$HOME/.bun}/bin/bun" \
+    "$HOME/.bun/bin/bun" \
+    "$HOME/.cache/.bun/bin/bun" \
+    /opt/homebrew/bin/bun \
+    /usr/local/bin/bun
+  do
+    if [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+bun_path=$(find_bun)
+
+if [ -z "$bun_path" ]; then
+  cat >&2 <<'MESSAGE'
+macos-mcp-tools: could not find the bun runtime.
+
+These servers are written in TypeScript and run on bun. Node cannot execute them.
+
+  Install bun:  brew install oven-sh/bun/bun
+                (or: curl -fsSL https://bun.sh/install | bash)
+  Then:         bun install -g @hachitogo/macos-mcp-tools@latest
+
+Searched PATH, then $BUN_INSTALL/bin, ~/.bun/bin, ~/.cache/.bun/bin,
+/opt/homebrew/bin and /usr/local/bin.
+
+If bun is installed elsewhere, set BUN_INSTALL, or point your MCP host straight
+at bun:
+
+  "command": "/full/path/to/bun",
+  "args": ["/full/path/to/@hachitogo/macos-mcp-tools/src/cli.ts", "mail"]
+MESSAGE
+  exit 1
+fi
+
+exec "$bun_path" "$root/src/cli.ts" "$@"

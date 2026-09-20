@@ -4,11 +4,11 @@
   "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Memory, Messages, Calendar Events, and Reminders",
   "type": "module",
   "bin": {
-    "macos-mcp-tools": "bin/macos-tools.js"
+    "macos-mcp-tools": "bin/macos-tools"
   },
   "files": [
     "bin/EventKitCLI",
-    "bin/macos-tools.js",
+    "bin/macos-tools",
     "src/**/*.ts",
     "!src/**/*.test.ts",
     "!src/integration/",
