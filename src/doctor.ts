@@ -13,6 +13,7 @@ import {
   exitCodeFor,
   formatReport,
   PACKAGE_NAME,
+  runtimeCheck,
   versionCheck,
 } from "./lib/doctor.js"
 import { CliPermissionError, executeCli, findProjectRoot } from "./lib/eventkit/index.js"
@@ -21,13 +22,9 @@ import { PACKAGE_VERSION } from "./lib/version.js"
 const HOME = homedir()
 const REGISTRY_TIMEOUT_MS = 5000
 
-const runtimeCheck = (): CheckResult => {
+const runtime = (): CheckResult => {
   const macos = spawnSync("sw_vers", ["-productVersion"], { encoding: "utf8" }).stdout.trim()
-  return {
-    name: "Runtime",
-    status: "ok",
-    detail: `Bun ${Bun.version}, macOS ${macos || "unknown"}, ${process.arch}`,
-  }
+  return runtimeCheck(Bun.version, macos, process.arch)
 }
 
 const npmLatest = async (): Promise<string | undefined> => {
@@ -147,7 +144,7 @@ const hostConfigChecks = (label: string, configPath: string): CheckResult[] => {
 export const runDoctor = async (): Promise<number> => {
   const latest = await npmLatest()
   const results: CheckResult[] = [
-    runtimeCheck(),
+    runtime(),
     versionCheck(PACKAGE_VERSION, latest),
     ...eventKitBinaryChecks(),
     fullDiskAccessCheck("Mail", "Library/Mail/V10/MailData/Envelope Index"),

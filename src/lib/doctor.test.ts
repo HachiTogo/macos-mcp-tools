@@ -7,6 +7,7 @@ import {
   exitCodeFor,
   formatReport,
   lipoArchFor,
+  runtimeCheck,
   versionCheck,
 } from "./doctor"
 
@@ -28,6 +29,24 @@ describe("versionCheck", () => {
     expect(behind.fix).toContain("bun pm cache rm")
     expect(versionCheck("0.4.1", "0.4.1").status).toBe("ok")
     expect(versionCheck("0.4.1", undefined).status).toBe("skip")
+  })
+})
+
+describe("runtimeCheck", () => {
+  test("fails below the EventKitCLI deployment target and passes at or above it", () => {
+    const old = runtimeCheck("1.3.14", "13.6.1", "x64")
+    expect(old.status).toBe("fail")
+    expect(old.detail).toContain("macOS 13.6.1")
+    expect(old.fix).toContain("macOS 14")
+
+    expect(runtimeCheck("1.3.14", "14.0", "arm64").status).toBe("ok")
+    expect(runtimeCheck("1.3.14", "26.5.2", "arm64").status).toBe("ok")
+  })
+
+  test("warns instead of failing when sw_vers gave nothing back", () => {
+    const unknown = runtimeCheck("1.3.14", "", "arm64")
+    expect(unknown.status).toBe("warn")
+    expect(unknown.detail).toContain("macOS unknown")
   })
 })
 

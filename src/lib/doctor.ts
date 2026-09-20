@@ -62,6 +62,29 @@ export const versionCheck = (installed: string, latest: string | undefined): Che
   }
 }
 
+// ── Runtime ──────────────────────────────────────────────────
+
+/** EventKitCLI is compiled with a macOS 14 deployment target, so older systems cannot load it. */
+export const MIN_MACOS_MAJOR = 14
+
+export const runtimeCheck = (bunVersion: string, macosVersion: string, processArch: string): CheckResult => {
+  const name = "Runtime"
+  const detail = `Bun ${bunVersion}, macOS ${macosVersion || "unknown"}, ${processArch}`
+  const major = Number(/^(\d+)/.exec(macosVersion)?.[1])
+  if (!Number.isFinite(major)) {
+    return { name, status: "warn", detail: `${detail}; could not read the macOS version` }
+  }
+  if (major < MIN_MACOS_MAJOR) {
+    return {
+      name,
+      status: "fail",
+      detail: `${detail}; EventKitCLI needs macOS ${MIN_MACOS_MAJOR} or newer`,
+      fix: `Update to macOS ${MIN_MACOS_MAJOR}+. The other five servers do not use EventKitCLI and keep working.`,
+    }
+  }
+  return { name, status: "ok", detail }
+}
+
 // ── Binary architecture ────────────────────────────────────────────────
 
 /** Map Node/Bun process.arch to the names `lipo -archs` prints. */

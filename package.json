@@ -1,6 +1,6 @@
 {
   "name": "@hachitogo/macos-mcp-tools",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Memory, Messages, Calendar Events, and Reminders",
   "type": "module",
   "bin": {
@@ -36,6 +36,7 @@
     "bun": ">=1.0.0"
   },
   "os": ["darwin"],
+  "cpu": ["arm64", "x64"],
   "license": "MIT",
   "publishConfig": {
     "access": "public"

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-19
+
+### Added
+- **Intel Mac support.** `bin/EventKitCLI` is now a universal binary (arm64 + x86_64). Previously `package.json` declared `os: darwin` with no `cpu`, so npm installed happily on an Intel Mac and `events`/`reminders` then failed with "EventKitCLI execution failed". `cpu` now declares both architectures.
+- **`doctor` fails below macOS 14** instead of only printing the version, and names the five servers that keep working without `EventKitCLI`.
+- **README: "The EventKitCLI binary"** documents what ships, the ad-hoc + Hardened Runtime signing model, and why macOS asks for Calendar and Reminders permission again after every update.
+
+### Changed
+- **`EventKitCLI` is built with an explicit macOS 14 deployment target.** It previously inherited the build host's target, which after the move to CI meant the published binary silently required whatever macOS the release runner ran — macOS 26 for the 0.6.0 pipeline. macOS 14 is the real floor: the EventKit APIs in use were introduced there. `LSMinimumSystemVersion` in `Info.plist` was `10.15` and is now `14.0`.
+- `bun run build:swift` verifies that the binary contains both architectures, not merely that it contains one.
+- The binary roughly doubles in size (728 KB to 1.45 MB); the packed tarball is 0.48 MB.
+
+
 ## [0.6.0] - 2026-09-19
 
 ### Changed
