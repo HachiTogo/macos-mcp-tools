@@ -15,6 +15,29 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # 0.6.0 was bumped onto main, never tagged, and then superseded by 0.7.0 -- at which point it
+      # could never be released, because the release workflow checks the tag against package.json.
+      # That is finding C7 happening in practice. Catch the second bump instead of the aftermath.
+      #
+      # main and the tags are fetched explicitly: checkout only guarantees the ref under test, and
+      # this deliberately compares against main rather than the PR base, which for a stacked PR is
+      # another feature branch.
+      - name: Refuse a version bump while main's version is untagged
+        run: |
+          git fetch --quiet --tags origin main
+          MAIN_VERSION="$(git show FETCH_HEAD:package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")"
+          HEAD_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$MAIN_VERSION" = "$HEAD_VERSION" ]; then
+            echo "No version change against main ($MAIN_VERSION); nothing to check."
+            exit 0
+          fi
+          if git rev-parse "v$MAIN_VERSION" >/dev/null 2>&1; then
+            echo "main is at $MAIN_VERSION and v$MAIN_VERSION is tagged; bumping to $HEAD_VERSION is fine."
+            exit 0
+          fi
+          echo "::error::This branch bumps $MAIN_VERSION -> $HEAD_VERSION, but v$MAIN_VERSION was never tagged. Merging would strand $MAIN_VERSION: the release workflow verifies the tag against package.json, so it could never be released. Either tag and release v$MAIN_VERSION first, or drop this bump and fold the changes into $MAIN_VERSION."
+          exit 1
+
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
         with:
