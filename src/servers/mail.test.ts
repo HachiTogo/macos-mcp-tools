@@ -12,7 +12,6 @@ import {
   groupEmailsByAccount,
   isBatchFailure,
   isExcludedMailbox,
-  type NormalizedEmail,
   parseExtractEmailLinksArguments,
   parseFetchEmailBodyArguments,
   parseForwardEmailArguments,
@@ -22,6 +21,7 @@ import {
   parseReplyEmailArguments,
   parseSendEmailArguments,
 } from "./mail"
+import type { NormalizedEmail } from "./mail/types"
 
 const TEST_CONFIG = {
   accounts: {
