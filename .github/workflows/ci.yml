@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+  # No base-branch filter. A stacked PR targets the slice below it, not main, so `branches: [main]`
+  # skipped it entirely -- the runs those PRs did get came from `gh stack submit` creating them
+  # against main and then retargeting, which is tooling accident rather than coverage.
   pull_request:
-    branches: [main]
 
 jobs:
   test:
