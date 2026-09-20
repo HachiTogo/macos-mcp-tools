@@ -80,9 +80,11 @@ Typical results are `/Users/<you>/.bun/bin/macos-mcp-tools` when `BUN_INSTALL` i
 "$(bun pm bin -g)/macos-mcp-tools" --help
 ```
 
+> **This package needs bun; node cannot run it.** The servers are TypeScript, executed directly. `npx @hachitogo/macos-mcp-tools` and `npm install -g` will install the package, but the launcher will tell you to install bun rather than failing on a syntax error.
+
 > **Do not use `bunx` in an MCP host config.** Hosts such as Claude Desktop start all seven servers at the same instant. `bunx` links each launch into one shared temp directory with no lock, so seven concurrent `bunx` runs corrupt each other's `node_modules` and the servers crash on startup with errors like `Cannot find package 'zod-to-json-schema'`, `Failed to link which: EEXIST`, or `could not determine executable to run`. Warming the cache does not prevent it. A global install has no install step at launch, so the race cannot happen.
 
-> **Use the absolute path, not a bare command name.** GUI hosts do not inherit your shell `PATH`, so `macos-mcp-tools` or `bun` alone will often fail with "No executable file" even though they work in Terminal.
+> **Use the absolute path, not a bare command name.** GUI hosts do not inherit your shell `PATH`, so `macos-mcp-tools` alone will often fail with "No executable file" even though it works in Terminal. The path itself is enough: the launcher is a `/bin/sh` script that finds bun on its own, so bun does not need to be on the host's `PATH`. If bun is installed somewhere unusual, set `BUN_INSTALL`, and the launcher will say so if it cannot find it at all.
 
 ### 2. Configure Claude Desktop
 
