@@ -1,13 +1,14 @@
 import { Database, type SQLQueryBindings } from "bun:sqlite"
 import { spawnSync } from "node:child_process"
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
-import { dirname, join, resolve } from "node:path"
+import { join } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
 import { PACKAGE_VERSION } from "../lib/version"
+import { discoverAndWriteConfig, loadEmailConfig } from "./mail/config"
 import {
   FETCH_EMAIL_ATTACHMENT_JXA,
   FETCH_EMAIL_BODY_JXA,
@@ -30,7 +31,6 @@ import {
   isExcludedMailbox,
 } from "./mail/mailbox"
 import type {
-  EmailAccountConfig,
   EmailAttachment,
   EmailConfig,
   EmailGroup,
@@ -50,7 +50,6 @@ import type {
   ForwardEmailResult,
   ListEmailAttachmentsArguments,
   ListEmailAttachmentsResult,
-  MailboxUrlRow,
   MarkEmailsJunkArguments,
   MarkEmailsJunkResult,
   MarkEmailsJunkTarget,
@@ -89,76 +88,6 @@ const BODY_MAX_CHARS = 8_000
 const MAX_LINKS = 500
 const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || "local"
 const SOURCE_NAME = "Apple Mail Envelope Index"
-
-const CONFIG_PATH = resolve(import.meta.dir, "..", "..", "config", "email.json")
-
-const EMPTY_CONFIG: EmailConfig = {
-  accounts: {},
-  displayOrder: [],
-}
-
-const loadEmailConfig = (): EmailConfig => {
-  try {
-    if (!existsSync(CONFIG_PATH)) {
-      return EMPTY_CONFIG
-    }
-    const raw = readFileSync(CONFIG_PATH, "utf8")
-    const parsed = JSON.parse(raw) as Partial<EmailConfig>
-    return {
-      accounts:
-        parsed.accounts && typeof parsed.accounts === "object"
-          ? (parsed.accounts as Record<string, EmailAccountConfig>)
-          : {},
-      displayOrder: Array.isArray(parsed.displayOrder) ? parsed.displayOrder : [],
-    }
-  } catch {
-    return EMPTY_CONFIG
-  }
-}
-
-const discoverAndWriteConfig = (database: Database): EmailConfig => {
-  const mailboxRows = database
-    .query("SELECT url AS mailboxUrl FROM mailboxes WHERE url IS NOT NULL")
-    .all() as MailboxUrlRow[]
-  const allUrls = mailboxRows.map((row) => row.mailboxUrl).filter(Boolean) as string[]
-
-  // Collect unique account keys
-  const accountKeys = new Set<string>()
-  const gmailAccountKeys = new Set<string>()
-
-  for (const url of allUrls) {
-    if (url.startsWith("local://")) continue
-    const key = getMailboxAccountKey(url)
-    accountKeys.add(key)
-    const mailboxName = getMailboxName(url).toLowerCase()
-    if (mailboxName === "[gmail]" || mailboxName.startsWith("[gmail]/")) {
-      gmailAccountKeys.add(key)
-    }
-  }
-
-  const accounts: Record<string, EmailAccountConfig> = {}
-  for (const key of accountKeys) {
-    accounts[key] = {
-      label: "unknown",
-      category: "unknown",
-      provider: gmailAccountKeys.has(key) ? "gmail" : "unknown",
-    }
-  }
-
-  const config: EmailConfig = {
-    accounts,
-    displayOrder: [],
-  }
-
-  try {
-    mkdirSync(dirname(CONFIG_PATH), { recursive: true })
-    writeFileSync(CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`, "utf8")
-  } catch {
-    // Non-fatal: config write failure shouldn't break email reading
-  }
-
-  return config
-}
 
 const padNumber = (value: number) => String(value).padStart(2, "0")
 
