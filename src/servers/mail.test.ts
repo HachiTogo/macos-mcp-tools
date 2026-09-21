@@ -2,11 +2,6 @@ import { describe, expect, test } from "bun:test"
 
 import {
   extractLinksFromSource,
-  formatEmailsForContent,
-  formatMarkEmailsJunkSummary,
-  formatMarkEmailsNotJunkSummary,
-  formatMarkEmailsReadSummary,
-  groupEmailsByAccount,
   isBatchFailure,
   parseExtractEmailLinksArguments,
   parseFetchEmailBodyArguments,
@@ -17,6 +12,13 @@ import {
   parseReplyEmailArguments,
   parseSendEmailArguments,
 } from "./mail"
+import {
+  formatEmailsForContent,
+  formatMarkEmailsJunkSummary,
+  formatMarkEmailsNotJunkSummary,
+  formatMarkEmailsReadSummary,
+  groupEmailsByAccount,
+} from "./mail/format"
 import { classifyAccountByMailboxUrl, createEmailHandle, getMailboxAccountKey, isExcludedMailbox } from "./mail/mailbox"
 import type { NormalizedEmail } from "./mail/types"
 
