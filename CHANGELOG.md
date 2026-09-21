@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-21
+
+### Changed
+- **Reverted the `/bin/sh` launcher introduced in 0.7.0.** `bin/macos-tools.js` is again a three-line `#!/usr/bin/env bun` shim. The launcher 0.7.0 replaced was not failing: an absolute path in an MCP host config reaches it, and `env bun` resolves in the hosts actually in use. It was rewritten on an inferred failure rather than an observed one. Where bun is installed is the user's environment to configure, not something this package should probe for across five candidate directories. No config change is needed in either direction.
+
+
 ## [0.7.0] - 2026-09-19
 
 ### Added
@@ -21,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The release workflow pins npm** (12.0.2) instead of installing `npm@latest`, and CI pins the same version, so a green PR means the release will pack the same way.
 
 ### Fixed
+- **The launcher no longer depends on bun being on the host's `PATH`.** `bin/macos-tools.js` was a `#!/usr/bin/env bun` script, and `bun install -g` symlinks the global `macos-mcp-tools` command straight at it, so the shebang is what the kernel runs. GUI MCP hosts do not inherit your shell `PATH` — they typically get `/usr/bin:/bin:/usr/sbin:/sbin`, and bun installs to none of those — so this only worked when a host happened to pass a fuller `PATH`. It is now `bin/macos-tools`, a `/bin/sh` script that resolves its own symlink and looks for bun on `PATH`, then in `$BUN_INSTALL/bin`, `~/.bun/bin`, `~/.cache/.bun/bin`, `/opt/homebrew/bin` and `/usr/local/bin`. Host configs are unchanged: they point at the `macos-mcp-tools` symlink, which is re-created on upgrade.
+- **`npx` and `npm install -g` now explain themselves.** The servers are TypeScript and need bun; under node the old shim failed with a syntax error, or with `env: bun: No such file or directory`. The launcher now exits 1 with instructions for installing bun, or for pointing an MCP host straight at a bun binary.
 - **The release workflow could not publish.** `npm install -g npm@latest` floated onto npm 12, which changed `npm pack --json` from an array of tarballs to an object keyed by package name. The package manifest test parsed only the old shape, so the v0.6.0 release run failed at the test step. It now reads both shapes — contributors run whatever npm they have — and throws a named error rather than reporting an empty package if the shape changes again. Nothing was published or released by the failed run.
 
 
