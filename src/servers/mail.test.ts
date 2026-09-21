@@ -1,8 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
 import {
-  extractLinksFromSource,
-  isBatchFailure,
   parseExtractEmailLinksArguments,
   parseFetchEmailBodyArguments,
   parseForwardEmailArguments,
@@ -20,6 +18,8 @@ import {
   groupEmailsByAccount,
 } from "./mail/format"
 import { classifyAccountByMailboxUrl, createEmailHandle, getMailboxAccountKey, isExcludedMailbox } from "./mail/mailbox"
+import { isBatchFailure } from "./mail/mutate"
+import { extractLinksFromSource } from "./mail/read"
 import type { NormalizedEmail } from "./mail/types"
 
 const TEST_CONFIG = {
