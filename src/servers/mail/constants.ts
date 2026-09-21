@@ -10,3 +10,4 @@ export const MAX_LIMIT = 100
 export const BODY_MAX_CHARS = 8_000
 export const MAX_LINKS = 500
 export const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || "local"
+export const MAX_EMAIL_BODY_LENGTH = 1_000_000
