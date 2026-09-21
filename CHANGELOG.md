@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **CI runs on every pull request**, not only those based on `main`. `pull_request: branches: [main]` filters on the base branch, so a stacked PR targeting the slice below it was skipped entirely; the runs such PRs appeared to get came from `gh stack submit` creating them against `main` and then retargeting.
+- **CI refuses a version bump while `main`'s version is untagged.** This is how 0.6.0 was lost: it reached main, was never tagged, and was then superseded by 0.7.0, after which the release workflow's tag check could never pass for it. The guard fails the second bump with an explanation instead of leaving the first version stranded.
+
 ## [0.7.1] - 2026-09-21
 
 ### Changed
 - **Reverted the `/bin/sh` launcher introduced in 0.7.0.** `bin/macos-tools.js` is again a three-line `#!/usr/bin/env bun` shim. The launcher 0.7.0 replaced was not failing: an absolute path in an MCP host config reaches it, and `env bun` resolves in the hosts actually in use. It was rewritten on an inferred failure rather than an observed one. Where bun is installed is the user's environment to configure, not something this package should probe for across five candidate directories. No config change is needed in either direction.
-
 
 ## [0.7.0] - 2026-09-19
 
