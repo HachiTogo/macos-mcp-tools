@@ -1,9 +1,8 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
   "files": {
-    // Source and the Swift build script. bin/macos-tools is a /bin/sh launcher, not JavaScript.
-    // package.json, lockfile, docs and the Swift binary stay untouched.
-    "includes": ["src/**", "swift/*.mjs", "biome.jsonc", "tsconfig.json"]
+    // Only source and the two JS shims. package.json, lockfile, docs and the Swift binary stay untouched.
+    "includes": ["src/**", "swift/*.mjs", "bin/*.js", "biome.jsonc", "tsconfig.json"]
   },
   "formatter": {
     "enabled": true,

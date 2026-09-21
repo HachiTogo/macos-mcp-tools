@@ -47,7 +47,7 @@ describe("npm package manifest", () => {
 
   test("ships the entrypoint and the Swift build inputs", () => {
     const required = [
-      "bin/macos-tools",
+      "bin/macos-tools.js",
       "swift/EventKitCLI.swift",
       "swift/EventKitCLI.entitlements",
       "swift/Info.plist",

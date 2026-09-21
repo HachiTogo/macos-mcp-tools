@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-21
+
+### Changed
+- **Reverted the `/bin/sh` launcher introduced in 0.7.0.** `bin/macos-tools.js` is again a three-line `#!/usr/bin/env bun` shim. The launcher 0.7.0 replaced was not failing: an absolute path in an MCP host config reaches it, and `env bun` resolves in the hosts actually in use. It was rewritten on an inferred failure rather than an observed one. Where bun is installed is the user's environment to configure, not something this package should probe for across five candidate directories. No config change is needed in either direction.
+
+
 ## [0.7.0] - 2026-09-19
 
 ### Added
