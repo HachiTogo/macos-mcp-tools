@@ -1,17 +1,13 @@
 import { describe, expect, test } from "bun:test"
 
 import {
-  classifyAccountByMailboxUrl,
-  createEmailHandle,
   extractLinksFromSource,
   formatEmailsForContent,
   formatMarkEmailsJunkSummary,
   formatMarkEmailsNotJunkSummary,
   formatMarkEmailsReadSummary,
-  getMailboxAccountKey,
   groupEmailsByAccount,
   isBatchFailure,
-  isExcludedMailbox,
   parseExtractEmailLinksArguments,
   parseFetchEmailBodyArguments,
   parseForwardEmailArguments,
@@ -21,6 +17,7 @@ import {
   parseReplyEmailArguments,
   parseSendEmailArguments,
 } from "./mail"
+import { classifyAccountByMailboxUrl, createEmailHandle, getMailboxAccountKey, isExcludedMailbox } from "./mail/mailbox"
 import type { NormalizedEmail } from "./mail/types"
 
 const TEST_CONFIG = {
