@@ -108,6 +108,11 @@ provenance. CI cannot make a version live on its own.
 Between steps 3 and 4 the GitHub release exists but npm still serves the previous version. Approve
 promptly so the two do not disagree for long.
 
+CI refuses a pull request that bumps the version while main's current version has no tag, because
+that is how 0.6.0 was stranded: it reached main, was never tagged, and was then superseded by 0.7.0,
+after which the tag check in step 3 could never pass for it. If you hit that failure, either release
+the pending version first or drop your bump and fold the changes into it.
+
 Re-pushing a tag whose version is already live is safe; staging is skipped. Re-pushing one that is
 still awaiting approval fails, because a staged version already occupies that version number. Reject
 the staged version first, or bump.
