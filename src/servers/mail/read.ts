@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process"
 import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
 import { discoverAndWriteConfig, loadEmailConfig } from "./config"
 import { BODY_MAX_CHARS, MAIL_DB_PATH, MAX_LINKS, TIME_ZONE } from "./constants"
@@ -61,7 +62,7 @@ export const fetchEmailBodyWithJxa = (handle: EmailHandle): { found: boolean; bo
   }
 }
 
-export const createFetchEmailBodyResult = async (argumentsValue: FetchEmailBodyArguments) => {
+export const createFetchEmailBodyResult = async (argumentsValue: FetchEmailBodyArguments): Promise<CallToolResult> => {
   try {
     const { found, body } = fetchEmailBodyWithJxa(argumentsValue.handle)
     const truncated = body.length > BODY_MAX_CHARS
@@ -227,7 +228,9 @@ export const extractLinksFromSource = (source: string): { links: EmailLink[]; tr
   return { links, truncated: false }
 }
 
-export const createExtractEmailLinksResult = async (argumentsValue: ExtractEmailLinksArguments) => {
+export const createExtractEmailLinksResult = async (
+  argumentsValue: ExtractEmailLinksArguments,
+): Promise<CallToolResult> => {
   try {
     const { found, source } = fetchEmailSourceWithJxa(argumentsValue.handle)
     const { links, truncated } = found ? extractLinksFromSource(source) : { links: [] as EmailLink[], truncated: false }
@@ -240,7 +243,7 @@ export const createExtractEmailLinksResult = async (argumentsValue: ExtractEmail
       truncated,
     }
 
-    const content = (() => {
+    const content = ((): CallToolResult["content"] => {
       if (!found) {
         return [{ type: "text", text: "(message not found)" }]
       }
@@ -249,7 +252,7 @@ export const createExtractEmailLinksResult = async (argumentsValue: ExtractEmail
       }
       const header = `Found ${links.length} link${links.length === 1 ? "" : "s"}${truncated ? " (truncated)" : ""}`
       const lines = links.map((link) => `- [${link.text}](${link.url})`)
-      return [{ type: "text", text: header }, ...lines.map((line) => ({ type: "text", text: line }))]
+      return [{ type: "text", text: header }, ...lines.map((line) => ({ type: "text" as const, text: line }))]
     })()
 
     return {
@@ -296,7 +299,9 @@ export const listEmailAttachmentsWithJxa = (
   }
 }
 
-export const createListEmailAttachmentsResult = async (argumentsValue: ListEmailAttachmentsArguments) => {
+export const createListEmailAttachmentsResult = async (
+  argumentsValue: ListEmailAttachmentsArguments,
+): Promise<CallToolResult> => {
   try {
     const { found, attachments } = listEmailAttachmentsWithJxa(argumentsValue.handle)
 
@@ -330,7 +335,9 @@ export const createListEmailAttachmentsResult = async (argumentsValue: ListEmail
   }
 }
 
-export const createFetchEmailAttachmentResult = async (argumentsValue: FetchEmailAttachmentArguments) => {
+export const createFetchEmailAttachmentResult = async (
+  argumentsValue: FetchEmailAttachmentArguments,
+): Promise<CallToolResult> => {
   const tmpDir = mkdtempSync(join(tmpdir(), "mcp-mail-attachments-"))
   const tmpFilePath = join(tmpDir, argumentsValue.attachmentName)
 
@@ -428,7 +435,7 @@ export const createFetchEmailAttachmentResult = async (argumentsValue: FetchEmai
   }
 }
 
-export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEmailArguments) => {
+export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEmailArguments): CallToolResult => {
   const schema = getSchemaInfo(database)
   ensureRequiredColumns(schema)
 
@@ -481,7 +488,7 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
   }
 }
 
-export const createUnreadEmailsResult = async (argumentsValue: UnreadEmailArguments) => {
+export const createUnreadEmailsResult = async (argumentsValue: UnreadEmailArguments): Promise<CallToolResult> => {
   let database: Database | undefined
 
   try {
@@ -517,7 +524,7 @@ export const createUnreadEmailsResult = async (argumentsValue: UnreadEmailArgume
   }
 }
 
-export const createSearchEmailResult = async (args: SearchEmailArguments) => {
+export const createSearchEmailResult = async (args: SearchEmailArguments): Promise<CallToolResult> => {
   let database: Database | undefined
 
   try {

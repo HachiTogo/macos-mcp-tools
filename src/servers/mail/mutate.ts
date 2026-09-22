@@ -3,6 +3,7 @@
 // readonly and Mail.app owns these operations.
 
 import { spawnSync } from "node:child_process"
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
 import {
   formatFlagEmailsSummary,
@@ -84,7 +85,7 @@ export const FAILED_BATCH_STATUSES: ReadonlySet<string> = new Set([
 export const isBatchFailure = (results: ReadonlyArray<{ status: string }>) =>
   results.length > 0 && results.every((result) => FAILED_BATCH_STATUSES.has(result.status))
 
-export const createMarkEmailsReadResult = async (argumentsValue: MarkEmailsReadArguments) => {
+export const createMarkEmailsReadResult = async (argumentsValue: MarkEmailsReadArguments): Promise<CallToolResult> => {
   try {
     const results = markEmailsReadWithJxa(argumentsValue.emails)
 
@@ -209,7 +210,7 @@ export const flagEmailsWithJxa = (targets: FlagEmailsTarget[]) => {
   return output.results
 }
 
-export const createMarkEmailsJunkResult = async (argumentsValue: MarkEmailsJunkArguments) => {
+export const createMarkEmailsJunkResult = async (argumentsValue: MarkEmailsJunkArguments): Promise<CallToolResult> => {
   try {
     const results = markEmailsJunkWithJxa(argumentsValue.emails)
 
@@ -250,7 +251,9 @@ export const createMarkEmailsJunkResult = async (argumentsValue: MarkEmailsJunkA
   }
 }
 
-export const createMarkEmailsNotJunkResult = async (argumentsValue: MarkEmailsNotJunkArguments) => {
+export const createMarkEmailsNotJunkResult = async (
+  argumentsValue: MarkEmailsNotJunkArguments,
+): Promise<CallToolResult> => {
   try {
     const results = markEmailsNotJunkWithJxa(argumentsValue.emails)
 
@@ -291,7 +294,7 @@ export const createMarkEmailsNotJunkResult = async (argumentsValue: MarkEmailsNo
   }
 }
 
-export const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments) => {
+export const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments): Promise<CallToolResult> => {
   try {
     const results = flagEmailsWithJxa(argumentsValue.emails)
 
@@ -386,7 +389,7 @@ export const forwardEmailWithJxa = (args: ForwardEmailArguments): ForwardEmailRe
   return output
 }
 
-export const createSendEmailResult = async (argumentsValue: SendEmailArguments) => {
+export const createSendEmailResult = async (argumentsValue: SendEmailArguments): Promise<CallToolResult> => {
   try {
     const result = sendEmailWithJxa(argumentsValue)
     return {
@@ -410,7 +413,7 @@ export const createSendEmailResult = async (argumentsValue: SendEmailArguments) 
   }
 }
 
-export const createReplyEmailResult = async (argumentsValue: ReplyEmailArguments) => {
+export const createReplyEmailResult = async (argumentsValue: ReplyEmailArguments): Promise<CallToolResult> => {
   try {
     const result = replyEmailWithJxa(argumentsValue)
     return {
@@ -434,7 +437,7 @@ export const createReplyEmailResult = async (argumentsValue: ReplyEmailArguments
   }
 }
 
-export const createForwardEmailResult = async (argumentsValue: ForwardEmailArguments) => {
+export const createForwardEmailResult = async (argumentsValue: ForwardEmailArguments): Promise<CallToolResult> => {
   try {
     const result = forwardEmailWithJxa(argumentsValue)
     return {
