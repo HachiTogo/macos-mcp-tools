@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-21
+
+### Changed
+- **Mail tool arguments are validated by their declared zod schemas.** Every mail tool already published a zod `inputSchema` and then re-validated the same arguments through a separate hand-written layer. That layer ran outside the tool handler, so a bad argument came back as a JSON-RPC protocol error rather than a tool result an agent can read; validation failures are now ordinary `isError` results. Messages come from zod and differ in wording from the old ones — anything matching on mail validation text should be updated. `search_emails` still reports "At least one of 'subject', 'sender', 'after', or 'before' is required", and `after`/`before` must now parse as dates.
+- **Unknown fields are ignored rather than rejected.** The old layer failed a call that carried an unexpected field; zod strips them, which is the behaviour every other server in this package already had.
+- **`mail.ts` is now tool registration only** — 3,911 lines to 264. Its internals moved to `src/servers/mail/`: the JXA scripts, types, mailbox parsing, account config, Envelope Index queries, normalization, formatting, and the read and mutate implementations.
+
+### Fixed
+- **Both Envelope Index queries are built from one plan.** The unread and search builders had drifted apart while sharing 71 identical lines of join and column logic. The shared part is derived once; the generated SQL is unchanged, verified across 24 schema and argument combinations.
+
+### Added
+- Unit tests for the mail logic that had none: the SQL builders run against an in-memory Envelope Index fixture, and row normalization, the argument schemas and the search-criteria rule are covered directly.
+
+
 ### Changed
 - **CI runs on every pull request**, not only those based on `main`. `pull_request: branches: [main]` filters on the base branch, so a stacked PR targeting the slice below it was skipped entirely; the runs such PRs appeared to get came from `gh stack submit` creating them against `main` and then retargeting.
 - **CI refuses a version bump while `main`'s version is untagged.** This is how 0.6.0 was lost: it reached main, was never tagged, and was then superseded by 0.7.0, after which the release workflow's tag check could never pass for it. The guard fails the second bump with an explanation instead of leaving the first version stranded.
