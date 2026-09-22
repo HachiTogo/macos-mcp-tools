@@ -6,6 +6,7 @@
 import type { Database, SQLQueryBindings } from "bun:sqlite"
 
 import { EmailToolError } from "./errors"
+import { toSearchBoundSeconds } from "./normalize"
 import type { SchemaInfo, SearchEmailArguments, TableColumnRow } from "./types"
 
 // Rows are capped in SQL and filtered in JS afterwards; see the callers in mail.ts.
@@ -220,12 +221,12 @@ export const buildSearchMessagesQuery = (
 
   if (args.after) {
     whereClauses.push(`COALESCE(${plan.receivedAtExpression}, 0) >= ?`)
-    params.push(Math.floor(new Date(args.after).getTime() / 1000))
+    params.push(toSearchBoundSeconds(args.after))
   }
 
   if (args.before) {
     whereClauses.push(`COALESCE(${plan.receivedAtExpression}, 0) < ?`)
-    params.push(Math.floor(new Date(args.before).getTime() / 1000))
+    params.push(toSearchBoundSeconds(args.before))
   }
 
   const columns = [...plan.columns, "messages.read AS readFlag", `${plan.messageIdHeaderExpression} AS messageIdHeader`]

@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test"
 
-import { matchesMailboxFilter, normalizeEmail, normalizeSender, normalizeSubject } from "./normalize"
+import {
+  matchesMailboxFilter,
+  normalizeEmail,
+  normalizeSender,
+  normalizeSubject,
+  toSearchBoundSeconds,
+} from "./normalize"
 import type { EmailConfig, EmailRow, NormalizedEmail } from "./types"
 
 // normalizeEmail is where a row stops being Envelope Index columns and becomes what an agent sees,
@@ -129,5 +135,24 @@ describe("matchesMailboxFilter", () => {
     expect(matchesMailboxFilter(email, "inbox")).toBe(true)
     expect(matchesMailboxFilter(email, "imap.example.com")).toBe(true)
     expect(matchesMailboxFilter(email, "archive")).toBe(false)
+  })
+})
+
+describe("toSearchBoundSeconds", () => {
+  test("a bare date means local midnight, not UTC midnight", () => {
+    // `new Date("2026-09-01")` is 17:00 on Aug 31 in Pacific time, so `after` used to include the
+    // previous evening and `before` used to drop the last hours of the day.
+    const local = new Date(2026, 8, 1, 0, 0, 0, 0)
+    expect(toSearchBoundSeconds("2026-09-01")).toBe(Math.floor(local.getTime() / 1000))
+    expect(new Date(toSearchBoundSeconds("2026-09-01") * 1000).getDate()).toBe(1)
+    expect(new Date(toSearchBoundSeconds("2026-09-01") * 1000).getHours()).toBe(0)
+  })
+
+  test("an explicit zone is honoured rather than reinterpreted", () => {
+    expect(toSearchBoundSeconds("2026-09-01T00:00:00Z")).toBe(Math.floor(Date.UTC(2026, 8, 1) / 1000))
+  })
+
+  test("a local timestamp without a zone keeps Date's own reading", () => {
+    expect(toSearchBoundSeconds("2026-09-01T09:30:00")).toBe(Math.floor(new Date(2026, 8, 1, 9, 30).getTime() / 1000))
   })
 })
