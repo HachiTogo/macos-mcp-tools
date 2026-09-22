@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **A hand-edited mail account config is no longer destroyed by a typo.** `email.json` was read through a catch-all that turned *any* failure — including a JSON syntax error — into an empty config. The caller read that as "not configured yet" and overwrote the file with rediscovered defaults, losing every label. A file that does not parse is now reported, naming the path and the problem, and is never written over.
+- **The config moved to the data directory** (`MACOS_TOOLS_DATA_DIR`, else `~/.local/share/macos-tools/`), alongside the memory database. It previously resolved inside the install directory, which a global upgrade replaces and which `bunx` may not be able to write at all. An existing file is migrated on first use.
+- **Config warnings name the file.** They previously said to edit `config/email.json`, a path relative to an install directory the agent was never told. They now print the absolute path, and a failed write is reported instead of being swallowed.
+
 ### Changed
 - **Mail tool arguments are validated by their declared zod schemas.** Every mail tool already published a zod `inputSchema` and then re-validated the same arguments through a separate hand-written layer. That layer ran outside the tool handler, so a bad argument came back as a JSON-RPC protocol error rather than a tool result an agent can read; validation failures are now ordinary `isError` results. Messages come from zod and differ in wording from the old ones — anything matching on mail validation text should be updated. `search_emails` still reports "At least one of 'subject', 'sender', 'after', or 'before' is required", and `after`/`before` must now parse as dates.
 - **Unknown fields are ignored rather than rejected.** The old layer failed a call that carried an unexpected field; zod strips them, which is the behaviour every other server in this package already had.

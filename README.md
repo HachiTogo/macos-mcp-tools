@@ -371,7 +371,17 @@ MACOS_TOOLS_DATA_DIR=/path/to/data bunx @hachitogo/macos-mcp-tools memory
 
 ### Mail Account Classification
 
-The mail server may create `config/email.json` locally to classify accounts. This file is treated as generated local state and is ignored by git.
+The mail server classifies each Apple Mail account — a label, a category and a provider — from `email.json` in the data directory above, so by default:
+
+```
+~/.local/share/macos-tools/email.json
+```
+
+On first use it scans your mailboxes and writes a starting point with every account labelled `unknown`. Edit it to give each account a real label and category; `unread_emails` groups and orders its output by them, and its warning names the full path.
+
+**A file it cannot parse is never overwritten.** If you introduce a JSON error, mail reads fail with an error naming the file and the problem, rather than silently replacing your labels with defaults. Fix or delete the file and reads resume.
+
+Upgrading from 0.7.1 or earlier: the config used to live inside the install directory, where every upgrade discarded it. An existing file is copied to the new location the first time a mail tool runs.
 
 ## Testing
 
