@@ -90,8 +90,11 @@ Publishing is automated up to a deliberate human gate. There is no npm token any
 workflow authenticates with npm trusted publishing (GitHub OIDC) and stages the release with
 provenance. CI cannot make a version live on its own.
 
-1. Every merged PR or PR stack bumps `package.json` and adds a CHANGELOG section (see AGENTS.md).
-2. After the merge, tag the merge commit with the same version and push the tag:
+1. Ordinary PRs do not touch `package.json`; they add CHANGELOG entries under `## [Unreleased]`.
+   When you want to publish, open a release PR that bumps the version and renames that heading to
+   it. Bumping per merge instead strands versions: a bump that reaches `main` and is never tagged
+   can never be released, because step 3 checks the tag against `package.json`.
+2. After the release PR merges, tag the merge commit with the same version and push the tag:
 
    ```bash
    git fetch origin main && git tag -a v0.5.0 origin/main -m "v0.5.0" && git push origin v0.5.0
@@ -128,6 +131,22 @@ the staged version first, or bump.
 Until trusted publishing is configured the staging step fails with a 404 from the registry (npm's
 response for an unauthorized write) and the GitHub release is not created; nothing is left
 half-published.
+
+## Marking a milestone without publishing
+
+A SemVer prerelease tag does not trigger the release workflow, so a point in history can be pinned
+and tracked without shipping anything:
+
+```bash
+git tag -a v0.8.0-rc.1 -m "WS2 complete" && git push origin v0.8.0-rc.1
+```
+
+`release.yml` matches `v*` and excludes `v*-*`, so anything with a hyphen after the version --
+`-rc.1`, `-beta.2`, `-alpha` -- is ignored. Release tags have no hyphen and still publish.
+
+Nothing else needs to change for one: `package.json` can stay on the published version, since
+nothing reads it for a tag the workflow ignores. Set it to the prerelease version instead if you
+want `doctor` and the tarball to say so.
 
 Local `npm publish` is not part of the process and is blocked by the settings above.
 

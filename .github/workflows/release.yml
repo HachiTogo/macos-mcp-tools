@@ -12,6 +12,10 @@ on:
   push:
     tags:
       - "v*"
+      # SemVer prerelease tags (v0.8.0-rc.1, v0.9.0-beta.2) are milestone markers, not releases.
+      # Excluding them here is what lets a point in history be tagged and tracked without
+      # publishing anything. A release tag has no hyphen, so it does not match this pattern.
+      - "!v*-*"
 
 permissions:
   contents: write
