@@ -19,9 +19,10 @@ import {
   FETCH_EMAIL_SOURCE_JXA,
   LIST_EMAIL_ATTACHMENTS_JXA,
 } from "./jxa-scripts"
-import { getMailboxAccountKey, getProviderByAccount } from "./mailbox"
+import { getMailboxAccountKey, getMailboxName, getProviderByAccount } from "./mailbox"
 import { cleanText, matchesMailboxFilter, normalizeEmail, SOURCE_NAME } from "./normalize"
 import {
+  buildMailboxInventoryQuery,
   buildSearchMessagesQuery,
   buildUnreadMessagesQuery,
   ensureRequiredColumns,
@@ -42,6 +43,8 @@ import type {
   FetchEmailBodyResult,
   ListEmailAttachmentsArguments,
   ListEmailAttachmentsResult,
+  ListMailAccountsResult,
+  MailAccountSummary,
   SearchEmailArguments,
   UnreadEmailArguments,
 } from "./types"
@@ -571,6 +574,95 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
       },
       messages: emails,
     },
+  }
+}
+
+export type MailboxInventoryRow = { mailboxUrl: string; unreadCount: number | null }
+
+/** Groups the mailbox inventory by account and applies whatever the config says about each. */
+export const summarizeMailAccounts = (
+  rows: MailboxInventoryRow[],
+  config: EmailConfig,
+  configPath: string,
+): ListMailAccountsResult => {
+  const byAccount = new Map<string, MailAccountSummary>()
+
+  for (const row of rows) {
+    const mailboxUrl = cleanText(row.mailboxUrl) ?? ""
+    if (!mailboxUrl) continue
+
+    const accountId = getMailboxAccountKey(mailboxUrl)
+    const unreadCount = row.unreadCount ?? 0
+
+    let account = byAccount.get(accountId)
+    if (!account) {
+      const configured = config.accounts[accountId]
+      account = {
+        accountId,
+        label: configured?.label ?? "unknown",
+        category: configured?.category ?? "unknown",
+        provider: configured?.provider ?? "unknown",
+        unreadCount: 0,
+        mailboxes: [],
+      }
+      byAccount.set(accountId, account)
+    }
+
+    account.unreadCount += unreadCount
+    account.mailboxes.push({ name: getMailboxName(mailboxUrl), mailboxUrl, unreadCount })
+  }
+
+  const accounts = [...byAccount.values()].sort((a, b) => a.label.localeCompare(b.label))
+  for (const account of accounts) {
+    account.mailboxes.sort((a, b) => b.unreadCount - a.unreadCount || a.name.localeCompare(b.name))
+  }
+
+  return { source: SOURCE_NAME, configPath, accounts }
+}
+
+/** The human-readable half: what to pass to `mailbox` and `provider`, and where labels come from. */
+export const describeMailAccounts = (result: ListMailAccountsResult): string => {
+  if (result.accounts.length === 0) {
+    return "No mail accounts found in the Envelope Index."
+  }
+
+  const lines = result.accounts.flatMap((account) => [
+    `${account.label} (${account.category}) — provider "${account.provider}", ${account.unreadCount} unread`,
+    `  account id: ${account.accountId}`,
+    ...account.mailboxes.map((mailbox) => `  - ${mailbox.name || "(no name)"} — ${mailbox.unreadCount} unread`),
+  ])
+
+  return [
+    `${result.accounts.length} account(s). Pass a mailbox name, or any substring of one, as "mailbox"; pass the provider as "provider".`,
+    "",
+    ...lines,
+    "",
+    `Labels and categories come from ${result.configPath}.`,
+  ].join("\n")
+}
+
+/**
+ * The accounts and mailboxes the other mail tools accept as filters. Without it, `provider` and
+ * `mailbox` are guesses, and a wrong guess is indistinguishable from an empty mailbox.
+ */
+export const createListMailAccountsResult = async (): Promise<CallToolResult> => {
+  let database: Database | undefined
+
+  try {
+    const db = new Database(MAIL_DB_PATH, { readonly: true })
+    database = db
+    ensureRequiredColumns(getSchemaInfo(db))
+
+    const { config } = resolveConfigForRead(db)
+    const rows = db.query(buildMailboxInventoryQuery()).all() as MailboxInventoryRow[]
+    const result = summarizeMailAccounts(rows, config, resolveConfigPath())
+    const text = describeMailAccounts(result)
+
+    return { content: [{ type: "text", text }], structuredContent: result as unknown as Record<string, unknown> }
+  } catch (error) {
+    throw error instanceof EmailToolError ? error : new EmailToolError(`Email read failed: ${String(error)}`)
+  } finally {
+    database?.close()
   }
 }
 

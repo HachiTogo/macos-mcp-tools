@@ -176,6 +176,23 @@ const composeQuery = (
 /** Mailboxes that hold drafts and local-only mail are never a source of unread mail worth reading. */
 const BASE_WHERE = ["messages.deleted = 0", "mailboxes.url IS NOT NULL", "mailboxes.url NOT LIKE 'local://%'"]
 
+/**
+ * Every mailbox the Envelope Index knows about, with its unread count. This is what backs
+ * `list_mail_accounts`: the other tools take a `mailbox` substring and a `provider`, and without
+ * this an agent has to guess both and read an empty result as "nothing matched".
+ */
+export const buildMailboxInventoryQuery = () => `
+    SELECT
+      mailboxes.url AS mailboxUrl,
+      SUM(CASE WHEN messages.read = 0 AND messages.deleted = 0 THEN 1 ELSE 0 END) AS unreadCount
+    FROM mailboxes
+    LEFT JOIN messages ON messages.mailbox = mailboxes.ROWID
+    WHERE mailboxes.url IS NOT NULL
+      AND mailboxes.url NOT LIKE 'local://%'
+    GROUP BY mailboxes.url
+    ORDER BY mailboxes.url
+  `
+
 export const buildUnreadMessagesQuery = (schema: SchemaInfo, page: QueryWindow = DEFAULT_WINDOW) => {
   const plan = planQuery(schema)
   return composeQuery(
