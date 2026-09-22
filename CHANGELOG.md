@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.0] - 2026-09-21
-
 ### Changed
 - **Mail tool arguments are validated by their declared zod schemas.** Every mail tool already published a zod `inputSchema` and then re-validated the same arguments through a separate hand-written layer. That layer ran outside the tool handler, so a bad argument came back as a JSON-RPC protocol error rather than a tool result an agent can read; validation failures are now ordinary `isError` results. Messages come from zod and differ in wording from the old ones — anything matching on mail validation text should be updated. `search_emails` still reports "At least one of 'subject', 'sender', 'after', or 'before' is required", and `after`/`before` must now parse as dates.
 - **Unknown fields are ignored rather than rejected.** The old layer failed a call that carried an unexpected field; zod strips them, which is the behaviour every other server in this package already had.

@@ -1,6 +1,6 @@
 {
   "name": "@hachitogo/macos-mcp-tools",
-  "version": "0.8.0",
+  "version": "0.7.1",
   "description": "MCP servers for macOS: Apple Mail, Contacts, Notes, Memory, Messages, Calendar Events, and Reminders",
   "type": "module",
   "bin": {

@@ -90,8 +90,12 @@ Publishing is automated up to a deliberate human gate. There is no npm token any
 workflow authenticates with npm trusted publishing (GitHub OIDC) and stages the release with
 provenance. CI cannot make a version live on its own.
 
-1. Every merged PR or PR stack bumps `package.json` and adds a CHANGELOG section (see AGENTS.md).
-2. After the merge, tag the merge commit with the same version and push the tag:
+1. Ordinary PRs do not touch `package.json`; they add CHANGELOG entries under `## [Unreleased]`.
+   When you want to publish, open a release PR that bumps the version and renames that heading to
+   it. Bumping per merge instead strands versions: a bump that reaches `main` and is never tagged
+   can never be released, because step 3 checks the tag against `package.json`. That is how 0.6.0
+   was lost.
+2. After the release PR merges, tag the merge commit with the same version and push the tag:
 
    ```bash
    git fetch origin main && git tag -a v0.5.0 origin/main -m "v0.5.0" && git push origin v0.5.0
