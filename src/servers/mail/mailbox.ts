@@ -25,10 +25,21 @@ export const decodeMailboxPath = (value: string) => {
   }
 }
 
-export const getMailboxName = (mailboxUrl: string) => {
-  const match = mailboxUrl.match(/^[a-z]+:\/\/[^/]+\/(.+)$/i)
-  return decodeMailboxPath(match?.[1] ?? mailboxUrl)
-}
+/**
+ * The mailbox's name as Mail.app knows it: the URL path with each segment percent-decoded. Empty
+ * segments are dropped, so a trailing slash or a doubled slash does not change the name.
+ *
+ * MAILBOX_NAME_JXA in jxa-scripts.ts is this same algorithm in JXA, because a mutation looks the
+ * mailbox up by name and has to arrive at the string a read displayed. mailbox.test.ts runs both
+ * over the same URLs to keep them honest.
+ */
+export const getMailboxName = (mailboxUrl: string) =>
+  mailboxUrl
+    .replace(/^[a-z]+:\/\/[^/]+/i, "")
+    .split("/")
+    .filter(Boolean)
+    .map(decodeMailboxPath)
+    .join("/")
 
 export const getProviderByAccount = (config: EmailConfig): Map<string, "gmail" | "icloud"> => {
   const result = new Map<string, "gmail" | "icloud">()
