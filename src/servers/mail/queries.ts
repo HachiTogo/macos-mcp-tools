@@ -9,8 +9,15 @@ import { EmailToolError } from "./errors"
 import { toSearchBoundSeconds } from "./normalize"
 import type { SchemaInfo, SearchEmailArguments, TableColumnRow } from "./types"
 
-// Rows are capped in SQL and filtered in JS afterwards; see the callers in mail.ts.
-const READ_FETCH_LIMIT = 250
+/**
+ * The window of rows a single statement returns. Provider, mailbox and exclusion filters cannot be
+ * expressed in this SQL -- they depend on the account config and on decoded mailbox names -- so the
+ * caller pages through these windows until it has enough matches, rather than filtering one fixed
+ * page and reporting whatever survived.
+ */
+export type QueryWindow = { limit: number; offset: number }
+
+const DEFAULT_WINDOW: QueryWindow = { limit: 250, offset: 0 }
 
 export const getColumns = (database: Database, tableName: string) => {
   try {
@@ -151,31 +158,38 @@ const planQuery = (schema: SchemaInfo) => {
 }
 
 /** Assembles the statement once both queries have decided what to select and what to filter on. */
-const composeQuery = (plan: ReturnType<typeof planQuery>, columns: string[], whereClauses: string[]) => `
+const composeQuery = (
+  plan: ReturnType<typeof planQuery>,
+  columns: string[],
+  whereClauses: string[],
+  page: QueryWindow,
+) => `
     SELECT
       ${columns.join(",\n      ")}
     FROM messages
     ${plan.joins.join("\n    ")}
     WHERE ${whereClauses.join("\n      AND ")}
     ORDER BY COALESCE(${plan.receivedAtExpression}, 0) DESC, messages.ROWID DESC
-    LIMIT ${READ_FETCH_LIMIT}
+    LIMIT ${page.limit} OFFSET ${page.offset}
   `
 
 /** Mailboxes that hold drafts and local-only mail are never a source of unread mail worth reading. */
 const BASE_WHERE = ["messages.deleted = 0", "mailboxes.url IS NOT NULL", "mailboxes.url NOT LIKE 'local://%'"]
 
-export const buildUnreadMessagesQuery = (schema: SchemaInfo) => {
+export const buildUnreadMessagesQuery = (schema: SchemaInfo, page: QueryWindow = DEFAULT_WINDOW) => {
   const plan = planQuery(schema)
   return composeQuery(
     plan,
     [...plan.columns, `${plan.messageIdHeaderExpression} AS messageIdHeader`],
     ["messages.read = 0", ...BASE_WHERE],
+    page,
   )
 }
 
 export const buildSearchMessagesQuery = (
   schema: SchemaInfo,
   args: SearchEmailArguments,
+  page: QueryWindow = DEFAULT_WINDOW,
 ): { sql: string; params: SQLQueryBindings[] } => {
   const plan = planQuery(schema)
   const params: SQLQueryBindings[] = []
@@ -231,5 +245,5 @@ export const buildSearchMessagesQuery = (
 
   const columns = [...plan.columns, "messages.read AS readFlag", `${plan.messageIdHeaderExpression} AS messageIdHeader`]
 
-  return { sql: composeQuery(plan, columns, whereClauses), params }
+  return { sql: composeQuery(plan, columns, whereClauses, page), params }
 }

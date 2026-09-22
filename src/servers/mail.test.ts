@@ -109,7 +109,7 @@ describe("email content formatting", () => {
           mailboxName: "Personal/Inbox",
         }),
       ],
-      { limit: 10 },
+      { limit: 10, offset: 0 },
       TEST_CONFIG,
     )
 

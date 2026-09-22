@@ -21,7 +21,13 @@ import {
 } from "./jxa-scripts"
 import { getMailboxAccountKey, getProviderByAccount } from "./mailbox"
 import { cleanText, matchesMailboxFilter, normalizeEmail, SOURCE_NAME } from "./normalize"
-import { buildSearchMessagesQuery, buildUnreadMessagesQuery, ensureRequiredColumns, getSchemaInfo } from "./queries"
+import {
+  buildSearchMessagesQuery,
+  buildUnreadMessagesQuery,
+  ensureRequiredColumns,
+  getSchemaInfo,
+  type QueryWindow,
+} from "./queries"
 import type {
   EmailAttachment,
   EmailConfig,
@@ -36,7 +42,6 @@ import type {
   FetchEmailBodyResult,
   ListEmailAttachmentsArguments,
   ListEmailAttachmentsResult,
-  NormalizedEmail,
   SearchEmailArguments,
   UnreadEmailArguments,
 } from "./types"
@@ -466,6 +471,48 @@ const resolveConfigForRead = (database: Database): { config: EmailConfig; warnin
   }
 }
 
+/** Rows a single statement returns while looking for matches. */
+const SCAN_PAGE = 250
+/** Ceiling on rows examined for one call, so a narrow filter over a huge mailbox still terminates. */
+const MAX_SCAN = 5_000
+
+type Scan<T> = { matches: T[]; scanned: number; exhausted: boolean }
+
+/**
+ * Pages through a query until enough rows survive filtering.
+ *
+ * Provider, mailbox and exclusion filters depend on the account config and on decoded mailbox
+ * names, so none of them can be pushed into the SQL. Reading one fixed page and filtering it --
+ * what this used to do -- means a filter matching nothing among the newest 250 messages reports no
+ * results at all, however many actually match.
+ */
+const scanForMatches = <Row, Match>(
+  fetchPage: (page: QueryWindow) => Row[],
+  keep: (row: Row) => Match | undefined,
+  need: number,
+): Scan<Match> => {
+  const matches: Match[] = []
+  let scanned = 0
+  let exhausted = false
+
+  while (matches.length < need && scanned < MAX_SCAN) {
+    const rows = fetchPage({ limit: SCAN_PAGE, offset: scanned })
+    scanned += rows.length
+
+    for (const row of rows) {
+      const match = keep(row)
+      if (match) matches.push(match)
+    }
+
+    if (rows.length < SCAN_PAGE) {
+      exhausted = true
+      break
+    }
+  }
+
+  return { matches, scanned, exhausted }
+}
+
 export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEmailArguments): CallToolResult => {
   const schema = getSchemaInfo(database)
   ensureRequiredColumns(schema)
@@ -473,21 +520,32 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
   const { config, warnings: configWarnings } = resolveConfigForRead(database)
 
   const providerByAccount = getProviderByAccount(config)
-  const query = buildUnreadMessagesQuery(schema)
-  const rows = database.query(query).all() as EmailRow[]
-  const emails = rows
-    .map((row) => normalizeEmail(row, providerByAccount, config))
-    .filter((row): row is NormalizedEmail => Boolean(row))
-    .filter((row) => (argumentsValue.provider ? row.provider === argumentsValue.provider : true))
-    .filter((row) => matchesMailboxFilter(row, argumentsValue.mailbox))
-    .slice(0, argumentsValue.limit)
+  const allAccountKeys = new Set<string>()
+  const needed = argumentsValue.offset + argumentsValue.limit
 
-  // Surface unconfigured accounts
-  const allAccountKeys = new Set(
-    rows.map((row) => getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")).filter(Boolean),
+  const scan = scanForMatches(
+    (page) => database.query(buildUnreadMessagesQuery(schema, page)).all() as EmailRow[],
+    (row) => {
+      const accountKey = getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")
+      if (accountKey) allAccountKeys.add(accountKey)
+
+      const email = normalizeEmail(row, providerByAccount, config)
+      if (!email) return undefined
+      if (argumentsValue.provider && email.provider !== argumentsValue.provider) return undefined
+      if (!matchesMailboxFilter(email, argumentsValue.mailbox)) return undefined
+      return email
+    },
+    needed,
   )
+
+  const emails = scan.matches.slice(argumentsValue.offset, needed)
   const unconfiguredKeys = [...allAccountKeys].filter((key) => !config.accounts[key])
   const warnings: string[] = [...configWarnings]
+  if (!scan.exhausted && scan.matches.length < needed) {
+    warnings.push(
+      `⚠️ Stopped after examining ${scan.scanned} messages without filling the page. More may match; narrow the filter, or page with offset.`,
+    )
+  }
   if (unconfiguredKeys.length > 0) {
     warnings.push(
       `⚠️ ${unconfiguredKeys.length} unconfigured account(s): ${unconfiguredKeys.join(", ")}. Edit ${resolveConfigPath()} to classify them.`,
@@ -556,27 +614,33 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
   let database: Database | undefined
 
   try {
-    database = new Database(MAIL_DB_PATH, { readonly: true })
-    const schema = getSchemaInfo(database)
+    const db = new Database(MAIL_DB_PATH, { readonly: true })
+    database = db
+    const schema = getSchemaInfo(db)
     ensureRequiredColumns(schema)
 
-    const { config } = resolveConfigForRead(database)
+    const { config } = resolveConfigForRead(db)
 
     const providerByAccount = getProviderByAccount(config)
-    const { sql, params } = buildSearchMessagesQuery(schema, args)
-    const rows = database.query(sql).all(...params) as (EmailRow & { readFlag?: number | null })[]
-    const emails = rows
-      .map((row) => {
+    const needed = args.offset + args.limit
+    const scan = scanForMatches(
+      (page) => {
+        const { sql, params } = buildSearchMessagesQuery(schema, args, page)
+        return db.query(sql).all(...params) as (EmailRow & { readFlag?: number | null })[]
+      },
+      (row) => {
         const normalized = normalizeEmail(row, providerByAccount, config)
         if (!normalized) return undefined
-        // Override isUnread based on actual read flag from query
+        // The query returns read and unread alike, so the flag decides rather than the caller.
         normalized.isUnread = row.readFlag === 0
+        if (args.provider && normalized.provider !== args.provider) return undefined
+        if (!matchesMailboxFilter(normalized, args.mailbox)) return undefined
         return normalized
-      })
-      .filter((row): row is NormalizedEmail => Boolean(row))
-      .filter((row) => (args.provider ? row.provider === args.provider : true))
-      .filter((row) => matchesMailboxFilter(row, args.mailbox))
-      .slice(0, args.limit)
+      },
+      needed,
+    )
+
+    const emails = scan.matches.slice(args.offset, needed)
 
     return {
       content: [

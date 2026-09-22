@@ -137,7 +137,11 @@ describe("buildUnreadMessagesQuery", () => {
 describe("buildSearchMessagesQuery", () => {
   // `limit` is required on SearchEmailArguments but the builder caps rows at READ_FETCH_LIMIT and
   // ignores it, so the tests supply one and vary only the filters.
-  const search = (filters: Partial<SearchEmailArguments> = {}): SearchEmailArguments => ({ limit: 25, ...filters })
+  const search = (filters: Partial<SearchEmailArguments> = {}): SearchEmailArguments => ({
+    limit: 25,
+    offset: 0,
+    ...filters,
+  })
 
   const run = (filters: Partial<SearchEmailArguments> = {}) => {
     const db = seed()
