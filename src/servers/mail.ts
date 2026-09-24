@@ -22,7 +22,14 @@ import {
   createSearchEmailResult,
   createUnreadEmailsResult,
 } from "./mail/read"
-import { emailsArraySchema, handleSchema, hasSearchCriteria, isoDateString, limitSchema } from "./mail/schemas"
+import {
+  emailsArraySchema,
+  handleSchema,
+  hasSearchCriteria,
+  isoDateString,
+  limitSchema,
+  offsetSchema,
+} from "./mail/schemas"
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
@@ -34,6 +41,7 @@ server.registerTool(
     description: "Read unread Apple Mail messages without fetching bodies.",
     inputSchema: {
       limit: limitSchema.describe("Maximum number of messages to return (1–100). Default: 25."),
+      offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
       provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
     },
@@ -182,6 +190,7 @@ server.registerTool(
           "ISO 8601 date. Only return emails received strictly before it. A bare date means local midnight. Example: '2025-03-01'.",
         ),
       limit: limitSchema.describe("Maximum number of results to return (1–100). Default: 25."),
+      offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
       provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
       unreadOnly: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),

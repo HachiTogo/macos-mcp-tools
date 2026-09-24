@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`offset` on `unread_emails` and `search_emails`**, so results past the first page are reachable.
 - Unit tests for the mail logic that had none: the SQL builders run against an in-memory Envelope Index fixture, and row normalization, the argument schemas and the search-criteria rule are covered directly.
 
 ### Changed
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI refuses a version bump while `main`'s version is untagged.** This is how 0.6.0 was lost: it reached main, was never tagged, and was then superseded by 0.7.0, after which the release workflow's tag check could never pass for it. The guard fails the second bump with an explanation instead of leaving the first version stranded.
 
 ### Fixed
+- **Filtered reads no longer stop at the first 250 messages.** `unread_emails` and `search_emails` apply their provider, mailbox and exclusion filters in JavaScript, because those depend on the account config and on decoded mailbox names. Both read one capped page and filtered that, so a filter matching nothing among the newest 250 messages reported no results while plenty matched further down. Both now page through until the requested page is full, and say so when they stop early rather than implying there is nothing more.
 - **A hand-edited mail account config is no longer destroyed by a typo.** `email.json` was read through a catch-all that turned *any* failure — including a JSON syntax error — into an empty config. The caller read that as "not configured yet" and overwrote the file with rediscovered defaults, losing every label. A file that does not parse is now reported, naming the path and the problem, and is never written over.
 - **The config moved to the data directory** (`MACOS_TOOLS_DATA_DIR`, else `~/.local/share/macos-tools/`), alongside the memory database. It previously resolved inside the install directory, which a global upgrade replaces and which `bunx` may not be able to write at all. An existing file is migrated on first use.
 - **Config warnings name the file.** They previously said to edit `config/email.json`, a path relative to an install directory the agent was never told. They now print the absolute path, and a failed write is reported instead of being swallowed.

@@ -27,6 +27,8 @@ export const emailsArraySchema = z
  * `default` and an absent `limit` parses as `undefined` rather than DEFAULT_LIMIT -- which is what
  * happened before, with the hand-rolled parser quietly supplying the real default.
  */
+export const offsetSchema = z.number().int().min(0).default(0)
+
 export const limitSchema = z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT)
 
 /** `after`/`before` accept a bare date or a full timestamp; both must parse. */

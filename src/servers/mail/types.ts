@@ -68,12 +68,14 @@ export type EmailGroup = AccountClassification & {
 }
 
 export type UnreadEmailArguments = {
+  offset: number
   limit: number
   mailbox?: string
   provider?: "gmail" | "icloud"
 }
 
 export type SearchEmailArguments = {
+  offset: number
   subject?: string
   sender?: string
   after?: string
