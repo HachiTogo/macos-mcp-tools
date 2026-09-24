@@ -174,6 +174,22 @@ describe("buildSearchMessagesQuery", () => {
     ).toEqual(["101", "104"])
   })
 
+  test("a message just after local midnight is inside that day's `after` bound", () => {
+    // The bug this pins: a bare date parsed as UTC midnight put the boundary at 17:00 the previous
+    // day in Pacific time, so 00:30 local landed outside the range it obviously belongs to.
+    const db = seed()
+    const justAfterMidnight = Math.floor(new Date(2026, 8, 15, 0, 30).getTime() / 1000)
+    db.run(`INSERT INTO messages (ROWID, mailbox, read, deleted, subject, sender, message_id, date_received)
+            VALUES (200, 1, 0, 0, 10, 20, 50, ${justAfterMidnight})`)
+
+    const { sql, params } = buildSearchMessagesQuery(getSchemaInfo(db), search({ after: "2026-09-15" }))
+    const rows = db.query(sql).all(...params) as Row[]
+    expect(rows.map((row) => row.rowIdText)).toContain("200")
+
+    const next = buildSearchMessagesQuery(getSchemaInfo(db), search({ after: "2026-09-16" }))
+    expect((db.query(next.sql).all(...next.params) as Row[]).map((row) => row.rowIdText)).not.toContain("200")
+  })
+
   test("filters by received date, inclusive of after and exclusive of before", () => {
     expect(
       run({ after: "2026-09-19" })

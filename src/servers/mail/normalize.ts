@@ -27,6 +27,21 @@ export const cleanText = (value: string | null | undefined) => {
   return normalized || undefined
 }
 
+/**
+ * Seconds since the epoch for a search bound. A bare `YYYY-MM-DD` means midnight where the user
+ * is, not UTC: `new Date("2026-09-01")` is 17:00 the previous day in Pacific time, so `after`
+ * silently pulled in the previous evening and `before` cut the last hours of the day. Anything
+ * carrying a time or a zone is left to Date, which honours it.
+ */
+export const toSearchBoundSeconds = (value: string): number => {
+  const bareDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (bareDate) {
+    const [, year, month, day] = bareDate
+    return Math.floor(new Date(Number(year), Number(month) - 1, Number(day)).getTime() / 1000)
+  }
+  return Math.floor(new Date(value).getTime() / 1000)
+}
+
 export const toIsoStringFromUnixSeconds = (value: number | null) => {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     return undefined

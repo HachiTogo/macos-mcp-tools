@@ -174,11 +174,13 @@ server.registerTool(
       after: isoDateString("after")
         .optional()
         .describe(
-          "ISO 8601 date string. Only return emails received on or after this date. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
+          "ISO 8601 date. Only return emails received on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
         ),
       before: isoDateString("before")
         .optional()
-        .describe("ISO 8601 date string. Only return emails received before this date. Example: '2025-03-01'."),
+        .describe(
+          "ISO 8601 date. Only return emails received strictly before it. A bare date means local midnight. Example: '2025-03-01'.",
+        ),
       limit: limitSchema.describe("Maximum number of results to return (1–100). Default: 25."),
       provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),

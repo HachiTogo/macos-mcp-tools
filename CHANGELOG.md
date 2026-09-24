@@ -7,27 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **A hand-edited mail account config is no longer destroyed by a typo.** `email.json` was read through a catch-all that turned *any* failure — including a JSON syntax error — into an empty config. The caller read that as "not configured yet" and overwrote the file with rediscovered defaults, losing every label. A file that does not parse is now reported, naming the path and the problem, and is never written over.
-- **The config moved to the data directory** (`MACOS_TOOLS_DATA_DIR`, else `~/.local/share/macos-tools/`), alongside the memory database. It previously resolved inside the install directory, which a global upgrade replaces and which `bunx` may not be able to write at all. An existing file is migrated on first use.
-- **Config warnings name the file.** They previously said to edit `config/email.json`, a path relative to an install directory the agent was never told. They now print the absolute path, and a failed write is reported instead of being swallowed.
+### Added
+- Unit tests for the mail logic that had none: the SQL builders run against an in-memory Envelope Index fixture, and row normalization, the argument schemas and the search-criteria rule are covered directly.
 
 ### Changed
 - **Mail tool arguments are validated by their declared zod schemas.** Every mail tool already published a zod `inputSchema` and then re-validated the same arguments through a separate hand-written layer. That layer ran outside the tool handler, so a bad argument came back as a JSON-RPC protocol error rather than a tool result an agent can read; validation failures are now ordinary `isError` results. Messages come from zod and differ in wording from the old ones — anything matching on mail validation text should be updated. `search_emails` still reports "At least one of 'subject', 'sender', 'after', or 'before' is required", and `after`/`before` must now parse as dates.
 - **Unknown fields are ignored rather than rejected.** The old layer failed a call that carried an unexpected field; zod strips them, which is the behaviour every other server in this package already had.
 - **`mail.ts` is now tool registration only** — 3,911 lines to 264. Its internals moved to `src/servers/mail/`: the JXA scripts, types, mailbox parsing, account config, Envelope Index queries, normalization, formatting, and the read and mutate implementations.
-
-### Fixed
-- **One mailbox-name algorithm, shared by TypeScript and the JXA scripts.** A read displays a mailbox by name and a mutation finds it by name, and the two implementations disagreed: ten hand-copied JXA versions split the URL path and dropped empty segments, while the TypeScript one decoded the path whole. They returned different names for a pathless URL, a trailing slash and a doubled slash — so a mailbox could list successfully and then fail to mutate with `invalid_handle`. The scripts now carry the TypeScript algorithm verbatim as a shared prelude, and a test runs both through `osascript` over the same URLs to keep them in step.
-- **Both Envelope Index queries are built from one plan.** The unread and search builders had drifted apart while sharing 71 identical lines of join and column logic. The shared part is derived once; the generated SQL is unchanged, verified across 24 schema and argument combinations.
-
-### Added
-- Unit tests for the mail logic that had none: the SQL builders run against an in-memory Envelope Index fixture, and row normalization, the argument schemas and the search-criteria rule are covered directly.
-
-
-### Changed
 - **CI runs on every pull request**, not only those based on `main`. `pull_request: branches: [main]` filters on the base branch, so a stacked PR targeting the slice below it was skipped entirely; the runs such PRs appeared to get came from `gh stack submit` creating them against `main` and then retargeting.
 - **CI refuses a version bump while `main`'s version is untagged.** This is how 0.6.0 was lost: it reached main, was never tagged, and was then superseded by 0.7.0, after which the release workflow's tag check could never pass for it. The guard fails the second bump with an explanation instead of leaving the first version stranded.
+
+### Fixed
+- **A hand-edited mail account config is no longer destroyed by a typo.** `email.json` was read through a catch-all that turned *any* failure — including a JSON syntax error — into an empty config. The caller read that as "not configured yet" and overwrote the file with rediscovered defaults, losing every label. A file that does not parse is now reported, naming the path and the problem, and is never written over.
+- **The config moved to the data directory** (`MACOS_TOOLS_DATA_DIR`, else `~/.local/share/macos-tools/`), alongside the memory database. It previously resolved inside the install directory, which a global upgrade replaces and which `bunx` may not be able to write at all. An existing file is migrated on first use.
+- **Config warnings name the file.** They previously said to edit `config/email.json`, a path relative to an install directory the agent was never told. They now print the absolute path, and a failed write is reported instead of being swallowed.
+- **One mailbox-name algorithm, shared by TypeScript and the JXA scripts.** A read displays a mailbox by name and a mutation finds it by name, and the two implementations disagreed: ten hand-copied JXA versions split the URL path and dropped empty segments, while the TypeScript one decoded the path whole. They returned different names for a pathless URL, a trailing slash and a doubled slash — so a mailbox could list successfully and then fail to mutate with `invalid_handle`. The scripts now carry the TypeScript algorithm verbatim as a shared prelude, and a test runs both through `osascript` over the same URLs to keep them in step.
+- **`search_emails` date bounds are local, matching the times it reports.** A bare `after`/`before` date was parsed as UTC midnight while results are rendered in local time, so in Pacific time `after: "2026-09-01"` actually meant 17:00 on August 31 — quietly pulling in the previous evening, and cutting the same hours off the end of a `before` range. A bare date now means local midnight; a value carrying a time or a zone is still honoured exactly. The tool descriptions say which.
+- **Both Envelope Index queries are built from one plan.** The unread and search builders had drifted apart while sharing 71 identical lines of join and column logic. The shared part is derived once; the generated SQL is unchanged, verified across 24 schema and argument combinations.
 
 ## [0.7.1] - 2026-09-21
 
