@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`mail.ts` is now tool registration only** — 3,911 lines to 264. Its internals moved to `src/servers/mail/`: the JXA scripts, types, mailbox parsing, account config, Envelope Index queries, normalization, formatting, and the read and mutate implementations.
 
 ### Fixed
+- **One mailbox-name algorithm, shared by TypeScript and the JXA scripts.** A read displays a mailbox by name and a mutation finds it by name, and the two implementations disagreed: ten hand-copied JXA versions split the URL path and dropped empty segments, while the TypeScript one decoded the path whole. They returned different names for a pathless URL, a trailing slash and a doubled slash — so a mailbox could list successfully and then fail to mutate with `invalid_handle`. The scripts now carry the TypeScript algorithm verbatim as a shared prelude, and a test runs both through `osascript` over the same URLs to keep them in step.
 - **Both Envelope Index queries are built from one plan.** The unread and search builders had drifted apart while sharing 71 identical lines of join and column logic. The shared part is derived once; the generated SQL is unchanged, verified across 24 schema and argument combinations.
 
 ### Added

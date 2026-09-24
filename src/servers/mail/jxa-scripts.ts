@@ -3,25 +3,39 @@
 // passed as JSON over argv, never interpolated. Moving them here is what lets mail.ts read as
 // TypeScript rather than as 900 lines of embedded JavaScript.
 
-export const MARK_EMAILS_READ_JXA = String.raw`
-function run(argv) {
-  const Mail = Application("Mail")
-  const input = JSON.parse(argv[0] || "{}")
-  const targets = Array.isArray(input.targets) ? input.targets : []
-  const decodeMailboxPart = (value) => {
-    try {
-      return decodeURIComponent(value)
-    } catch {
-      return value
-    }
+/**
+ * getMailboxName from mailbox.ts, as JXA source. A mutation finds its mailbox by name, so it has
+ * to compute the same name a read displayed; ten hand-copied versions of this used to disagree
+ * with the TypeScript one on pathless URLs, trailing slashes and doubled slashes, which surfaced
+ * as `invalid_handle` on a mailbox that had just been listed successfully.
+ *
+ * Prepended to each script rather than interpolated into it: the scripts stay static text with
+ * their inputs passed as JSON over argv, so there is still nothing to inject into.
+ */
+export const MAILBOX_NAME_JXA = String.raw`
+const decodeMailboxPart = (value) => {
+  try {
+    return decodeURIComponent(value)
+  } catch (error) {
+    return value
   }
-  const getMailboxName = (mailboxUrl) => mailboxUrl
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
+}
+const getMailboxName = (mailboxUrl) =>
+  mailboxUrl
+    .replace(/^[a-z]+:\/\/[^/]+/i, "")
     .split("/")
     .filter(Boolean)
     .map(decodeMailboxPart)
     .join("/")
+`
 
+export const MARK_EMAILS_READ_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
+function run(argv) {
+  const Mail = Application("Mail")
+  const input = JSON.parse(argv[0] || "{}")
+  const targets = Array.isArray(input.targets) ? input.targets : []
   const results = targets.map((target) => {
     const baseResult = {
       id: target.id,
@@ -97,7 +111,9 @@ function run(argv) {
 }
 `
 
-export const FETCH_EMAIL_BODY_JXA = String.raw`
+export const FETCH_EMAIL_BODY_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
@@ -105,16 +121,6 @@ function run(argv) {
   const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
   const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
   const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-
-  const decodeMailboxPart = (value) => {
-    try { return decodeURIComponent(value) } catch { return value }
-  }
-  const getMailboxName = (url) => url
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
 
   if (!accountId || !mailId || !mailboxUrl) {
     return JSON.stringify({ found: false, body: "" })
@@ -142,7 +148,9 @@ function run(argv) {
 }
 `
 
-export const FETCH_EMAIL_SOURCE_JXA = String.raw`
+export const FETCH_EMAIL_SOURCE_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
@@ -150,16 +158,6 @@ function run(argv) {
   const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
   const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
   const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-
-  const decodeMailboxPart = (value) => {
-    try { return decodeURIComponent(value) } catch { return value }
-  }
-  const getMailboxName = (url) => url
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
 
   if (!accountId || !mailId || !mailboxUrl) {
     return JSON.stringify({ found: false, source: "" })
@@ -187,7 +185,9 @@ function run(argv) {
 }
 `
 
-export const LIST_EMAIL_ATTACHMENTS_JXA = String.raw`
+export const LIST_EMAIL_ATTACHMENTS_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
@@ -195,16 +195,6 @@ function run(argv) {
   const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
   const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
   const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-
-  const decodeMailboxPart = (value) => {
-    try { return decodeURIComponent(value) } catch { return value }
-  }
-  const getMailboxName = (url) => url
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
 
   if (!accountId || !mailId || !mailboxUrl) {
     return JSON.stringify({ found: false, attachments: [] })
@@ -236,7 +226,9 @@ function run(argv) {
 }
 `
 
-export const FETCH_EMAIL_ATTACHMENT_JXA = String.raw`
+export const FETCH_EMAIL_ATTACHMENT_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
@@ -246,16 +238,6 @@ function run(argv) {
   const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
   const attachmentName = typeof input.attachmentName === "string" ? input.attachmentName : ""
   const savePath = typeof input.savePath === "string" ? input.savePath : ""
-
-  const decodeMailboxPart = (value) => {
-    try { return decodeURIComponent(value) } catch { return value }
-  }
-  const getMailboxName = (url) => url
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
 
   if (!accountId || !mailId || !mailboxUrl || !attachmentName || !savePath) {
     return JSON.stringify({ saved: false, error: "Missing required parameters." })
@@ -297,25 +279,13 @@ function run(argv) {
 }
 `
 
-export const MARK_EMAILS_JUNK_JXA = String.raw`
+export const MARK_EMAILS_JUNK_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
   const targets = Array.isArray(input.targets) ? input.targets : []
-  const decodeMailboxPart = (value) => {
-    try {
-      return decodeURIComponent(value)
-    } catch {
-      return value
-    }
-  }
-  const getMailboxName = (mailboxUrl) => mailboxUrl
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
-
   const junkNames = ["junk", "[gmail]/spam", "spam"]
 
   const findJunkMailbox = (account) => {
@@ -424,25 +394,13 @@ function run(argv) {
 }
 `
 
-export const MARK_EMAILS_NOT_JUNK_JXA = String.raw`
+export const MARK_EMAILS_NOT_JUNK_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
   const targets = Array.isArray(input.targets) ? input.targets : []
-  const decodeMailboxPart = (value) => {
-    try {
-      return decodeURIComponent(value)
-    } catch {
-      return value
-    }
-  }
-  const getMailboxName = (mailboxUrl) => mailboxUrl
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
-
   const inboxNames = ["inbox"]
 
   const findInboxMailbox = (account) => {
@@ -553,25 +511,13 @@ function run(argv) {
 }
 `
 
-export const FLAG_EMAILS_JXA = String.raw`
+export const FLAG_EMAILS_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
   const targets = Array.isArray(input.targets) ? input.targets : []
-  const decodeMailboxPart = (value) => {
-    try {
-      return decodeURIComponent(value)
-    } catch {
-      return value
-    }
-  }
-  const getMailboxName = (mailboxUrl) => mailboxUrl
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
-
   const results = targets.map((target) => {
     const baseResult = {
       id: target.id,
@@ -753,20 +699,12 @@ function run(argv) {
 }
 `
 
-export const REPLY_EMAIL_JXA = String.raw`
+export const REPLY_EMAIL_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
-
-  const decodeMailboxPart = (value) => {
-    try { return decodeURIComponent(value) } catch { return value }
-  }
-  const getMailboxName = (mailboxUrl) => mailboxUrl
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
 
   try {
     const handle = input.handle || {}
@@ -821,20 +759,12 @@ function run(argv) {
 }
 `
 
-export const FORWARD_EMAIL_JXA = String.raw`
+export const FORWARD_EMAIL_JXA =
+  MAILBOX_NAME_JXA +
+  String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
-
-  const decodeMailboxPart = (value) => {
-    try { return decodeURIComponent(value) } catch { return value }
-  }
-  const getMailboxName = (mailboxUrl) => mailboxUrl
-    .replace(/^[a-z]+:\/\/[^/]+\//i, "")
-    .split("/")
-    .filter(Boolean)
-    .map(decodeMailboxPart)
-    .join("/")
 
   try {
     const handle = input.handle || {}
