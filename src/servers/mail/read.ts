@@ -9,7 +9,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
-import { discoverAndWriteConfig, loadEmailConfig } from "./config"
+import { discoverAndWriteConfig, loadEmailConfig, resolveConfigPath } from "./config"
 import { BODY_MAX_CHARS, MAIL_DB_PATH, MAX_LINKS, TIME_ZONE } from "./constants"
 import { EmailToolError } from "./errors"
 import { formatEmailsForContent, formatSearchEmailSummary } from "./format"
@@ -24,6 +24,7 @@ import { cleanText, matchesMailboxFilter, normalizeEmail, SOURCE_NAME } from "./
 import { buildSearchMessagesQuery, buildUnreadMessagesQuery, ensureRequiredColumns, getSchemaInfo } from "./queries"
 import type {
   EmailAttachment,
+  EmailConfig,
   EmailHandle,
   EmailLink,
   EmailRow,
@@ -435,14 +436,41 @@ export const createFetchEmailAttachmentResult = async (
   }
 }
 
+/**
+ * The account config for a read. A file that exists but does not parse is reported, never
+ * replaced: discovery writes defaults, and overwriting a hand-edited file with them loses work
+ * the user cannot get back.
+ */
+const resolveConfigForRead = (database: Database): { config: EmailConfig; warnings: string[] } => {
+  const path = resolveConfigPath()
+  const loaded = loadEmailConfig()
+
+  if (loaded.status === "invalid") {
+    throw new EmailToolError(
+      `Email account config at ${path} could not be read: ${loaded.reason}. Fix or delete that file; it will not be overwritten.`,
+    )
+  }
+
+  if (loaded.status === "ok" && Object.keys(loaded.config.accounts).length > 0) {
+    return { config: loaded.config, warnings: [] }
+  }
+
+  const discovered = discoverAndWriteConfig(database, path)
+  return {
+    config: discovered.config,
+    warnings: discovered.writeError
+      ? [
+          `⚠️ Could not save the account config to ${path}: ${discovered.writeError}. Accounts are rediscovered on every call until this is fixed.`,
+        ]
+      : [],
+  }
+}
+
 export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEmailArguments): CallToolResult => {
   const schema = getSchemaInfo(database)
   ensureRequiredColumns(schema)
 
-  let config = loadEmailConfig()
-  if (Object.keys(config.accounts).length === 0) {
-    config = discoverAndWriteConfig(database)
-  }
+  const { config, warnings: configWarnings } = resolveConfigForRead(database)
 
   const providerByAccount = getProviderByAccount(config)
   const query = buildUnreadMessagesQuery(schema)
@@ -459,10 +487,10 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
     rows.map((row) => getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")).filter(Boolean),
   )
   const unconfiguredKeys = [...allAccountKeys].filter((key) => !config.accounts[key])
-  const warnings: string[] = []
+  const warnings: string[] = [...configWarnings]
   if (unconfiguredKeys.length > 0) {
     warnings.push(
-      `⚠️ ${unconfiguredKeys.length} unconfigured account(s): ${unconfiguredKeys.join(", ")}. Edit config/email.json to classify them.`,
+      `⚠️ ${unconfiguredKeys.length} unconfigured account(s): ${unconfiguredKeys.join(", ")}. Edit ${resolveConfigPath()} to classify them.`,
     )
   }
 
@@ -532,10 +560,7 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
     const schema = getSchemaInfo(database)
     ensureRequiredColumns(schema)
 
-    let config = loadEmailConfig()
-    if (Object.keys(config.accounts).length === 0) {
-      config = discoverAndWriteConfig(database)
-    }
+    const { config } = resolveConfigForRead(database)
 
     const providerByAccount = getProviderByAccount(config)
     const { sql, params } = buildSearchMessagesQuery(schema, args)

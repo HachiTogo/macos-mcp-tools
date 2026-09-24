@@ -25,7 +25,7 @@
 
 ## Stateful Side Effects
 - `mail.ts` reads `~/Library/Mail/V10/MailData/Envelope Index` but mutates through JXA/`osascript`.
-- Mail auto-writes `config/email.json`, resolved against the install directory, when missing or empty. `config/` is gitignored, so it cannot dirty the worktree. Treat it as generated.
+- Mail auto-writes `email.json` in the data dir (`MACOS_TOOLS_DATA_DIR`, else `~/.local/share/macos-tools/`) when missing or empty. A file that does not parse is reported, never overwritten.
 - `messages.ts` reads `~/Library/Messages/chat.db` (readonly SQLite) and sends through JXA/`osascript`.
 - `memory.ts` stores SQLite in `MACOS_TOOLS_DATA_DIR` if set, else `~/.local/share/macos-tools/`. Use a temp dir when testing.
 - `events.ts` and `reminders.ts` mutate real calendars and reminder lists through EventKit.
