@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`list_mail_accounts`**, which reports every Apple Mail account and mailbox with its unread count, plus the config path the labels come from. The `provider` and `mailbox` filters on the other tools only accept values that exist, and a value matching nothing returns an empty result rather than an error — so until now an agent had to guess, and could not tell a wrong guess from an empty mailbox.
 - **`offset` on `unread_emails` and `search_emails`**, so results past the first page are reachable.
 - Unit tests for the mail logic that had none: the SQL builders run against an in-memory Envelope Index fixture, and row normalization, the argument schemas and the search-criteria rule are covered directly.
 

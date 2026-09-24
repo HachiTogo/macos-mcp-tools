@@ -261,6 +261,27 @@ export type ForwardEmailResult = {
   recipientCount?: number
 }
 
+export type MailboxSummary = {
+  name: string
+  mailboxUrl: string
+  unreadCount: number
+}
+
+export type MailAccountSummary = {
+  accountId: string
+  label: string
+  category: string
+  provider: string
+  unreadCount: number
+  mailboxes: MailboxSummary[]
+}
+
+export type ListMailAccountsResult = {
+  source: string
+  configPath: string
+  accounts: MailAccountSummary[]
+}
+
 export type SchemaInfo = {
   addresses: Set<string>
   mailboxes: Set<string>

@@ -19,6 +19,7 @@ import {
   createFetchEmailAttachmentResult,
   createFetchEmailBodyResult,
   createListEmailAttachmentsResult,
+  createListMailAccountsResult,
   createSearchEmailResult,
   createUnreadEmailsResult,
 } from "./mail/read"
@@ -34,6 +35,16 @@ import {
 // ── MCP Server ─────────────────────────────────────────────────────────
 
 const server = new McpServer({ name: "apple-mail", version: PACKAGE_VERSION })
+
+server.registerTool(
+  "list_mail_accounts",
+  {
+    description:
+      "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
+    inputSchema: {},
+  },
+  async () => runTool("list_mail_accounts", () => createListMailAccountsResult()),
+)
 
 server.registerTool(
   "unread_emails",

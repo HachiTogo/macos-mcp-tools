@@ -183,7 +183,9 @@ If the prompt does not appear at all, `doctor` reports the Calendar and Reminder
 
 Uses a hybrid implementation: direct read-only SQLite queries for fast message reads and searches, plus JXA for actions like fetching bodies, listing attachments, and mutating message state.
 
-Tools: `unread_emails`, `mark_emails_read`, `fetch_email_body`, `mark_emails_junk`, `mark_emails_not_junk`, `flag_emails`, `list_email_attachments`, `fetch_email_attachment`, `search_emails`, `extract_email_links`, `send_email`, `reply_email`, `forward_email`
+Start with `list_mail_accounts`: it reports every account and mailbox with its unread count, which is where the values for the `provider` and `mailbox` filters come from. A filter that matches nothing returns an empty result rather than an error, so guessing is hard to tell apart from an empty mailbox.
+
+Tools: `list_mail_accounts`, `unread_emails`, `mark_emails_read`, `fetch_email_body`, `mark_emails_junk`, `mark_emails_not_junk`, `flag_emails`, `list_email_attachments`, `fetch_email_attachment`, `search_emails`, `extract_email_links`, `send_email`, `reply_email`, `forward_email`
 
 ### Contacts
 

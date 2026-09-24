@@ -5,7 +5,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 import { buildUnreadMessagesQuery, getSchemaInfo } from "./queries"
-import { runUnreadEmailRead } from "./read"
+import { describeMailAccounts, runUnreadEmailRead, summarizeMailAccounts } from "./read"
 
 // Provider and mailbox filters are applied in JavaScript, because they depend on the account
 // config and on decoded mailbox names. This used to mean: read the newest 250 messages, filter
@@ -91,5 +91,49 @@ describe("runUnreadEmailRead", () => {
     const result = read(db, { mailbox: "quiet" })
     expect(structured(result).messages).toEqual([])
     expect(result.content[0]?.type === "text" && result.content[0].text).toContain("Stopped after examining")
+  })
+})
+
+describe("summarizeMailAccounts", () => {
+  const rows = [
+    { mailboxUrl: `${NOISY}/INBOX`, unreadCount: 12 },
+    { mailboxUrl: `${NOISY}/[Gmail]/All Mail`, unreadCount: 40 },
+    { mailboxUrl: `${QUIET}/INBOX`, unreadCount: 0 },
+    { mailboxUrl: `${QUIET}/Receipts`, unreadCount: 3 },
+  ]
+  const config = {
+    accounts: { [NOISY.replace("imap://", "")]: { label: "Work", category: "work", provider: "gmail" as const } },
+    displayOrder: [],
+  }
+
+  test("groups mailboxes under their account and totals the unread", () => {
+    const result = summarizeMailAccounts(rows, config, "/tmp/email.json")
+    const work = result.accounts.find((account) => account.label === "Work")
+    expect(work?.unreadCount).toBe(52)
+    expect(work?.mailboxes.map((m) => m.name)).toEqual(["[Gmail]/All Mail", "INBOX"])
+  })
+
+  test("an account missing from config is reported as unknown, not hidden", () => {
+    const result = summarizeMailAccounts(rows, config, "/tmp/email.json")
+    const unconfigured = result.accounts.find((account) => account.label === "unknown")
+    expect(unconfigured).toBeDefined()
+    expect(unconfigured?.provider).toBe("unknown")
+    expect(unconfigured?.mailboxes.map((m) => m.name)).toEqual(["Receipts", "INBOX"])
+  })
+
+  test("mailbox names are the decoded path, which is what the mailbox filter matches on", () => {
+    const result = summarizeMailAccounts([{ mailboxUrl: `${QUIET}/Sent%20Messages`, unreadCount: 0 }], config, "/x")
+    expect(result.accounts[0]?.mailboxes[0]?.name).toBe("Sent Messages")
+  })
+
+  test("says where labels come from, and what the values are for", () => {
+    const text = describeMailAccounts(summarizeMailAccounts(rows, config, "/tmp/email.json"))
+    expect(text).toContain("/tmp/email.json")
+    expect(text).toContain('"mailbox"')
+    expect(text).toContain("Receipts")
+  })
+
+  test("says so plainly when there are no accounts", () => {
+    expect(describeMailAccounts(summarizeMailAccounts([], config, "/x"))).toContain("No mail accounts found")
   })
 })
