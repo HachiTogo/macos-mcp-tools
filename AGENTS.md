@@ -16,7 +16,7 @@
 ## Development Guidance
 - Every change lands through a pull request against `main`. Never push directly to `main`.
 - Each PR or stack gets its own branch off `main`. Do not reuse a branch across unrelated changes.
-- Do not bump `package.json`; add CHANGELOG entries under `## [Unreleased]`. A release PR promotes them to a version heading and bumps once, sized to everything in it: patch for fixes, minor for features or pre-1.0 breaks, major past 1.0. `main`'s version always equals what npm serves.
+- Do not bump `package.json`; add CHANGELOG entries under `## [Unreleased]`. `make publish` runs the release: it promotes them and bumps once, sized to everything in it: patch for fixes, minor for features or pre-1.0 breaks, major past 1.0. `main`'s version always equals what npm serves.
 - Keep each PR near 300 lines of code, excluding comments and tests. One reviewable concern per PR.
 - Larger work splits into stacked PRs with `gh stack` (see `gh stack --help`): `gh stack init`, commit a slice, `gh stack add <branch>`, `gh stack submit`, `gh stack sync` after merges. Each slice must pass CI and stand alone.
 - Style: TypeScript strict, ESM, no semicolons, enforced by Biome (`biome.jsonc`). Run `bun run format` before committing.
