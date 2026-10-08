@@ -24,6 +24,8 @@ export type EmailRow = {
   subjectReferenceText: string | null
   readFlag?: number | null
   messageIdHeader?: string | null
+  /** Gmail only: the label mailboxes a message is filed under, newline-separated URLs. */
+  labelMailboxUrls?: string | null
 }
 
 export type NormalizedEmail = {
@@ -42,6 +44,8 @@ export type NormalizedEmail = {
   isUnread: boolean
   messageUrl: string
   source: string
+  /** Gmail only: every label the message is filed under, INBOX first. */
+  labels?: string[]
 }
 
 export type EmailHandle = {
@@ -284,6 +288,7 @@ export type ListMailAccountsResult = {
 
 export type SchemaInfo = {
   addresses: Set<string>
+  labels: Set<string>
   mailboxes: Set<string>
   messageGlobalData: Set<string>
   messages: Set<string>

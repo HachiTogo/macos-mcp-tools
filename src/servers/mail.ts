@@ -49,7 +49,8 @@ server.registerTool(
 server.registerTool(
   "unread_emails",
   {
-    description: "Read unread Apple Mail messages without fetching bodies.",
+    description:
+      "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
     inputSchema: {
       limit: limitSchema.describe("Maximum number of messages to return (1–100). Default: 25."),
       offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),

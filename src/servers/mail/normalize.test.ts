@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 
 import {
+  filedGmailLabels,
   matchesMailboxFilter,
   normalizeEmail,
   normalizeSender,
@@ -87,41 +88,41 @@ describe("normalizeSender", () => {
   })
 })
 
+/** What unread_emails passes: archived Gmail mail is left out. */
+const UNREAD = { includeArchivedGmail: false }
+/** What search_emails passes: archived Gmail mail is still searchable. */
+const SEARCH = { includeArchivedGmail: true }
+
 describe("normalizeEmail", () => {
   const providers = new Map<string, "gmail" | "icloud">([[ACCOUNT, "gmail"]])
 
   test("carries the account classification from config", () => {
-    const email = normalizeEmail(row(), providers, CONFIG)
+    const email = normalizeEmail(row(), providers, CONFIG, UNREAD)
     expect(email?.accountLabel).toBe("Work")
     expect(email?.accountCategory).toBe("work")
     expect(email?.provider).toBe("gmail")
   })
 
   test("drops rows with no mailbox URL and rows in excluded mailboxes", () => {
-    expect(normalizeEmail(row({ mailboxUrl: null }), providers, CONFIG)).toBeUndefined()
+    expect(normalizeEmail(row({ mailboxUrl: null }), providers, CONFIG, UNREAD)).toBeUndefined()
     const junk = row({ mailboxUrl: `imap://${ACCOUNT}/[Gmail]/Spam` })
-    expect(normalizeEmail(junk, providers, CONFIG)).toBeUndefined()
-  })
-
-  test("presents Gmail's All Mail as INBOX", () => {
-    const allMail = row({ mailboxUrl: `imap://${ACCOUNT}/[Gmail]/All Mail` })
-    expect(normalizeEmail(allMail, providers, CONFIG)?.mailboxName).toBe("INBOX")
+    expect(normalizeEmail(junk, providers, CONFIG, UNREAD)).toBeUndefined()
   })
 
   test("falls back from message id to document id to row id", () => {
-    expect(normalizeEmail(row(), providers, CONFIG)?.id).toBe("40")
-    expect(normalizeEmail(row({ messageIdText: null }), providers, CONFIG)?.id).toBe("doc-100")
-    expect(normalizeEmail(row({ messageIdText: null, documentId: null }), providers, CONFIG)?.id).toBe("100")
+    expect(normalizeEmail(row(), providers, CONFIG, UNREAD)?.id).toBe("40")
+    expect(normalizeEmail(row({ messageIdText: null }), providers, CONFIG, UNREAD)?.id).toBe("doc-100")
+    expect(normalizeEmail(row({ messageIdText: null, documentId: null }), providers, CONFIG, UNREAD)?.id).toBe("100")
   })
 
   test("builds a handle the mutation tools can address the message by", () => {
-    const email = normalizeEmail(row(), providers, CONFIG)
+    const email = normalizeEmail(row(), providers, CONFIG, UNREAD)
     expect(email?.handle.mailboxUrl).toBe(INBOX)
     expect(email?.handle.mailId).toBe("100")
   })
 
   test("leaves the timestamps empty rather than inventing one", () => {
-    const undated = normalizeEmail(row({ receivedAtUnix: null }), providers, CONFIG)
+    const undated = normalizeEmail(row({ receivedAtUnix: null }), providers, CONFIG, UNREAD)
     expect(undated?.receivedAt).toBe("")
     expect(undated?.receivedAtLocal).toBe("")
   })
@@ -154,5 +155,72 @@ describe("toSearchBoundSeconds", () => {
 
   test("a local timestamp without a zone keeps Date's own reading", () => {
     expect(toSearchBoundSeconds("2026-09-01T09:30:00")).toBe(Math.floor(new Date(2026, 8, 1, 9, 30).getTime() / 1000))
+  })
+})
+
+// Gmail stores every message in [Gmail]/All Mail and files it with labels. The storage mailbox says
+// nothing about where a message is filed, so the labels decide: INBOX or a user label means filed,
+// none means archived. Gmail's own system labels (Important, Starred) do not count as filing.
+describe("Gmail labels", () => {
+  const GMAIL = "imap://9F1C2D3E-0000-4000-8000-000000000001"
+  const at = (path: string) => `${GMAIL}/${path}`
+  const ALL_MAIL = at("%5BGmail%5D/All%20Mail")
+  const providers = new Map<string, "gmail" | "icloud">()
+  const gmailRow = (...labelPaths: string[]) =>
+    row({ mailboxUrl: ALL_MAIL, labelMailboxUrls: labelPaths.map(at).join("\n") || null })
+
+  test("a message labelled INBOX is reported as INBOX, even without a provider in config", () => {
+    const email = normalizeEmail(gmailRow("INBOX"), providers, CONFIG, UNREAD)
+    expect(email?.mailboxName).toBe("INBOX")
+    expect(email?.provider).toBe("gmail")
+  })
+
+  test("an unread message in a user label but not the inbox is kept, under that label", () => {
+    const email = normalizeEmail(gmailRow("Newsletters"), providers, CONFIG, UNREAD)
+    expect(email?.mailboxName).toBe("Newsletters")
+    expect(email?.labels).toEqual(["Newsletters"])
+  })
+
+  test("archived mail, with no label at all, is left out of unread but stays searchable", () => {
+    expect(normalizeEmail(gmailRow(), providers, CONFIG, UNREAD)).toBeUndefined()
+    expect(normalizeEmail(gmailRow(), providers, CONFIG, SEARCH)?.mailboxName).toBe("[Gmail]/All Mail")
+  })
+
+  test("Gmail's own labels do not make a message filed", () => {
+    // Gmail marks archived mail Important on its own; that must not pull it back into unread.
+    expect(normalizeEmail(gmailRow("%5BGmail%5D/Important"), providers, CONFIG, UNREAD)).toBeUndefined()
+    expect(normalizeEmail(gmailRow("%5BGmail%5D/Starred"), providers, CONFIG, UNREAD)).toBeUndefined()
+  })
+
+  test("INBOX wins when a message is also in a label, and the label still matches a filter", () => {
+    const email = normalizeEmail(gmailRow("Receipts", "INBOX", "%5BGmail%5D/Important"), providers, CONFIG, UNREAD)
+    expect(email?.mailboxName).toBe("INBOX")
+    expect(email?.labels).toEqual(["INBOX", "Receipts"])
+    expect(email && matchesMailboxFilter(email, "receipts")).toBe(true)
+    expect(email && matchesMailboxFilter(email, "inbox")).toBe(true)
+  })
+
+  test("the handle keeps pointing where the message is stored, which is where Mail.app finds it", () => {
+    const email = normalizeEmail(gmailRow("Newsletters"), providers, CONFIG, UNREAD)
+    expect(email?.handle.mailboxUrl).toBe(ALL_MAIL)
+    expect(email?.mailboxUrl).toBe(at("Newsletters"))
+  })
+
+  test("Google Mail, the name Gmail uses in some regions, is handled the same way", () => {
+    const row2 = row({ mailboxUrl: `${GMAIL}/%5BGoogle%20Mail%5D/All%20Mail`, labelMailboxUrls: at("INBOX") })
+    expect(normalizeEmail(row2, providers, CONFIG, UNREAD)?.mailboxName).toBe("INBOX")
+  })
+
+  test("non-Gmail mailboxes are untouched: no labels field, reported where they are stored", () => {
+    const email = normalizeEmail(row(), providers, CONFIG, UNREAD)
+    expect(email?.mailboxName).toBe("INBOX")
+    expect(email?.labels).toBeUndefined()
+  })
+
+  test("filedGmailLabels ignores blanks and system labels, and puts INBOX first", () => {
+    expect(filedGmailLabels(null)).toEqual([])
+    expect(
+      filedGmailLabels(`${at("Zed")}\n\n${at("%5BGmail%5D/Important")}\n${at("INBOX")}`).map((l) => l.name),
+    ).toEqual(["INBOX", "Zed"])
   })
 })

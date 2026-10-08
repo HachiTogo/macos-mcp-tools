@@ -4,7 +4,8 @@ import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { buildUnreadMessagesQuery, getSchemaInfo } from "./queries"
+import { getMailboxName } from "./mailbox"
+import { buildMailboxInventoryQuery, buildUnreadMessagesQuery, getSchemaInfo } from "./queries"
 import { describeMailAccounts, runUnreadEmailRead, summarizeMailAccounts } from "./read"
 
 // Provider and mailbox filters are applied in JavaScript, because they depend on the account
@@ -135,5 +136,82 @@ describe("summarizeMailAccounts", () => {
 
   test("says so plainly when there are no accounts", () => {
     expect(describeMailAccounts(summarizeMailAccounts([], config, "/x"))).toContain("No mail accounts found")
+  })
+})
+
+// The same rule end to end, through the real query and the real read, on a database shaped like a
+// Gmail account sitting next to an ordinary one.
+describe("Gmail through runUnreadEmailRead", () => {
+  const GMAIL = "imap://9F1C2D3E-0000-4000-8000-000000000001"
+  const OTHER = "imap://other%40example.com@imap.example.com"
+
+  const seedGmail = () => {
+    const db = new Database(":memory:")
+    db.run(`
+      CREATE TABLE mailboxes (ROWID INTEGER PRIMARY KEY, url TEXT);
+      CREATE TABLE messages (
+        ROWID INTEGER PRIMARY KEY, mailbox INTEGER, read INTEGER, deleted INTEGER,
+        subject INTEGER, sender INTEGER, message_id INTEGER, date_received INTEGER
+      );
+      CREATE TABLE labels (message_id INTEGER, mailbox_id INTEGER);
+      INSERT INTO mailboxes (ROWID, url) VALUES
+        (1, '${GMAIL}/%5BGmail%5D/All%20Mail'),
+        (2, '${GMAIL}/INBOX'),
+        (3, '${GMAIL}/Newsletters'),
+        (4, '${GMAIL}/%5BGmail%5D/Important'),
+        (5, '${OTHER}/INBOX');
+    `)
+    const at = Math.floor(Date.UTC(2026, 9, 1) / 1000)
+    const add = db.prepare(
+      "INSERT INTO messages (ROWID, mailbox, read, deleted, message_id, date_received) VALUES (?, ?, ?, 0, ?, ?)",
+    )
+    const label = db.prepare("INSERT INTO labels (message_id, mailbox_id) VALUES (?, ?)")
+    add.run(10, 1, 0, 10, at) // unread, in the inbox
+    label.run(10, 2)
+    add.run(11, 1, 0, 11, at - 1) // unread, filed under a label, not in the inbox
+    label.run(11, 3)
+    add.run(12, 1, 0, 12, at - 2) // unread, archived: no label at all
+    add.run(13, 1, 0, 13, at - 3) // unread, archived but auto-marked Important by Gmail
+    label.run(13, 4)
+    add.run(14, 1, 1, 14, at - 4) // read, in the inbox: not unread at all
+    label.run(14, 2)
+    add.run(20, 5, 0, 20, at - 5) // unread in an ordinary account's inbox
+    return db
+  }
+
+  const mailboxes = (args: Partial<{ mailbox: string }> = {}) =>
+    (
+      structured(runUnreadEmailRead(seedGmail(), { limit: 25, offset: 0, ...args })).messages as unknown as {
+        mailboxName: string
+      }[]
+    ).map((m) => m.mailboxName)
+
+  test("counts inbox and labelled unread, leaves archived out, and leaves other accounts alone", () => {
+    expect(mailboxes().sort()).toEqual(["INBOX", "INBOX", "Newsletters"])
+  })
+
+  test("a label filter finds labelled Gmail mail, which used to be reported as INBOX", () => {
+    expect(mailboxes({ mailbox: "newsletters" })).toEqual(["Newsletters"])
+  })
+
+  test("the inventory counts labelled mail under its label, so Gmail's INBOX no longer reads 0", () => {
+    const db = seedGmail()
+    const rows = db.query(buildMailboxInventoryQuery(getSchemaInfo(db))).all() as {
+      mailboxUrl: string
+      unreadCount: number
+    }[]
+    const unread = Object.fromEntries(
+      rows.map((row) => [
+        `${row.mailboxUrl.startsWith(GMAIL) ? "gmail" : "other"}:${getMailboxName(row.mailboxUrl)}`,
+        row.unreadCount,
+      ]),
+    )
+    expect(unread).toEqual({
+      "gmail:[Gmail]/All Mail": 4, // stored there: 10, 11, 12, 13 (14 is read)
+      "gmail:INBOX": 1, // 10, by label; Gmail's INBOX holds no rows of its own
+      "gmail:Newsletters": 1, // 11, by label
+      "gmail:[Gmail]/Important": 1, // 13, by label
+      "other:INBOX": 1, // 20, stored directly: non-Gmail counting is unchanged
+    })
   })
 })
