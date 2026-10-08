@@ -41,13 +41,15 @@ export const removeLeftoverWorktrees = (repo: string, branch: string): string[] 
 }
 
 /**
- * Builds the release commit on `branch` from `base` in a throwaway worktree, so the caller's
- * checkout is never touched, and pushes it to that branch and nowhere else.
+ * Builds the release commit on a new `branch` from `base` in a throwaway worktree, so the caller's
+ * checkout is never touched, and publishes it with `git push -u origin <branch>`.
  *
- * Two details carry the safety. `--no-track` leaves the branch without an upstream. And the push
- * names its destination in full. Without both, a user with `push.default=upstream` -- under which
- * a bare `git push origin <branch>` goes to the branch's upstream -- force-pushes the release
- * commit to main, because a branch started from origin/main tracks origin/main.
+ * `--no-track` matters. Starting a branch from a remote-tracking ref such as origin/main makes git
+ * set that ref as the branch's upstream (branch.autoSetupMerge), and under push.default=upstream
+ * the push then goes to main. Without it, the branch has no upstream until `-u` gives it one.
+ *
+ * Nothing is forced. If origin already has the branch from an earlier run, the release stops and
+ * says so rather than overwriting it.
  */
 export const pushReleaseBranch = (options: {
   repo: string
@@ -57,17 +59,25 @@ export const pushReleaseBranch = (options: {
   edit: (worktree: string) => void
 }) => {
   const { repo, branch, base, message, edit } = options
-  if (!branch.startsWith("release/")) throw new ReleaseError(`refusing to force-push ${branch}: not a release branch`)
+  if (!branch.startsWith("release/")) throw new ReleaseError(`refusing to push ${branch}: not a release branch`)
 
+  if (run("git", ["ls-remote", "--heads", "origin", `refs/heads/${branch}`], { cwd: repo }).out) {
+    throw new ReleaseError(
+      `origin already has ${branch}, probably from an earlier run, and no open PR from it. Look at it, then delete it and run again:\n  git push origin --delete ${branch}`,
+    )
+  }
+
+  // A local branch left by an earlier failed run may still track origin/main, and resetting it
+  // keeps that upstream. Origin does not have it (checked above), so start it over instead.
   removeLeftoverWorktrees(repo, branch)
+  run("git", ["branch", "-D", branch], { cwd: repo, allowFail: true })
+
   const worktree = mkdtempSync(join(tmpdir(), "macos-mcp-tools-release-"))
   try {
-    run("git", ["worktree", "add", "--quiet", "--no-track", "-B", branch, worktree, base], { cwd: repo })
+    run("git", ["worktree", "add", "--quiet", "--no-track", "-b", branch, worktree, base], { cwd: repo })
     edit(worktree)
     run("git", ["commit", "--quiet", "-am", message], { cwd: worktree })
-    // The branch belongs to the release, so replacing a leftover from a failed run is safe -- and
-    // the explicit destination means --force can only ever reach that branch.
-    run("git", ["push", "--quiet", "--force", "origin", `HEAD:refs/heads/${branch}`], { cwd: worktree })
+    run("git", ["push", "--quiet", "-u", "origin", branch], { cwd: worktree })
   } finally {
     run("git", ["worktree", "remove", "--force", worktree], { cwd: repo, allowFail: true })
     rmSync(worktree, { recursive: true, force: true })

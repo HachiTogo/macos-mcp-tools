@@ -5,11 +5,10 @@ import { join } from "node:path"
 
 import { pushReleaseBranch, ReleaseError, removeLeftoverWorktrees, run } from "./release-git"
 
-// The first `make publish` force-pushed the release commit at main instead of release/v0.8.0, and
-// only the repository's PR rule stopped it. The cause was git configuration, not the script's
-// logic: with push.default=upstream, a bare `git push origin <branch>` goes to that branch's
-// upstream, and a branch started from origin/main tracks origin/main. These tests run against a
-// scratch "origin" configured the same way, so they fail if that can happen again.
+// The first `make publish` pushed the release commit at main instead of release/v0.8.0, and only
+// the repository's PR rule stopped it. The script created the branch from origin/main, which makes
+// git set origin/main as its upstream; under push.default=upstream the push then went there. These
+// tests run against a scratch origin configured the same way, so they fail if that comes back.
 
 const dirs: string[] = []
 afterEach(() => {
@@ -47,13 +46,14 @@ const remoteRef = (origin: string, ref: string) =>
 const bump = (worktree: string) => writeFileSync(join(worktree, "package.json"), '{ "version": "1.1.0" }\n')
 
 describe("pushReleaseBranch", () => {
-  test("the old command would have pushed to main under this configuration", () => {
-    // Pins the cause: same config, the previous way of creating and pushing the branch.
+  test("a branch started from origin/main tracks it, so its push goes to main", () => {
+    // Pins the cause. No force involved: the upstream alone redirects the push.
     const { repo } = scratch()
-    run("git", ["branch", "-f", "release/v1.1.0", "origin/main"], { cwd: repo })
-    const dryRun = run("git", ["push", "--dry-run", "--porcelain", "--force", "origin", "release/v1.1.0"], {
-      cwd: repo,
-    })
+    run("git", ["branch", "release/v1.1.0", "origin/main"], { cwd: repo })
+    expect(run("git", ["rev-parse", "--abbrev-ref", "release/v1.1.0@{upstream}"], { cwd: repo }).out).toBe(
+      "origin/main",
+    )
+    const dryRun = run("git", ["push", "--dry-run", "--porcelain", "origin", "release/v1.1.0"], { cwd: repo })
     expect(dryRun.out).toContain("refs/heads/release/v1.1.0:refs/heads/main")
   })
 
@@ -67,6 +67,21 @@ describe("pushReleaseBranch", () => {
     const pushed = remoteRef(origin, "refs/heads/release/v1.1.0")
     expect(pushed).not.toBe("")
     expect(run("git", ["show", `${pushed}:package.json`], { cwd: origin }).out).toContain("1.1.0")
+    // `-u` gave it the upstream it should have had all along.
+    expect(run("git", ["rev-parse", "--abbrev-ref", "release/v1.1.0@{upstream}"], { cwd: repo }).out).toBe(
+      "origin/release/v1.1.0",
+    )
+  })
+
+  test("stops, without overwriting, when origin already has the branch", () => {
+    const { origin, repo } = scratch()
+    run("git", ["push", "--quiet", "origin", "origin/main:refs/heads/release/v1.1.0"], { cwd: repo })
+    const before = remoteRef(origin, "refs/heads/release/v1.1.0")
+
+    expect(() =>
+      pushReleaseBranch({ repo, branch: "release/v1.1.0", base: "origin/main", message: "x", edit: bump }),
+    ).toThrow(/already has release\/v1.1.0/)
+    expect(remoteRef(origin, "refs/heads/release/v1.1.0")).toBe(before)
   })
 
   test("leaves the caller's checkout untouched", () => {
@@ -94,16 +109,19 @@ describe("pushReleaseBranch", () => {
     const { origin, repo } = scratch()
     const leftover = join(mkdtempSync(join(tmpdir(), "leftover-")), "wt")
     dirs.push(leftover)
+    // Exactly what the first failed run left: a worktree holding the branch, which tracks origin/main.
     run("git", ["worktree", "add", "--quiet", "-b", "release/v1.1.0", leftover, "origin/main"], { cwd: repo })
+    const mainBefore = remoteRef(origin, "refs/heads/main")
 
     // git reports resolved paths, and on macOS /var is /private/var. Resolve before it is removed.
     const resolved = realpathSync(leftover)
     expect(removeLeftoverWorktrees(repo, "release/v1.1.0")).toEqual([resolved])
     pushReleaseBranch({ repo, branch: "release/v1.1.0", base: "origin/main", message: "release", edit: bump })
     expect(remoteRef(origin, "refs/heads/release/v1.1.0")).not.toBe("")
+    expect(remoteRef(origin, "refs/heads/main")).toBe(mainBefore)
   })
 
-  test("refuses to force-push anything that is not a release branch", () => {
+  test("refuses to push anything that is not a release branch", () => {
     const { repo } = scratch()
     expect(() => pushReleaseBranch({ repo, branch: "main", base: "origin/main", message: "x", edit: bump })).toThrow(
       /not a release branch/,
