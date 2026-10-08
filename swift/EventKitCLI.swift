@@ -1153,6 +1153,16 @@ class RemindersManager {
     private func findEvent(withId id: String) -> EKEvent? {
         return eventStore.event(withIdentifier: id)
     }
+
+    // The same lookup update-event and delete-event use, so an id they accept can also be read.
+    // Searching a date range instead missed any event outside it. For a recurring event EventKit
+    // returns the series' first occurrence.
+    func getEventById(id: String) throws -> EventJSON {
+        guard let event = findEvent(withId: id) else {
+            throw NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Event with ID '\(id)' not found."])
+        }
+        return event.toJSON()
+    }
     
     func updateEvent(id: String, title: String?, calendarName: String?, startDateString: String?, endDateString: String?, notes: String?, location: String?, structuredLocationJSON: String?, urlString: String?, isAllDay: Bool?, availability: String?, alarmsJSON: String?, clearAlarms: Bool?, recurrenceRulesJSON: String?, clearRecurrence: Bool?, span: String?) throws -> EventJSON {
         guard let event = findEvent(withId: id) else {
@@ -1578,7 +1588,7 @@ func main() {
     
     let action = parser.get("action") ?? ""
 
-    let isCalendarAction = action == "read-events" || action == "read-calendars" || action == "create-event" || action == "update-event" || action == "delete-event"
+    let isCalendarAction = action == "read-events" || action == "read-event" || action == "read-calendars" || action == "create-event" || action == "update-event" || action == "delete-event"
     
     // Check permission status first (Best Practice)
     let checkAndRequestPermission: () -> Void = {
@@ -1705,6 +1715,9 @@ func main() {
                 let endDate = endDateStr != nil ? manager.parseDate(from: endDateStr!) : nil
                 let events = try manager.getEvents(startDate: startDate, endDate: endDate, calendarName: parser.get("filterCalendar"), search: parser.get("search"), availability: parser.get("availability"), accountName: parser.get("filterAccount"))
                 print(String(data: try encoder.encode(StandardOutput(result: EventsReadResult(calendars: manager.getCalendars(), events: events))), encoding: .utf8)!)
+            case "read-event":
+                guard let id = parser.get("id") else { throw NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "--id required."]) }
+                print(String(data: try encoder.encode(StandardOutput(result: try manager.getEventById(id: id))), encoding: .utf8)!)
             case "read-calendars":
                 print(String(data: try encoder.encode(StandardOutput(result: manager.getCalendars())), encoding: .utf8)!)
             case "create-event":

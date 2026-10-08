@@ -11,8 +11,6 @@ import type {
 } from "./types.js"
 
 const DEFAULT_READ_WINDOW_DAYS = 14
-// Two years either side of today: a four-year span, the maximum EventKit honours per predicate.
-const READ_BY_ID_WINDOW_DAYS = 730
 
 const formatDateOnly = (date: Date): string => {
   const year = date.getFullYear()
@@ -93,19 +91,9 @@ class CalendarRepository {
   }
 
   async findEventById(id: string): Promise<CalendarEvent> {
-    // EventKit shortens any event predicate to four years from its start date. With no dates the CLI
-    // queried distantPast..distantFuture, which EventKit clipped to roughly years 1-5 AD, so lookups
-    // always failed. Until a dedicated read-event-by-id CLI action exists, search a bounded window
-    // centred on today that stays inside that cap.
-    const today = new Date()
-    const { events } = await this.readEvents(
-      formatDateOnly(shiftDays(today, -READ_BY_ID_WINDOW_DAYS)),
-      formatDateOnly(shiftDays(today, READ_BY_ID_WINDOW_DAYS)),
-    )
-    const event = events.find((e) => e.id === id)
-    if (!event) {
-      throw new Error(`Event with ID '${id}' not found within two years of today.`)
-    }
+    // A direct lookup, the one update and delete use. Searching a date range for the id missed every
+    // event outside it: EventKit caps a range at four years, so only events near today were found.
+    const event = await executeCli<EventJSON>(["--action", "read-event", "--id", id])
     return nullToUndefined(event, [
       "notes",
       "location",

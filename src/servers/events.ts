@@ -89,7 +89,7 @@ server.registerTool(
         .string()
         .optional()
         .describe(
-          "The unique identifier of the event (REQUIRED for update, delete; optional for read to get a single event, searched within two years of today)",
+          "The unique identifier of the event (REQUIRED for update, delete; optional for read to get that one event, at any date). A recurring event's id names the series; read returns its first occurrence.",
         ),
       title: z.string().optional().describe("The title of the event (REQUIRED for create, optional for update)"),
       startDate: z
