@@ -94,40 +94,24 @@ Ordinary PRs do not touch `package.json`; they add CHANGELOG entries under `## [
 Bumping per merge strands versions: a bump that reaches `main` and is never tagged can never be
 released, because the release workflow checks the tag against `package.json`.
 
-To publish, run:
+To release, from a clean checkout of this repository:
 
 ```bash
-make publish                  # version suggested from the changelog, shown before anything happens
-make publish VERSION=0.8.0    # or choose it
-make publish-dry-run          # check everything and print the plan; changes nothing
+make release VERSION=0.8.0   # branch release/v0.8.0, bump package.json, date the changelog, open the PR
+# review and merge the release PR
+make tag                     # tag main's version and push the tag
+# approve on npmjs.com -> the package -> Staged Packages (2FA)
+make upgrade                 # update your own global install
 ```
 
-It needs `gh` logged in, and npm 11.15.0 or newer. After one confirmation it:
-
-1. Opens a release PR that bumps `package.json` and dates the Unreleased entries, then merges it
-   once CI passes. The edit happens in a throwaway worktree, so your checkout is never touched.
-2. Tags the release commit and pushes the tag.
-3. Waits for `.github/workflows/release.yml`, which verifies the tag against `package.json`, builds
-   and verifies `bin/EventKitCLI`, runs the full CI suite, packs, stages the release on npm with
-   `--provenance`, and creates the GitHub release with the tarball attached.
-4. **Approves it**, which is the one step that needs you. If you are logged in to npm
-   (`npm whoami`), it runs `npm stage approve` and you enter your 2FA code. If not, it prints the
-   package page and waits while you approve under **Staged Packages** there.
-
-Every step checks whether it already happened, so if one fails, fix the cause and run
-`make publish` again; it picks up where it stopped. Afterwards, `make upgrade` updates your own
-global install.
-
-The manual equivalent, if you ever need it: release PR as above; then
-`git tag -a vX.Y.Z <release commit> -m vX.Y.Z && git push origin vX.Y.Z`; wait for the workflow;
-then `npm stage approve <stage-id>`, with the id from the workflow log.
-
-Between staging and approval the GitHub release exists but npm still serves the previous version.
-`make publish` waits for approval, so the two only disagree while it is waiting on you.
+The tag starts `.github/workflows/release.yml`, which checks the tag against `package.json`, builds
+`bin/EventKitCLI`, runs the CI suite, stages the package on npm with `--provenance`, and creates the
+GitHub release. The version is not installable until you approve it, and the GitHub release exists in
+the meantime, so approve promptly.
 
 CI refuses a pull request that bumps the version while main's current version has no tag, because
 that is how 0.6.0 was stranded: it reached main, was never tagged, and was then superseded by 0.7.0,
-after which the tag check in step 3 could never pass for it. If you hit that failure, either release
+after which the release workflow's tag check could never pass for it. If you hit that failure, either release
 the pending version first or drop your bump and fold the changes into it.
 
 Re-pushing a tag whose version is already live is safe; staging is skipped. Re-pushing one that is
