@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-08
+
 ### Fixed
 - **`get_messages` date bounds are local, matching the times it reports.** A bare `from_date`/`to_date` was parsed as UTC midnight while messages are shown in local time, so in Pacific time a one-day range started at 17:00 the evening before and stopped at 17:00 on the day itself. A bare date now means local midnight, the rule `search_emails` already follows; a value carrying a time or a zone is still honoured exactly. Both servers now share one implementation of it.
 - **`get_messages` rejects a date it cannot read.** Text such as "last week" became an invalid bound that matched nothing, so the call returned an empty conversation rather than an error. It now fails validation, naming the field.
