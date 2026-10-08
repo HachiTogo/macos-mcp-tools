@@ -32,10 +32,7 @@ export const offsetSchema = z.number().int().min(0).default(0)
 export const limitSchema = z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT)
 
 /** `after`/`before` accept a bare date or a full timestamp; both must parse. */
-export const isoDateString = (field: string) =>
-  z.string().refine((value) => !Number.isNaN(Date.parse(value)), {
-    message: `Invalid ${field} date. Use ISO 8601, for example "2026-09-01" or "2026-09-01T09:00:00Z".`,
-  })
+export { isoDateString } from "../../lib/dates"
 
 /**
  * search_emails needs at least one criterion. This is a rule about the object rather than any one
