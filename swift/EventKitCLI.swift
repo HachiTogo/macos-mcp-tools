@@ -1569,7 +1569,7 @@ struct ArgumentParser {
 }
 
 func subprocessPermissionMessage(domain: String, tccService: String, errorMsg: String) -> String {
-    return "\(domain) permission denied. \(errorMsg)\n\nThe permission dialog may not appear when running as a subprocess.\nTo fix this on macOS 26+, try one of:\n1. Run 'tccutil reset \(tccService)' in Terminal, then retry\n2. Manually grant access in: System Settings > Privacy & Security > \(tccService)\n3. If installed from source, rebuild with 'pnpm build' to update code signing"
+    return "\(domain) permission denied. \(errorMsg)\n\nThe permission dialog may not appear when running as a subprocess.\nTo fix this on macOS 26+, try one of:\n1. Run 'tccutil reset \(tccService)' in Terminal, then retry\n2. Manually grant access in: System Settings > Privacy & Security > \(tccService)\n3. If installed from source, rebuild with 'bun run build:swift' to update code signing"
 }
 
 func main() {
