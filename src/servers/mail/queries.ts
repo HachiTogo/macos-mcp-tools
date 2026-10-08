@@ -36,6 +36,7 @@ export const getSchemaInfo = (database: Database): SchemaInfo => ({
   senders: getColumns(database, "senders"),
   senderAddresses: getColumns(database, "sender_addresses"),
   mailboxes: getColumns(database, "mailboxes"),
+  labels: getColumns(database, "labels"),
 })
 
 export const ensureRequiredColumns = (schema: SchemaInfo) => {
@@ -131,6 +132,13 @@ const planQuery = (schema: SchemaInfo) => {
   const resolvedSenderAddressExpression =
     resolvedSenderAddressParts.length > 0 ? `COALESCE(${resolvedSenderAddressParts.join(", ")})` : "NULL"
 
+  // Gmail stores every message in [Gmail]/All Mail and files it with labels, which Mail records in
+  // the labels table. No other account type writes to that table.
+  const canListLabels = schema.labels.has("message_id") && schema.labels.has("mailbox_id")
+  const labelMailboxUrlsExpression = canListLabels
+    ? "(SELECT group_concat(label_mailbox.url, char(10)) FROM labels JOIN mailboxes label_mailbox ON label_mailbox.ROWID = labels.mailbox_id WHERE labels.message_id = messages.ROWID)"
+    : "NULL"
+
   // The columns both queries select, in the order NormalizedEmail reads them.
   const columns = [
     "CAST(messages.ROWID AS TEXT) AS rowIdText",
@@ -144,6 +152,7 @@ const planQuery = (schema: SchemaInfo) => {
     `${resolvedSenderAddressExpression} AS resolvedSenderAddress`,
     `${senderReferenceExpression} AS senderReferenceText`,
     "mailboxes.url AS mailboxUrl",
+    `${labelMailboxUrlsExpression} AS labelMailboxUrls`,
   ]
 
   return {
@@ -181,17 +190,21 @@ const BASE_WHERE = ["messages.deleted = 0", "mailboxes.url IS NOT NULL", "mailbo
  * `list_mail_accounts`: the other tools take a `mailbox` substring and a `provider`, and without
  * this an agent has to guess both and read an empty result as "nothing matched".
  */
-export const buildMailboxInventoryQuery = () => `
-    SELECT
-      mailboxes.url AS mailboxUrl,
-      SUM(CASE WHEN messages.read = 0 AND messages.deleted = 0 THEN 1 ELSE 0 END) AS unreadCount
+export const buildMailboxInventoryQuery = (schema: SchemaInfo) => {
+  const stored = "(SELECT COUNT(*) FROM messages m WHERE m.mailbox = mailboxes.ROWID AND m.read = 0 AND m.deleted = 0)"
+  // A Gmail label holds no rows of its own; its messages live in All Mail and point back to it.
+  const labelled =
+    schema.labels.has("message_id") && schema.labels.has("mailbox_id")
+      ? " + (SELECT COUNT(*) FROM labels l JOIN messages m ON m.ROWID = l.message_id WHERE l.mailbox_id = mailboxes.ROWID AND l.mailbox_id != m.mailbox AND m.read = 0 AND m.deleted = 0)"
+      : ""
+  return `
+    SELECT mailboxes.url AS mailboxUrl, ${stored}${labelled} AS unreadCount
     FROM mailboxes
-    LEFT JOIN messages ON messages.mailbox = mailboxes.ROWID
     WHERE mailboxes.url IS NOT NULL
       AND mailboxes.url NOT LIKE 'local://%'
-    GROUP BY mailboxes.url
     ORDER BY mailboxes.url
   `
+}
 
 export const buildUnreadMessagesQuery = (schema: SchemaInfo, page: QueryWindow = DEFAULT_WINDOW) => {
   const plan = planQuery(schema)

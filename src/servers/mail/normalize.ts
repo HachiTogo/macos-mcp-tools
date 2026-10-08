@@ -111,10 +111,41 @@ export const normalizeSender = (row: EmailRow) => {
   }
 }
 
+/** Gmail's All Mail, under either of the names Gmail uses by region. */
+const GMAIL_ALL_MAIL = /^\[(gmail|google mail)\]\/all mail$/i
+/** Labels Gmail applies itself. They are not folders a user filed into: Important, Starred, etc. */
+const GMAIL_SYSTEM_LABEL = /^\[(gmail|google mail)\](\/|$)/i
+
+type Label = { name: string; url: string }
+
+/**
+ * The labels a Gmail message is filed under, INBOX first. Gmail's own system labels do not count:
+ * it applies Important automatically, archived mail included, so counting it would bring archived
+ * mail back in. Labels are screened by the same exclusions as any other mailbox.
+ */
+export const filedGmailLabels = (labelMailboxUrls: string | null | undefined): Label[] =>
+  (labelMailboxUrls ?? "")
+    .split("\n")
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .map((url) => ({ url, name: getMailboxName(url) }))
+    .filter((label) => label.name && !GMAIL_SYSTEM_LABEL.test(label.name))
+    .filter((label) => !isExcludedMailbox(label.url, label.name, "gmail"))
+    .sort((a, b) => Number(b.name === "INBOX") - Number(a.name === "INBOX") || a.name.localeCompare(b.name))
+
+export type NormalizeOptions = {
+  /**
+   * Whether a Gmail message with no filed label -- archived, in Gmail's terms -- is kept. Unread
+   * reads leave it out; searches keep it, since finding old archived mail is what search is for.
+   */
+  includeArchivedGmail: boolean
+}
+
 export const normalizeEmail = (
   row: EmailRow,
   providerByAccount: Map<string, "gmail" | "icloud">,
   config: EmailConfig,
+  options: NormalizeOptions,
 ) => {
   const mailboxUrl = cleanText(row.mailboxUrl) ?? ""
 
@@ -124,14 +155,31 @@ export const normalizeEmail = (
 
   const mailboxName = getMailboxName(mailboxUrl)
   const accountKey = getMailboxAccountKey(mailboxUrl)
-  const provider = providerByAccount.get(accountKey) ?? "icloud"
+  let provider = providerByAccount.get(accountKey) ?? "icloud"
 
-  if (isExcludedMailbox(mailboxUrl, mailboxName, provider)) {
+  // Where the message is reported. Every account but Gmail: the mailbox it is stored in.
+  let displayMailboxName = mailboxName
+  let displayMailboxUrl = mailboxUrl
+  let labels: string[] | undefined
+
+  if (GMAIL_ALL_MAIL.test(mailboxName)) {
+    // Gmail stores every message here and expresses folders as labels, so the storage mailbox says
+    // nothing about where the message is filed. Report its first filed label instead -- INBOX when
+    // it has one -- and treat a message with no filed label as archived.
+    provider = "gmail"
+    const filed = filedGmailLabels(row.labelMailboxUrls)
+    if (filed.length === 0 && !options.includeArchivedGmail) {
+      return undefined
+    }
+    if (filed[0]) {
+      displayMailboxName = filed[0].name
+      displayMailboxUrl = filed[0].url
+    }
+    labels = filed.map((label) => label.name)
+  } else if (isExcludedMailbox(mailboxUrl, mailboxName, provider)) {
     return undefined
   }
 
-  const displayMailboxName =
-    provider === "gmail" && mailboxName.toLowerCase().includes("all mail") ? "INBOX" : mailboxName
   const messageId = cleanText(row.messageIdText) ?? ""
   const accountClassification = classifyAccountByMailboxUrl(mailboxUrl, config)
   const receivedAt = toIsoStringFromUnixSeconds(row.receivedAtUnix)
@@ -141,12 +189,13 @@ export const normalizeEmail = (
 
   return {
     id: messageId || cleanText(row.documentId) || row.rowIdText,
+    // The handle names the mailbox the message is stored in, which is where Mail.app finds it.
     handle: createEmailHandle(mailboxUrl, row.rowIdText),
     subject: normalizeSubject(row),
     senderName: sender.senderName,
     senderAddress: sender.senderAddress,
     mailboxName: displayMailboxName,
-    mailboxUrl,
+    mailboxUrl: displayMailboxUrl,
     provider,
     accountLabel: accountClassification.accountLabel,
     accountCategory: accountClassification.accountCategory,
@@ -155,6 +204,7 @@ export const normalizeEmail = (
     isUnread: true as boolean,
     messageUrl,
     source: SOURCE_NAME,
+    ...(labels ? { labels } : {}),
   } satisfies NormalizedEmail
 }
 
@@ -166,6 +216,8 @@ export const matchesMailboxFilter = (email: NormalizedEmail, mailbox: string | u
   const normalizedFilter = mailbox.toLowerCase()
   return (
     email.mailboxName.toLowerCase().includes(normalizedFilter) ||
-    email.mailboxUrl.toLowerCase().includes(normalizedFilter)
+    email.mailboxUrl.toLowerCase().includes(normalizedFilter) ||
+    // A Gmail message filed under several labels matches any of them.
+    (email.labels ?? []).some((label) => label.toLowerCase().includes(normalizedFilter))
   )
 }

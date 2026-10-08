@@ -532,7 +532,7 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
       const accountKey = getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")
       if (accountKey) allAccountKeys.add(accountKey)
 
-      const email = normalizeEmail(row, providerByAccount, config)
+      const email = normalizeEmail(row, providerByAccount, config, { includeArchivedGmail: false })
       if (!email) return undefined
       if (argumentsValue.provider && email.provider !== argumentsValue.provider) return undefined
       if (!matchesMailboxFilter(email, argumentsValue.mailbox)) return undefined
@@ -654,7 +654,7 @@ export const createListMailAccountsResult = async (): Promise<CallToolResult> =>
     ensureRequiredColumns(getSchemaInfo(db))
 
     const { config } = resolveConfigForRead(db)
-    const rows = db.query(buildMailboxInventoryQuery()).all() as MailboxInventoryRow[]
+    const rows = db.query(buildMailboxInventoryQuery(getSchemaInfo(db))).all() as MailboxInventoryRow[]
     const result = summarizeMailAccounts(rows, config, resolveConfigPath())
     const text = describeMailAccounts(result)
 
@@ -721,7 +721,7 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
         return db.query(sql).all(...params) as (EmailRow & { readFlag?: number | null })[]
       },
       (row) => {
-        const normalized = normalizeEmail(row, providerByAccount, config)
+        const normalized = normalizeEmail(row, providerByAccount, config, { includeArchivedGmail: true })
         if (!normalized) return undefined
         // The query returns read and unread alike, so the flag decides rather than the caller.
         normalized.isUnread = row.readFlag === 0
