@@ -88,6 +88,26 @@ describe("memory pure helpers", () => {
     })
   })
 
+  test("computeDurationSince counts a date-only timestamp from local midnight", () => {
+    // Pinned west of UTC, where UTC midnight is 17:00 the previous day; CI itself runs in UTC.
+    const defaultTz = process.env.TZ
+    process.env.TZ = "America/Los_Angeles"
+    try {
+      expect(computeDurationSince("2026-06-07", new Date(2026, 9, 8, 11, 30))).toEqual({
+        elapsed_days: 123,
+        elapsed_hours: 123 * 24 + 11,
+      })
+      // At 18:00 local the UTC reading had already rolled over to the next day.
+      expect(computeDurationSince("2026-06-07", new Date(2026, 9, 8, 18, 0)).elapsed_days).toBe(123)
+    } finally {
+      if (defaultTz) {
+        process.env.TZ = defaultTz
+      } else {
+        delete process.env.TZ
+      }
+    }
+  })
+
   test("normalizeEntry includes structured cost fields in normalized entries", () => {
     expect(
       normalizeEntry(
