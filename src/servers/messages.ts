@@ -6,6 +6,7 @@ import { join } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
+import { isoDateString, parseLocalDate } from "../lib/dates.js"
 import { runJxa } from "../lib/jxa.js"
 import { errorMessage, runTool, textResult } from "../lib/mcp-result.js"
 import { PACKAGE_VERSION } from "../lib/version"
@@ -92,8 +93,9 @@ const appleNanosToIso = (nanos: number): string => new Date(appleNanosToUnix(nan
 const appleNanosToLocal = (nanos: number): string =>
   new Date(appleNanosToUnix(nanos) * 1000).toLocaleString("en-US", { timeZone: TIME_ZONE })
 
-const isoToAppleNanos = (iso: string): number => {
-  const unix = Math.floor(new Date(iso).getTime() / 1000)
+// A bare date bound means local midnight, matching the local times results are shown in.
+export const isoToAppleNanos = (iso: string): number => {
+  const unix = Math.floor(parseLocalDate(iso).getTime() / 1000)
   return (unix - APPLE_EPOCH_OFFSET) * 1e9
 }
 
@@ -449,13 +451,16 @@ server.registerTool(
         .default(DEFAULT_LIMIT)
         .optional()
         .describe("Maximum messages to return (1–200). Default: 50."),
-      from_date: z
-        .string()
+      from_date: isoDateString("from_date")
         .optional()
         .describe(
-          "ISO 8601 date. Only return messages on or after this date. Example: '2026-01-15' or '2026-01-15T09:00:00Z'.",
+          "ISO 8601 date. Only return messages on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2026-01-15' or '2026-01-15T09:00:00Z'.",
         ),
-      to_date: z.string().optional().describe("ISO 8601 date. Only return messages before this date."),
+      to_date: isoDateString("to_date")
+        .optional()
+        .describe(
+          "ISO 8601 date. Only return messages before it. A bare date means local midnight. Example: '2026-02-01'.",
+        ),
     },
     annotations: { readOnlyHint: true },
   },

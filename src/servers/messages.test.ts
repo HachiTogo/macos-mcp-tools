@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test"
+import { afterEach, describe, expect, test } from "bun:test"
 
-import { escapeLikePattern, extractTextFromBody, resolveText } from "./messages"
+import { escapeLikePattern, extractTextFromBody, isoToAppleNanos, resolveText } from "./messages"
 
 // Build a minimal attributedBody-style blob: opaque header, "NSString", "+", length prefix, UTF-8 text.
 const buildBody = (text: string, lengthForm: "short" | "u16" = "short"): Uint8Array => {
@@ -46,5 +46,32 @@ describe("escapeLikePattern", () => {
     expect(escapeLikePattern("a_b")).toBe("a\\_b")
     expect(escapeLikePattern("back\\slash")).toBe("back\\\\slash")
     expect(escapeLikePattern("plain")).toBe("plain")
+  })
+})
+
+describe("isoToAppleNanos", () => {
+  const DEFAULT_TZ = process.env.TZ
+
+  afterEach(() => {
+    if (DEFAULT_TZ) {
+      process.env.TZ = DEFAULT_TZ
+    } else {
+      delete process.env.TZ
+    }
+  })
+
+  // Messages stores nanoseconds since 2001-01-01 UTC. In Pacific time a bare date read as UTC put
+  // the bound at 17:00 the day before, so a one-day range was mostly the previous evening.
+  test("a bare date bound is local midnight", () => {
+    process.env.TZ = "America/Los_Angeles"
+    const appleEpochMs = Date.UTC(2001, 0, 1)
+    const localMidnight = new Date(2026, 9, 1).getTime()
+    expect(isoToAppleNanos("2026-10-01")).toBe(((localMidnight - appleEpochMs) / 1000) * 1e9)
+  })
+
+  test("a timestamp with a zone is honoured exactly", () => {
+    process.env.TZ = "America/Los_Angeles"
+    const appleEpochMs = Date.UTC(2001, 0, 1)
+    expect(isoToAppleNanos("2026-10-01T00:00:00Z")).toBe(((Date.UTC(2026, 9, 1) - appleEpochMs) / 1000) * 1e9)
   })
 })
