@@ -90,26 +90,40 @@ Publishing is automated up to a deliberate human gate. There is no npm token any
 workflow authenticates with npm trusted publishing (GitHub OIDC) and stages the release with
 provenance. CI cannot make a version live on its own.
 
-1. Ordinary PRs do not touch `package.json`; they add CHANGELOG entries under `## [Unreleased]`.
-   When you want to publish, open a release PR that bumps the version and renames that heading to
-   it. Bumping per merge instead strands versions: a bump that reaches `main` and is never tagged
-   can never be released, because step 3 checks the tag against `package.json`.
-2. After the release PR merges, tag the merge commit with the same version and push the tag:
+Ordinary PRs do not touch `package.json`; they add CHANGELOG entries under `## [Unreleased]`.
+Bumping per merge strands versions: a bump that reaches `main` and is never tagged can never be
+released, because the release workflow checks the tag against `package.json`.
 
-   ```bash
-   git fetch origin main && git tag -a v0.5.0 origin/main -m "v0.5.0" && git push origin v0.5.0
-   ```
+To publish, run:
 
-3. `.github/workflows/release.yml` verifies the tag matches `package.json`, builds and verifies
-   `bin/EventKitCLI` from the tagged Swift source, runs lint, tests, typecheck and integration,
-   packs, stages the release on npm with `--provenance`, and creates the GitHub release with the
-   tarball attached. The job summary links to the approval step.
-4. **Approve it.** The staged version is not installable until a maintainer promotes it. On
-   npmjs.com open the package → **Staged Packages** → Approve, or run `npm stage list` and then
-   `npm stage approve <stage-id>`. Either route prompts for 2FA.
+```bash
+make publish                  # version suggested from the changelog, shown before anything happens
+make publish VERSION=0.8.0    # or choose it
+make publish-dry-run          # check everything and print the plan; changes nothing
+```
 
-Between steps 3 and 4 the GitHub release exists but npm still serves the previous version. Approve
-promptly so the two do not disagree for long.
+It needs `gh` logged in, and npm 11.15.0 or newer. After one confirmation it:
+
+1. Opens a release PR that bumps `package.json` and dates the Unreleased entries, then merges it
+   once CI passes. The edit happens in a throwaway worktree, so your checkout is never touched.
+2. Tags the release commit and pushes the tag.
+3. Waits for `.github/workflows/release.yml`, which verifies the tag against `package.json`, builds
+   and verifies `bin/EventKitCLI`, runs the full CI suite, packs, stages the release on npm with
+   `--provenance`, and creates the GitHub release with the tarball attached.
+4. **Approves it**, which is the one step that needs you. If you are logged in to npm
+   (`npm whoami`), it runs `npm stage approve` and you enter your 2FA code. If not, it prints the
+   package page and waits while you approve under **Staged Packages** there.
+
+Every step checks whether it already happened, so if one fails, fix the cause and run
+`make publish` again; it picks up where it stopped. Afterwards, `make upgrade` updates your own
+global install.
+
+The manual equivalent, if you ever need it: release PR as above; then
+`git tag -a vX.Y.Z <release commit> -m vX.Y.Z && git push origin vX.Y.Z`; wait for the workflow;
+then `npm stage approve <stage-id>`, with the id from the workflow log.
+
+Between staging and approval the GitHub release exists but npm still serves the previous version.
+`make publish` waits for approval, so the two only disagree while it is waiting on you.
 
 CI refuses a pull request that bumps the version while main's current version has no tag, because
 that is how 0.6.0 was stranded: it reached main, was never tagged, and was then superseded by 0.7.0,
