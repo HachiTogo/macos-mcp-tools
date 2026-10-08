@@ -7,6 +7,45 @@ import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── JXA scripts ────────────────────────────────────────────────────────
 
+// Shared by every script that acts on one note. Several notes can share a title, in different
+// folders or in the same one, and acting on whichever came first read, overwrote or deleted a note
+// the caller never meant. An id is exact; a title has to match exactly one note.
+export const NOTE_LOOKUP = String.raw`
+function findFolder(app, name) {
+  const folder = app.folders().find(f => f.name() === name);
+  if (!folder) throw new Error("Folder not found: " + name);
+  return folder;
+}
+
+function pickNote(matches, title) {
+  if (matches.length === 0) throw new Error("Note not found: " + title);
+  if (matches.length > 1) {
+    const listed = matches.map(m => m.id + " (folder: " + m.folder + ")").join("; ");
+    throw new Error(matches.length + " notes are titled \"" + title + "\". Pass the id of the one you mean: " + listed);
+  }
+  return matches[0];
+}
+
+function findNote(app, args) {
+  if (args.id) {
+    const note = app.notes.byId(args.id);
+    try { note.name(); } catch (e) { throw new Error("Note not found: " + args.id); }
+    return note;
+  }
+  const folders = args.folder ? [findFolder(app, args.folder)] : app.folders();
+  const matches = [];
+  for (const folder of folders) {
+    const ids = folder.notes.id();
+    const names = folder.notes.name();
+    const folderName = folder.name();
+    for (let i = 0; i < names.length; i++) {
+      if (names[i] === args.title) matches.push({ id: ids[i], folder: folderName });
+    }
+  }
+  return app.notes.byId(pickNote(matches, args.title).id);
+}
+`
+
 const JXA_LIST_FOLDERS = String.raw`
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
@@ -63,36 +102,16 @@ function run(argv) {
 }
 `
 
-const JXA_GET_NOTE = String.raw`
+export const JXA_GET_NOTE = String.raw`${NOTE_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
   app.includeStandardAdditions = true;
-  let note = null;
-  let folderName = null;
-  if (args.folder) {
-    const folders = app.folders();
-    const folder = folders.find(f => f.name() === args.folder);
-    if (!folder) throw new Error("Folder not found: " + args.folder);
-    const notes = folder.notes();
-    note = notes.find(n => n.name() === args.title);
-    folderName = args.folder;
-  } else {
-    const folders = app.folders();
-    for (const folder of folders) {
-      const notes = folder.notes();
-      const found = notes.find(n => n.name() === args.title);
-      if (found) {
-        note = found;
-        folderName = folder.name();
-        break;
-      }
-    }
-  }
-  if (!note) throw new Error("Note not found: " + args.title);
+  const note = findNote(app, args);
   return JSON.stringify({
+    id: note.id(),
     name: note.name(),
-    folder: folderName,
+    folder: note.container().name(),
     body: note.body(),
     creationDate: note.creationDate().toISOString(),
     modificationDate: note.modificationDate().toISOString(),
@@ -100,112 +119,61 @@ function run(argv) {
 }
 `
 
-const JXA_CREATE_NOTE = String.raw`
+export const JXA_CREATE_NOTE = String.raw`${NOTE_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
   app.includeStandardAdditions = true;
-  const folders = app.folders();
-  const folder = folders.find(f => f.name() === args.folder);
-  if (!folder) throw new Error("Folder not found: " + args.folder);
+  const folder = findFolder(app, args.folder);
   const note = app.make({ new: "note", at: folder, withProperties: { name: args.title, body: args.body } });
-  return JSON.stringify({ success: true, name: note.name(), folder: args.folder });
+  return JSON.stringify({ success: true, id: note.id(), name: note.name(), folder: args.folder });
 }
 `
 
-const JXA_UPDATE_NOTE = String.raw`
+export const JXA_UPDATE_NOTE = String.raw`${NOTE_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
   app.includeStandardAdditions = true;
-  let note = null;
-  if (args.folder) {
-    const folders = app.folders();
-    const folder = folders.find(f => f.name() === args.folder);
-    if (!folder) throw new Error("Folder not found: " + args.folder);
-    const notes = folder.notes();
-    note = notes.find(n => n.name() === args.title);
-  } else {
-    const folders = app.folders();
-    for (const folder of folders) {
-      const notes = folder.notes();
-      const found = notes.find(n => n.name() === args.title);
-      if (found) { note = found; break; }
-    }
-  }
-  if (!note) throw new Error("Note not found: " + args.title);
+  const note = findNote(app, args);
   note.body = args.body;
-  return JSON.stringify({ success: true, name: args.title });
+  return JSON.stringify({ success: true, id: note.id(), name: note.name() });
 }
 `
 
-const JXA_MOVE_NOTE = String.raw`
+export const JXA_MOVE_NOTE = String.raw`${NOTE_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
   app.includeStandardAdditions = true;
-  const folders = app.folders();
-  const fromFolder = folders.find(f => f.name() === args.from_folder);
-  if (!fromFolder) throw new Error("Source folder not found: " + args.from_folder);
-  const toFolder = folders.find(f => f.name() === args.to_folder);
-  if (!toFolder) throw new Error("Target folder not found: " + args.to_folder);
-  const notes = fromFolder.notes();
-  const note = notes.find(n => n.name() === args.title);
-  if (!note) throw new Error("Note not found: " + args.title);
+  const note = findNote(app, { id: args.id, title: args.title, folder: args.from_folder });
+  const toFolder = findFolder(app, args.to_folder);
+  const result = { success: true, id: note.id(), name: note.name(), from: note.container().name(), to: args.to_folder };
   app.move(note, { to: toFolder });
-  return JSON.stringify({ success: true, name: args.title, from: args.from_folder, to: args.to_folder });
+  return JSON.stringify(result);
 }
 `
 
-const JXA_APPEND_TO_NOTE = String.raw`
+export const JXA_APPEND_TO_NOTE = String.raw`${NOTE_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
   app.includeStandardAdditions = true;
-  let note = null;
-  if (args.folder) {
-    const folders = app.folders();
-    const folder = folders.find(f => f.name() === args.folder);
-    if (!folder) throw new Error("Folder not found: " + args.folder);
-    const notes = folder.notes();
-    note = notes.find(n => n.name() === args.title);
-  } else {
-    const folders = app.folders();
-    for (const folder of folders) {
-      const notes = folder.notes();
-      const found = notes.find(n => n.name() === args.title);
-      if (found) { note = found; break; }
-    }
-  }
-  if (!note) throw new Error("Note not found: " + args.title);
+  const note = findNote(app, args);
   note.body = note.body() + args.content;
-  return JSON.stringify({ success: true, name: args.title });
+  return JSON.stringify({ success: true, id: note.id(), name: note.name() });
 }
 `
 
-const JXA_DELETE_NOTE = String.raw`
+export const JXA_DELETE_NOTE = String.raw`${NOTE_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
   app.includeStandardAdditions = true;
-  let note = null;
-  if (args.folder) {
-    const folders = app.folders();
-    const folder = folders.find(f => f.name() === args.folder);
-    if (!folder) throw new Error("Folder not found: " + args.folder);
-    const notes = folder.notes();
-    note = notes.find(n => n.name() === args.title);
-  } else {
-    const folders = app.folders();
-    for (const folder of folders) {
-      const notes = folder.notes();
-      const found = notes.find(n => n.name() === args.title);
-      if (found) { note = found; break; }
-    }
-  }
-  if (!note) throw new Error("Note not found: " + args.title);
+  const note = findNote(app, args);
+  const result = { success: true, id: note.id(), name: note.name() };
   app.delete(note);
-  return JSON.stringify({ success: true, name: args.title });
+  return JSON.stringify(result);
 }
 `
 
@@ -222,7 +190,7 @@ function run(argv) {
 }
 `
 
-const JXA_SEARCH_NOTES = String.raw`
+export const JXA_SEARCH_NOTES = String.raw`
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
@@ -261,6 +229,7 @@ function run(argv) {
           snippet = pt.slice(start, start + 120);
         } catch (e) {}
         results.push({
+          id: note.id(),
           name: note.name(),
           folder: folderName,
           snippet,
@@ -272,6 +241,23 @@ function run(argv) {
   return JSON.stringify(results);
 }
 `
+
+// ── Note references ────────────────────────────────────────────────────
+
+/** A single-note tool needs an id or a title. `registerTool` takes a shape, so the rule lives here. */
+export const requireNoteRef = ({ id, title }: { id?: string; title?: string }) => {
+  if (!id && !title) throw new Error("Pass the note's id or its title.")
+}
+
+const noteId = z
+  .string()
+  .optional()
+  .describe("Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.")
+
+const noteTitle = z
+  .string()
+  .optional()
+  .describe("Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.")
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
@@ -319,23 +305,26 @@ server.registerTool(
 server.registerTool(
   "get_note",
   {
-    description: "Get the full content of a specific note by title",
+    description:
+      "Get the full content of one note, by id or by title. A title shared by several notes is an error listing their ids.",
     inputSchema: {
-      title: z.string().describe("Note title"),
-      folder: z.string().optional().describe("Folder name (optional)"),
+      id: noteId,
+      title: noteTitle,
+      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ title, folder }) =>
-    runTool("get_note", () =>
-      jsonResult(JSON.parse(runJxa(JXA_GET_NOTE, { title, ...(folder !== undefined ? { folder } : {}) }))),
-    ),
+  async ({ id, title, folder }) =>
+    runTool("get_note", () => {
+      requireNoteRef({ id, title })
+      return jsonResult(JSON.parse(runJxa(JXA_GET_NOTE, { id, title, folder })))
+    }),
 )
 
 server.registerTool(
   "create_note",
   {
-    description: "Create a new note in a specified Apple Notes folder",
+    description: "Create a new note in a specified Apple Notes folder. Returns the new note's id.",
     inputSchema: {
       title: z.string().describe("Note title"),
       body: z.string().describe("HTML body content"),
@@ -349,64 +338,75 @@ server.registerTool(
 server.registerTool(
   "update_note",
   {
-    description: "Update the body of an existing note",
+    description:
+      "Replace the body of one note, by id or by title. A title shared by several notes is refused, listing their ids.",
     inputSchema: {
-      title: z.string().describe("Note title"),
+      id: noteId,
+      title: noteTitle,
       body: z.string().describe("New HTML body content"),
-      folder: z.string().optional().describe("Folder name (optional)"),
+      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
   },
-  async ({ title, body, folder }) =>
-    runTool("update_note", () =>
-      jsonResult(JSON.parse(runJxa(JXA_UPDATE_NOTE, { title, body, ...(folder !== undefined ? { folder } : {}) }))),
-    ),
+  async ({ id, title, body, folder }) =>
+    runTool("update_note", () => {
+      requireNoteRef({ id, title })
+      return jsonResult(JSON.parse(runJxa(JXA_UPDATE_NOTE, { id, title, body, folder })))
+    }),
 )
 
 server.registerTool(
   "move_note",
   {
-    description: "Move a note from one folder to another",
+    description:
+      "Move one note to another folder, by id or by title. A title shared by several notes is refused, listing their ids.",
     inputSchema: {
-      title: z.string().describe("Note title"),
-      from_folder: z.string().describe("Source folder name"),
+      id: noteId,
+      title: noteTitle,
+      from_folder: z.string().optional().describe("Source folder name (optional); narrows a title lookup"),
       to_folder: z.string().describe("Target folder name"),
     },
   },
-  async ({ title, from_folder, to_folder }) =>
-    runTool("move_note", () => jsonResult(JSON.parse(runJxa(JXA_MOVE_NOTE, { title, from_folder, to_folder })))),
+  async ({ id, title, from_folder, to_folder }) =>
+    runTool("move_note", () => {
+      requireNoteRef({ id, title })
+      return jsonResult(JSON.parse(runJxa(JXA_MOVE_NOTE, { id, title, from_folder, to_folder })))
+    }),
 )
 
 server.registerTool(
   "append_to_note",
   {
-    description: "Append HTML content to an existing note without replacing its body",
+    description:
+      "Append HTML content to one note without replacing its body, by id or by title. A title shared by several notes is refused, listing their ids.",
     inputSchema: {
-      title: z.string().describe("Note title"),
+      id: noteId,
+      title: noteTitle,
       content: z.string().describe("HTML content to append"),
-      folder: z.string().optional().describe("Folder name (optional)"),
+      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
   },
-  async ({ title, content, folder }) =>
-    runTool("append_to_note", () =>
-      jsonResult(
-        JSON.parse(runJxa(JXA_APPEND_TO_NOTE, { title, content, ...(folder !== undefined ? { folder } : {}) })),
-      ),
-    ),
+  async ({ id, title, content, folder }) =>
+    runTool("append_to_note", () => {
+      requireNoteRef({ id, title })
+      return jsonResult(JSON.parse(runJxa(JXA_APPEND_TO_NOTE, { id, title, content, folder })))
+    }),
 )
 
 server.registerTool(
   "delete_note",
   {
-    description: "Delete a note from Apple Notes",
+    description: "Delete one note, by id or by title. A title shared by several notes is refused, listing their ids.",
     inputSchema: {
-      title: z.string().describe("Note title"),
-      folder: z.string().optional().describe("Folder name (optional)"),
+      id: noteId,
+      title: noteTitle,
+      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
   },
-  async ({ title, folder }) =>
-    runTool("delete_note", () =>
-      jsonResult(JSON.parse(runJxa(JXA_DELETE_NOTE, { title, ...(folder !== undefined ? { folder } : {}) }))),
-    ),
+  async ({ id, title, folder }) =>
+    runTool("delete_note", () => {
+      requireNoteRef({ id, title })
+      return jsonResult(JSON.parse(runJxa(JXA_DELETE_NOTE, { id, title, folder })))
+    }),
 )
 
 server.registerTool(
@@ -424,7 +424,7 @@ server.registerTool(
   "search_notes",
   {
     description:
-      "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content.",
+      "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content. Results carry each note's id.",
     inputSchema: {
       query: z.string().describe("Search query"),
       folder: z.string().optional().describe("Folder name to scope search (optional)"),
@@ -433,9 +433,7 @@ server.registerTool(
     annotations: { readOnlyHint: true },
   },
   async ({ query, folder, limit }) =>
-    runTool("search_notes", () =>
-      jsonResult(JSON.parse(runJxa(JXA_SEARCH_NOTES, { query, limit, ...(folder !== undefined ? { folder } : {}) }))),
-    ),
+    runTool("search_notes", () => jsonResult(JSON.parse(runJxa(JXA_SEARCH_NOTES, { query, limit, folder })))),
 )
 
 // ── Entry point ────────────────────────────────────────────────────────
