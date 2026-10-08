@@ -6,6 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
+import { parseLocalDate } from "../lib/dates"
 import { jsonResult, runTool, textResult } from "../lib/mcp-result"
 import { PACKAGE_VERSION } from "../lib/version"
 // ── Types ──────────────────────────────────────────────────────────────
@@ -300,8 +301,10 @@ export const chooseOccurrenceTimestamp = (entry: Pick<NormalizedEntry, "happened
   } as const
 }
 
+// A date-only timestamp ("2026-06-07") counts from local midnight. Read as UTC midnight it started
+// the clock hours early: elapsed_hours was off by the UTC offset, and elapsed_days by one each evening.
 export const computeDurationSince = (timestamp: string, now = new Date()) => {
-  const elapsedMilliseconds = now.getTime() - new Date(timestamp).getTime()
+  const elapsedMilliseconds = now.getTime() - parseLocalDate(timestamp).getTime()
 
   return {
     elapsed_days: Math.floor(elapsedMilliseconds / (24 * 60 * 60 * 1000)),
