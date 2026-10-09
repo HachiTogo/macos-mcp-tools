@@ -17,6 +17,7 @@ import {
   versionCheck,
 } from "./lib/doctor.js"
 import { CliPermissionError, executeCli, findProjectRoot } from "./lib/eventkit/index.js"
+import { errorMessage } from "./lib/mcp-result.js"
 import { PACKAGE_VERSION } from "./lib/version.js"
 
 const HOME = homedir()
@@ -89,7 +90,7 @@ const fullDiskAccessCheck = (label: string, relativePath: string): CheckResult =
     return {
       name,
       status: "fail",
-      detail: `cannot read ${dbPath}: ${error instanceof Error ? error.message : String(error)}`,
+      detail: `cannot read ${dbPath}: ${errorMessage(error)}`,
       fix: "System Settings > Privacy & Security > Full Disk Access: enable the app that launches the servers (e.g. Claude), then restart it",
     }
   }
@@ -111,7 +112,7 @@ const eventKitPermissionCheck = async (label: string, action: string): Promise<C
         fix: `if ${label.toLowerCase()} tools fail inside the host too: System Settings > Privacy & Security > ${label}, enable the host app (e.g. Claude), then restart it`,
       }
     }
-    return { name, status: "warn", detail: error instanceof Error ? error.message : String(error) }
+    return { name, status: "warn", detail: errorMessage(error) }
   }
 }
 
@@ -134,7 +135,7 @@ const hostConfigChecks = (label: string, configPath: string): CheckResult[] => {
       {
         name: label,
         status: "fail",
-        detail: `${configPath} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        detail: `${configPath} is not valid JSON: ${errorMessage(error)}`,
         fix: "fix the JSON; the host will not start any server until it parses",
       },
     ]

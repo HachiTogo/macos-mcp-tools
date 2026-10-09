@@ -7,6 +7,7 @@ import type { Database } from "bun:sqlite"
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
+import { errorMessage } from "../../lib/mcp-result"
 
 import { getMailboxAccountKey, getMailboxName } from "./mailbox"
 import type { EmailAccountConfig, EmailConfig, MailboxUrlRow } from "./types"
@@ -55,7 +56,7 @@ export const readConfigFile = (path: string): ConfigLoad => {
   try {
     raw = readFileSync(path, "utf8")
   } catch (error) {
-    return { status: "invalid", reason: error instanceof Error ? error.message : String(error) }
+    return { status: "invalid", reason: errorMessage(error) }
   }
 
   if (raw.trim() === "") {
@@ -66,7 +67,7 @@ export const readConfigFile = (path: string): ConfigLoad => {
   try {
     parsed = JSON.parse(raw)
   } catch (error) {
-    return { status: "invalid", reason: error instanceof Error ? error.message : String(error) }
+    return { status: "invalid", reason: errorMessage(error) }
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -145,6 +146,6 @@ export const discoverAndWriteConfig = (database: Database, targetPath?: string):
     writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, "utf8")
     return { config, path }
   } catch (error) {
-    return { config, path, writeError: error instanceof Error ? error.message : String(error) }
+    return { config, path, writeError: errorMessage(error) }
   }
 }
