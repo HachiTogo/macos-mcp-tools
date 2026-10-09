@@ -92,20 +92,35 @@ function run(argv) {
   const folders = app.folders();
   const folder = folders.find(f => f.name() === args.folder);
   if (!folder) throw new Error("Folder not found: " + args.folder);
-  const notes = folder.notes();
-  const page = notes.slice(offset, offset + limit);
-  const result = page.map(n => {
-    const { text, warning } = readText(n);
-    return {
-      id: n.id(),
-      name: n.name(),
-      creationDate: n.creationDate().toISOString(),
-      modificationDate: n.modificationDate().toISOString(),
+  // Each property is read for the whole folder in one Apple event, as search does. Reading them note
+  // by note took about ten seconds for a large folder and grew with its size.
+  const notes = folder.notes;
+  const ids = notes.id();
+  const names = notes.name();
+  const created = notes.creationDate();
+  const modified = notes.modificationDate();
+  const end = Math.min(ids.length, offset + limit);
+  let texts;
+  try {
+    texts = notes.plaintext().map(text => ({ text }));
+  } catch (e) {
+    // One unreadable note fails the bulk read; reading the page note by note confines it to that note.
+    const each = notes();
+    texts = ids.map((id, i) => (i >= offset && i < end ? readText(each[i]) : { text: "" }));
+  }
+  const result = [];
+  for (let i = offset; i < end; i++) {
+    const { text, warning } = texts[i];
+    result.push({
+      id: ids[i],
+      name: names[i],
+      creationDate: created[i].toISOString(),
+      modificationDate: modified[i].toISOString(),
       snippet: text.slice(0, 100),
       ...(warning ? { warning } : {}),
-    };
-  });
-  return JSON.stringify({ notes: result, total: notes.length, offset, limit });
+    });
+  }
+  return JSON.stringify({ notes: result, total: ids.length, offset, limit });
 }
 `
 
