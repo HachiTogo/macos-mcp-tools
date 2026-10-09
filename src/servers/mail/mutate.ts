@@ -2,8 +2,9 @@
 // replying and forwarding. All of it goes through JXA, because the Envelope Index is opened
 // readonly and Mail.app owns these operations.
 
-import { spawnSync } from "node:child_process"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
+
+import { JXA_TIMEOUT_MS, runJxa } from "../../lib/jxa"
 
 import {
   formatFlagEmailsSummary,
@@ -44,24 +45,15 @@ import type {
   SendEmailResult,
 } from "./types"
 
+// The mark and flag tools handle a whole batch in one osascript call, at about 0.14 s a message (100
+// took 13.5 s). The runner's default timeout would cut off batches of a few hundred that complete
+// today, so a batch gets a second per message on top of it.
+const batchTimeoutMs = (count: number) => JXA_TIMEOUT_MS + count * 1_000
+
 export const markEmailsReadWithJxa = (targets: MarkEmailsReadTarget[]) => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", MARK_EMAILS_READ_JXA, "--", JSON.stringify({ targets })],
-    {
-      encoding: "utf8",
-    },
-  )
+  const stdout = runJxa(MARK_EMAILS_READ_JXA, { targets }, { timeoutMs: batchTimeoutMs(targets.length) })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as {
+  const output = JSON.parse(stdout || "{}") as {
     results?: MarkEmailsReadResult[]
   }
 
@@ -127,23 +119,9 @@ export const createMarkEmailsReadResult = async (argumentsValue: MarkEmailsReadA
 }
 
 export const markEmailsJunkWithJxa = (targets: MarkEmailsJunkTarget[]) => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", MARK_EMAILS_JUNK_JXA, "--", JSON.stringify({ targets })],
-    {
-      encoding: "utf8",
-    },
-  )
+  const stdout = runJxa(MARK_EMAILS_JUNK_JXA, { targets }, { timeoutMs: batchTimeoutMs(targets.length) })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as {
+  const output = JSON.parse(stdout || "{}") as {
     results?: MarkEmailsJunkResult[]
   }
 
@@ -155,23 +133,9 @@ export const markEmailsJunkWithJxa = (targets: MarkEmailsJunkTarget[]) => {
 }
 
 export const markEmailsNotJunkWithJxa = (targets: MarkEmailsNotJunkTarget[]) => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", MARK_EMAILS_NOT_JUNK_JXA, "--", JSON.stringify({ targets })],
-    {
-      encoding: "utf8",
-    },
-  )
+  const stdout = runJxa(MARK_EMAILS_NOT_JUNK_JXA, { targets }, { timeoutMs: batchTimeoutMs(targets.length) })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as {
+  const output = JSON.parse(stdout || "{}") as {
     results?: MarkEmailsNotJunkResult[]
   }
 
@@ -183,23 +147,9 @@ export const markEmailsNotJunkWithJxa = (targets: MarkEmailsNotJunkTarget[]) => 
 }
 
 export const flagEmailsWithJxa = (targets: FlagEmailsTarget[]) => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", FLAG_EMAILS_JXA, "--", JSON.stringify({ targets })],
-    {
-      encoding: "utf8",
-    },
-  )
+  const stdout = runJxa(FLAG_EMAILS_JXA, { targets }, { timeoutMs: batchTimeoutMs(targets.length) })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as {
+  const output = JSON.parse(stdout || "{}") as {
     results?: FlagEmailsResult[]
   }
 
@@ -336,19 +286,9 @@ export const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments
 }
 
 export const sendEmailWithJxa = (args: SendEmailArguments): SendEmailResult => {
-  const command = spawnSync("osascript", ["-l", "JavaScript", "-e", SEND_EMAIL_JXA, "--", JSON.stringify(args)], {
-    encoding: "utf8",
-  })
+  const stdout = runJxa(SEND_EMAIL_JXA, { ...args })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as SendEmailResult
+  const output = JSON.parse(stdout || "{}") as SendEmailResult
   if (output.status !== "sent" && output.status !== "error") {
     throw new Error("send_email: invalid JXA response.")
   }
@@ -356,36 +296,16 @@ export const sendEmailWithJxa = (args: SendEmailArguments): SendEmailResult => {
 }
 
 export const replyEmailWithJxa = (args: ReplyEmailArguments): ReplyEmailResult => {
-  const command = spawnSync("osascript", ["-l", "JavaScript", "-e", REPLY_EMAIL_JXA, "--", JSON.stringify(args)], {
-    encoding: "utf8",
-  })
+  const stdout = runJxa(REPLY_EMAIL_JXA, { ...args })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as ReplyEmailResult
+  const output = JSON.parse(stdout || "{}") as ReplyEmailResult
   return output
 }
 
 export const forwardEmailWithJxa = (args: ForwardEmailArguments): ForwardEmailResult => {
-  const command = spawnSync("osascript", ["-l", "JavaScript", "-e", FORWARD_EMAIL_JXA, "--", JSON.stringify(args)], {
-    encoding: "utf8",
-  })
+  const stdout = runJxa(FORWARD_EMAIL_JXA, { ...args })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as ForwardEmailResult
+  const output = JSON.parse(stdout || "{}") as ForwardEmailResult
   return output
 }
 

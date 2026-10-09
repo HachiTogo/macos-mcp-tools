@@ -9,6 +9,8 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
+import { runJxa } from "../../lib/jxa"
+
 import { discoverAndWriteConfig, loadEmailConfig, resolveConfigPath } from "./config"
 import { BODY_MAX_CHARS, MAIL_DB_PATH, MAX_LINKS, TIME_ZONE } from "./constants"
 import { EmailToolError } from "./errors"
@@ -50,21 +52,9 @@ import type {
 } from "./types"
 
 export const fetchEmailBodyWithJxa = (handle: EmailHandle): { found: boolean; body: string } => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", FETCH_EMAIL_BODY_JXA, "--", JSON.stringify({ handle })],
-    { encoding: "utf8" },
-  )
+  const stdout = runJxa(FETCH_EMAIL_BODY_JXA, { handle })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as { found?: boolean; body?: string }
+  const output = JSON.parse(stdout || "{}") as { found?: boolean; body?: string }
   return {
     found: output.found === true,
     body: typeof output.body === "string" ? output.body : "",
@@ -109,21 +99,9 @@ export const createFetchEmailBodyResult = async (argumentsValue: FetchEmailBodyA
 }
 
 export const fetchEmailSourceWithJxa = (handle: EmailHandle): { found: boolean; source: string } => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", FETCH_EMAIL_SOURCE_JXA, "--", JSON.stringify({ handle })],
-    { encoding: "utf8" },
-  )
+  const stdout = runJxa(FETCH_EMAIL_SOURCE_JXA, { handle })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as { found?: boolean; source?: string }
+  const output = JSON.parse(stdout || "{}") as { found?: boolean; source?: string }
   return {
     found: output.found === true,
     source: typeof output.source === "string" ? output.source : "",
@@ -287,21 +265,9 @@ export const createExtractEmailLinksResult = async (
 export const listEmailAttachmentsWithJxa = (
   handle: EmailHandle,
 ): { found: boolean; attachments: EmailAttachment[] } => {
-  const command = spawnSync(
-    "osascript",
-    ["-l", "JavaScript", "-e", LIST_EMAIL_ATTACHMENTS_JXA, "--", JSON.stringify({ handle })],
-    { encoding: "utf8" },
-  )
+  const stdout = runJxa(LIST_EMAIL_ATTACHMENTS_JXA, { handle })
 
-  if (command.error) {
-    throw command.error
-  }
-
-  if (command.status !== 0) {
-    throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-  }
-
-  const output = JSON.parse(command.stdout || "{}") as { found?: boolean; attachments?: EmailAttachment[] }
+  const output = JSON.parse(stdout || "{}") as { found?: boolean; attachments?: EmailAttachment[] }
   return {
     found: output.found === true,
     attachments: Array.isArray(output.attachments) ? output.attachments : [],
@@ -351,32 +317,13 @@ export const createFetchEmailAttachmentResult = async (
   const tmpFilePath = join(tmpDir, argumentsValue.attachmentName)
 
   try {
-    const command = spawnSync(
-      "osascript",
-      [
-        "-l",
-        "JavaScript",
-        "-e",
-        FETCH_EMAIL_ATTACHMENT_JXA,
-        "--",
-        JSON.stringify({
-          handle: argumentsValue.handle,
-          attachmentName: argumentsValue.attachmentName,
-          savePath: tmpFilePath,
-        }),
-      ],
-      { encoding: "utf8" },
-    )
+    const stdout = runJxa(FETCH_EMAIL_ATTACHMENT_JXA, {
+      handle: argumentsValue.handle,
+      attachmentName: argumentsValue.attachmentName,
+      savePath: tmpFilePath,
+    })
 
-    if (command.error) {
-      throw command.error
-    }
-
-    if (command.status !== 0) {
-      throw new Error(command.stderr.trim() || `osascript failed with exit code ${command.status}.`)
-    }
-
-    const jxaOutput = JSON.parse(command.stdout || "{}") as { saved?: boolean; error?: string }
+    const jxaOutput = JSON.parse(stdout || "{}") as { saved?: boolean; error?: string }
 
     if (!jxaOutput.saved) {
       throw new Error(jxaOutput.error ?? "Failed to save attachment.")
