@@ -616,16 +616,24 @@ function run(argv) {
     let sender = ""
     const accounts = Mail.accounts()
     let chosenAccount = null
+    // Account details steer which account sends. A read that fails falls back as before (an account
+    // whose state cannot be read counts as enabled, with no addresses or name), and is reported.
+    const warnings = []
+    const read = (what, fallback, get) => {
+      try {
+        return get()
+      } catch (error) {
+        warnings.push("Could not read " + what + ": " + (error instanceof Error ? error.message : String(error)))
+        return fallback
+      }
+    }
 
     if (fromAddress) {
       const target = fromAddress.toLowerCase()
       for (let i = 0; i < accounts.length; i++) {
         const acct = accounts[i]
-        try {
-          if (typeof acct.enabled === "function" && !acct.enabled()) continue
-        } catch (_) {}
-        let addresses = []
-        try { addresses = acct.emailAddresses() || [] } catch (_) {}
+        if (typeof acct.enabled === "function" && !read("whether account " + (i + 1) + " is enabled", true, () => acct.enabled())) continue
+        const addresses = read("account " + (i + 1) + "'s addresses", [], () => acct.emailAddresses() || [])
         const match = addresses.some((addr) => typeof addr === "string" && addr.toLowerCase() === target)
         if (match) {
           chosenAccount = acct
@@ -633,14 +641,13 @@ function run(argv) {
         }
       }
       if (!chosenAccount) {
-        return JSON.stringify({ status: "error", detail: "No enabled account matches 'from' address: " + fromAddress })
+        const reasons = warnings.length > 0 ? " (" + warnings.join("; ") + ")" : ""
+        return JSON.stringify({ status: "error", detail: "No enabled account matches 'from' address: " + fromAddress + reasons })
       }
     } else {
       for (let i = 0; i < accounts.length; i++) {
         const acct = accounts[i]
-        try {
-          if (typeof acct.enabled === "function" && !acct.enabled()) continue
-        } catch (_) {}
+        if (typeof acct.enabled === "function" && !read("whether account " + (i + 1) + " is enabled", true, () => acct.enabled())) continue
         chosenAccount = acct
         break
       }
@@ -649,15 +656,9 @@ function run(argv) {
       }
     }
 
-    let primaryAddress = ""
-    try {
-      const addrs = chosenAccount.emailAddresses() || []
-      if (addrs.length > 0) primaryAddress = addrs[0]
-    } catch (_) {}
-    if (fromAddress) primaryAddress = fromAddress
-
-    let fullName = ""
-    try { fullName = chosenAccount.fullName() || "" } catch (_) {}
+    const addrs = read("the sending account's addresses", [], () => chosenAccount.emailAddresses() || [])
+    const primaryAddress = fromAddress || (addrs.length > 0 ? addrs[0] : "")
+    const fullName = read("the sending account's name", "", () => chosenAccount.fullName() || "")
 
     if (fullName && primaryAddress) {
       sender = fullName + " <" + primaryAddress + ">"
@@ -689,6 +690,7 @@ function run(argv) {
     return JSON.stringify({
       status: "sent",
       recipientCount: to.length + cc.length + bcc.length,
+      ...(warnings.length > 0 ? { warnings } : {}),
     })
   } catch (error) {
     return JSON.stringify({
@@ -737,9 +739,14 @@ function run(argv) {
 
     const reply = matchedMessage.reply({ openingWindow: false, replyToAll: replyAll })
 
+    const warnings = []
     if (body) {
       let existing = ""
-      try { existing = reply.content() || "" } catch (_) {}
+      try {
+        existing = reply.content() || ""
+      } catch (error) {
+        warnings.push("Could not read the original message to quote it, so it was sent without the quote: " + (error instanceof Error ? error.message : String(error)))
+      }
       reply.content = body + "\n\n" + existing
     }
 
@@ -749,7 +756,7 @@ function run(argv) {
 
     reply.send()
 
-    return JSON.stringify({ status: "sent" })
+    return JSON.stringify({ status: "sent", ...(warnings.length > 0 ? { warnings } : {}) })
   } catch (error) {
     return JSON.stringify({
       status: "error",
@@ -803,9 +810,14 @@ function run(argv) {
 
     const fwd = matchedMessage.forward({ openingWindow: false })
 
+    const warnings = []
     if (body) {
       let existing = ""
-      try { existing = fwd.content() || "" } catch (_) {}
+      try {
+        existing = fwd.content() || ""
+      } catch (error) {
+        warnings.push("Could not read the original message to quote it, so it was sent without the quote: " + (error instanceof Error ? error.message : String(error)))
+      }
       fwd.content = body + "\n\n" + existing
     }
 
@@ -828,6 +840,7 @@ function run(argv) {
     return JSON.stringify({
       status: "sent",
       recipientCount: to.length + cc.length + bcc.length,
+      ...(warnings.length > 0 ? { warnings } : {}),
     })
   } catch (error) {
     return JSON.stringify({

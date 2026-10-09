@@ -85,12 +85,22 @@ export const formatEmailsForContent = (
   return `${summaryParts.join(" ")}.\n\n${groupedSections.join("\n\n")}\n\n${json}`
 }
 
+// A sent message whose script had to fall back somewhere carries warnings; they follow the summary so
+// the fallback is never invisible.
+export const withWarnings = (summary: string, warnings: string[] | undefined) =>
+  warnings && warnings.length > 0
+    ? `${summary}\nWarnings:\n${warnings.map((warning) => `- ${warning}`).join("\n")}`
+    : summary
+
 export const formatSendEmailSummary = (result: SendEmailResult) => {
   if (result.status === "sent") {
     if (typeof result.recipientCount === "number") {
-      return `Sent: ${result.recipientCount} recipient${result.recipientCount === 1 ? "" : "s"}.`
+      return withWarnings(
+        `Sent: ${result.recipientCount} recipient${result.recipientCount === 1 ? "" : "s"}.`,
+        result.warnings,
+      )
     }
-    return "Sent."
+    return withWarnings("Sent.", result.warnings)
   }
   return `send_email failed: ${result.detail ?? "unknown error"}`
 }
@@ -98,7 +108,7 @@ export const formatSendEmailSummary = (result: SendEmailResult) => {
 export const formatReplyEmailSummary = (result: ReplyEmailResult) => {
   switch (result.status) {
     case "sent":
-      return "Reply sent."
+      return withWarnings("Reply sent.", result.warnings)
     case "not_found":
       return `reply_email failed: ${result.detail ?? "Original message not found."}`
     case "invalid_handle":
@@ -112,9 +122,12 @@ export const formatForwardEmailSummary = (result: ForwardEmailResult) => {
   switch (result.status) {
     case "sent":
       if (typeof result.recipientCount === "number") {
-        return `Forward sent: ${result.recipientCount} recipient${result.recipientCount === 1 ? "" : "s"}.`
+        return withWarnings(
+          `Forward sent: ${result.recipientCount} recipient${result.recipientCount === 1 ? "" : "s"}.`,
+          result.warnings,
+        )
       }
-      return "Forward sent."
+      return withWarnings("Forward sent.", result.warnings)
     case "not_found":
       return `forward_email failed: ${result.detail ?? "Original message not found."}`
     case "invalid_handle":
