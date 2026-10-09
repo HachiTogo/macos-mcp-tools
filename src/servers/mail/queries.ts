@@ -59,109 +59,116 @@ export const ensureRequiredColumns = (schema: SchemaInfo) => {
  * what is actually present -- and that reasoning is identical for both queries, which is why it
  * lives here rather than twice.
  */
-const planQuery = (schema: SchemaInfo) => {
-  const canResolveSubject = schema.messages.has("subject") && schema.subjects.has("subject")
-  const canResolveDirectSender = schema.messages.has("sender") && schema.addresses.has("address")
+const planCapabilities = (schema: SchemaInfo) => {
   const canJoinSenderLookup = schema.messages.has("sender") && schema.senders.size > 0
-  const canResolveMappedSender =
-    canJoinSenderLookup &&
-    schema.senderAddresses.has("sender") &&
-    schema.senderAddresses.has("address") &&
-    schema.addresses.has("address")
+  return {
+    canResolveSubject: schema.messages.has("subject") && schema.subjects.has("subject"),
+    canResolveDirectSender: schema.messages.has("sender") && schema.addresses.has("address"),
+    canJoinSenderLookup,
+    canResolveMappedSender:
+      canJoinSenderLookup &&
+      schema.senderAddresses.has("sender") &&
+      schema.senderAddresses.has("address") &&
+      schema.addresses.has("address"),
+    canJoinMessageGlobalData:
+      schema.messages.has("message_id") &&
+      schema.messageGlobalData.has("message_id") &&
+      schema.messageGlobalData.has("message_id_header"),
+    // Gmail stores every message in [Gmail]/All Mail and files it with labels, which Mail records in
+    // the labels table. No other account type writes to that table.
+    canListLabels: schema.labels.has("message_id") && schema.labels.has("mailbox_id"),
+  }
+}
 
-  const canJoinMessageGlobalData =
-    schema.messages.has("message_id") &&
-    schema.messageGlobalData.has("message_id") &&
-    schema.messageGlobalData.has("message_id_header")
+type Capabilities = ReturnType<typeof planCapabilities>
 
+const planJoins = (can: Capabilities) => {
   const joins = ["JOIN mailboxes ON mailboxes.ROWID = messages.mailbox"]
 
-  if (canResolveSubject) {
+  if (can.canResolveSubject) {
     joins.push("LEFT JOIN subjects subject_lookup ON subject_lookup.ROWID = messages.subject")
   }
 
-  if (canResolveDirectSender) {
+  if (can.canResolveDirectSender) {
     joins.push("LEFT JOIN addresses direct_sender ON direct_sender.ROWID = messages.sender")
   }
 
-  if (canJoinSenderLookup) {
+  if (can.canJoinSenderLookup) {
     joins.push("LEFT JOIN senders sender_lookup ON sender_lookup.ROWID = messages.sender")
   }
 
-  if (canResolveMappedSender) {
+  if (can.canResolveMappedSender) {
     joins.push(
       "LEFT JOIN (SELECT sender, MIN(address) AS address FROM sender_addresses GROUP BY sender) sender_address_lookup ON sender_address_lookup.sender = sender_lookup.ROWID",
     )
     joins.push("LEFT JOIN addresses mapped_sender ON mapped_sender.ROWID = sender_address_lookup.address")
   }
 
-  if (canJoinMessageGlobalData) {
+  if (can.canJoinMessageGlobalData) {
     joins.push("LEFT JOIN message_global_data mgd ON mgd.message_id = messages.message_id")
   }
 
-  const receivedAtExpression = schema.messages.has("date_received")
-    ? "messages.date_received"
-    : schema.messages.has("display_date")
-      ? "messages.display_date"
-      : "NULL"
+  return joins
+}
 
-  const documentIdExpression = schema.messages.has("document_id") ? "messages.document_id" : "NULL"
-  const messageIdExpression = schema.messages.has("message_id") ? "CAST(messages.message_id AS TEXT)" : "NULL"
-  const messageIdHeaderExpression = canJoinMessageGlobalData ? "mgd.message_id_header" : "NULL"
-  const subjectReferenceExpression = schema.messages.has("subject") ? "CAST(messages.subject AS TEXT)" : "NULL"
-  const subjectPrefixExpression = schema.messages.has("subject_prefix") ? "messages.subject_prefix" : "NULL"
-  const senderReferenceExpression = schema.messages.has("sender") ? "CAST(messages.sender AS TEXT)" : "NULL"
-  const resolvedSubjectExpression = canResolveSubject ? "subject_lookup.subject" : "NULL"
-
-  const resolvedSenderNameParts = [
-    canResolveDirectSender ? "NULLIF(TRIM(direct_sender.comment), '')" : undefined,
-    canResolveMappedSender ? "NULLIF(TRIM(mapped_sender.comment), '')" : undefined,
-    canJoinSenderLookup && schema.senders.has("contact_identifier")
+/** How each sender column is expressed: the first non-empty of whichever lookups the schema allows. */
+const planSenderExpressions = (schema: SchemaInfo, can: Capabilities) => {
+  const nameParts = [
+    can.canResolveDirectSender ? "NULLIF(TRIM(direct_sender.comment), '')" : undefined,
+    can.canResolveMappedSender ? "NULLIF(TRIM(mapped_sender.comment), '')" : undefined,
+    can.canJoinSenderLookup && schema.senders.has("contact_identifier")
       ? "NULLIF(TRIM(sender_lookup.contact_identifier), '')"
       : undefined,
   ].filter(Boolean)
 
-  const resolvedSenderAddressParts = [
-    canResolveDirectSender ? "NULLIF(TRIM(direct_sender.address), '')" : undefined,
-    canResolveMappedSender ? "NULLIF(TRIM(mapped_sender.address), '')" : undefined,
+  const addressParts = [
+    can.canResolveDirectSender ? "NULLIF(TRIM(direct_sender.address), '')" : undefined,
+    can.canResolveMappedSender ? "NULLIF(TRIM(mapped_sender.address), '')" : undefined,
   ].filter(Boolean)
 
-  const resolvedSenderNameExpression =
-    resolvedSenderNameParts.length > 0 ? `COALESCE(${resolvedSenderNameParts.join(", ")})` : "NULL"
+  return {
+    name: nameParts.length > 0 ? `COALESCE(${nameParts.join(", ")})` : "NULL",
+    address: addressParts.length > 0 ? `COALESCE(${addressParts.join(", ")})` : "NULL",
+  }
+}
 
-  const resolvedSenderAddressExpression =
-    resolvedSenderAddressParts.length > 0 ? `COALESCE(${resolvedSenderAddressParts.join(", ")})` : "NULL"
+const planQuery = (schema: SchemaInfo) => {
+  const can = planCapabilities(schema)
+  const has = (column: string) => schema.messages.has(column)
 
-  // Gmail stores every message in [Gmail]/All Mail and files it with labels, which Mail records in
-  // the labels table. No other account type writes to that table.
-  const canListLabels = schema.labels.has("message_id") && schema.labels.has("mailbox_id")
-  const labelMailboxUrlsExpression = canListLabels
+  const receivedAtExpression = has("date_received")
+    ? "messages.date_received"
+    : has("display_date")
+      ? "messages.display_date"
+      : "NULL"
+  const sender = planSenderExpressions(schema, can)
+  const labelMailboxUrlsExpression = can.canListLabels
     ? "(SELECT group_concat(label_mailbox.url, char(10)) FROM labels JOIN mailboxes label_mailbox ON label_mailbox.ROWID = labels.mailbox_id WHERE labels.message_id = messages.ROWID)"
     : "NULL"
 
   // The columns both queries select, in the order NormalizedEmail reads them.
   const columns = [
     "CAST(messages.ROWID AS TEXT) AS rowIdText",
-    `${messageIdExpression} AS messageIdText`,
-    `${documentIdExpression} AS documentId`,
+    `${has("message_id") ? "CAST(messages.message_id AS TEXT)" : "NULL"} AS messageIdText`,
+    `${has("document_id") ? "messages.document_id" : "NULL"} AS documentId`,
     `${receivedAtExpression} AS receivedAtUnix`,
-    `${resolvedSubjectExpression} AS resolvedSubject`,
-    `${subjectReferenceExpression} AS subjectReferenceText`,
-    `${subjectPrefixExpression} AS subjectPrefix`,
-    `${resolvedSenderNameExpression} AS resolvedSenderName`,
-    `${resolvedSenderAddressExpression} AS resolvedSenderAddress`,
-    `${senderReferenceExpression} AS senderReferenceText`,
+    `${can.canResolveSubject ? "subject_lookup.subject" : "NULL"} AS resolvedSubject`,
+    `${has("subject") ? "CAST(messages.subject AS TEXT)" : "NULL"} AS subjectReferenceText`,
+    `${has("subject_prefix") ? "messages.subject_prefix" : "NULL"} AS subjectPrefix`,
+    `${sender.name} AS resolvedSenderName`,
+    `${sender.address} AS resolvedSenderAddress`,
+    `${has("sender") ? "CAST(messages.sender AS TEXT)" : "NULL"} AS senderReferenceText`,
     "mailboxes.url AS mailboxUrl",
     `${labelMailboxUrlsExpression} AS labelMailboxUrls`,
   ]
 
   return {
-    canResolveSubject,
-    canResolveDirectSender,
-    canResolveMappedSender,
+    canResolveSubject: can.canResolveSubject,
+    canResolveDirectSender: can.canResolveDirectSender,
+    canResolveMappedSender: can.canResolveMappedSender,
     columns,
-    joins,
-    messageIdHeaderExpression,
+    joins: planJoins(can),
+    messageIdHeaderExpression: can.canJoinMessageGlobalData ? "mgd.message_id_header" : "NULL",
     receivedAtExpression,
   }
 }
