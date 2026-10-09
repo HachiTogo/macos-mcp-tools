@@ -151,8 +151,6 @@ function resolveDataDir(): string {
   return defaultDir
 }
 
-const DATA_DIR = resolveDataDir()
-const DB_PATH = join(DATA_DIR, "sqlite-memory.db")
 const DEFAULT_LIMIT = 25
 const MAX_LIMIT = 100
 const ENTRY_KINDS = ["memory", "task", "event", "note"] as const satisfies readonly EntryKind[]
@@ -219,7 +217,9 @@ const getDatabase = () => {
     return database
   }
 
-  database = new Database(DB_PATH)
+  // Resolved here, on first use, rather than at import: resolving creates the directory, and
+  // importing this module (as the unit tests do) must not write to the user's home.
+  database = new Database(join(resolveDataDir(), "sqlite-memory.db"))
   ensureSchema(database)
   return database
 }
