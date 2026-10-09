@@ -29,8 +29,39 @@ const getMailboxName = (mailboxUrl) =>
     .join("/")
 `
 
-export const MARK_EMAILS_READ_JXA =
+// Resolves an email handle to its Mail account, mailbox and message. Each script keeps its own
+// result wording and the order it reports failures in; this only does the lookup, which ten scripts
+// used to repeat.
+export const MESSAGE_LOOKUP_JXA =
   MAILBOX_NAME_JXA +
+  String.raw`
+const INVALID_HANDLE_DETAIL = "Missing accountId, mailboxUrl, or mailId."
+const MISSING_DETAIL = { account: "Account not found.", mailbox: "Mailbox not found.", message: "Message not found." }
+
+const readHandle = (handle) => {
+  const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
+  const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
+  const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
+  const mailboxName = getMailboxName(mailboxUrl)
+  return { accountId, mailboxUrl, mailId, mailboxName, valid: Boolean(accountId && mailId && mailboxName) }
+}
+
+const exists = (specifier) => typeof specifier.exists !== "function" || specifier.exists()
+
+// "missing" names the first of account, mailbox and message that does not exist.
+const findMessage = (Mail, parts) => {
+  const account = Mail.accounts.byId(parts.accountId)
+  if (!exists(account)) return { missing: "account" }
+  const mailbox = account.mailboxes.byName(parts.mailboxName)
+  if (!exists(mailbox)) return { missing: "mailbox", account }
+  const message = mailbox.messages.byId(Number(parts.mailId))
+  if (!exists(message)) return { missing: "message", account, mailbox }
+  return { account, mailbox, message }
+}
+`
+
+export const MARK_EMAILS_READ_JXA =
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
@@ -44,46 +75,16 @@ function run(argv) {
     }
 
     try {
-      const handle = target.handle || {}
-      const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-      const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-      const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-      const mailboxName = getMailboxName(mailboxUrl)
-
-      if (!accountId || !mailId || !mailboxName) {
-        return {
-          ...baseResult,
-          status: "invalid_handle",
-          detail: "Missing accountId, mailboxUrl, or mailId.",
-        }
+      const parts = readHandle(target.handle || {})
+      if (!parts.valid) {
+        return { ...baseResult, status: "invalid_handle", detail: INVALID_HANDLE_DETAIL }
       }
 
-      const account = Mail.accounts.byId(accountId)
-
-      if (typeof account.exists === "function" && !account.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-        }
+      const found = findMessage(Mail, parts)
+      if (found.missing) {
+        return { ...baseResult, status: "not_found" }
       }
-
-      const mailbox = account.mailboxes.byName(mailboxName)
-
-      if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-        }
-      }
-
-      const matchedMessage = mailbox.messages.byId(Number(mailId))
-
-      if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-        }
-      }
+      const matchedMessage = found.message
 
       if (matchedMessage.readStatus()) {
         return {
@@ -112,34 +113,22 @@ function run(argv) {
 `
 
 export const FETCH_EMAIL_BODY_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
-  const handle = input.handle || {}
-  const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-  const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-  const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-
-  if (!accountId || !mailId || !mailboxUrl) {
+  const parts = readHandle(input.handle || {})
+  if (!parts.accountId || !parts.mailId || !parts.mailboxUrl) {
     return JSON.stringify({ found: false, body: "" })
   }
 
   try {
-    const account = Mail.accounts.byId(accountId)
-    if (typeof account.exists === "function" && !account.exists()) {
+    const found = findMessage(Mail, parts)
+    if (found.missing) {
       return JSON.stringify({ found: false, body: "" })
     }
-    const mailboxName = getMailboxName(mailboxUrl)
-    const mailbox = account.mailboxes.byName(mailboxName)
-    if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-      return JSON.stringify({ found: false, body: "" })
-    }
-    const message = mailbox.messages.byId(Number(mailId))
-    if (typeof message.exists === "function" && !message.exists()) {
-      return JSON.stringify({ found: false, body: "" })
-    }
+    const message = found.message
     const body = message.content() || ""
     return JSON.stringify({ found: true, body })
   } catch (error) {
@@ -149,34 +138,22 @@ function run(argv) {
 `
 
 export const FETCH_EMAIL_SOURCE_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
-  const handle = input.handle || {}
-  const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-  const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-  const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-
-  if (!accountId || !mailId || !mailboxUrl) {
+  const parts = readHandle(input.handle || {})
+  if (!parts.accountId || !parts.mailId || !parts.mailboxUrl) {
     return JSON.stringify({ found: false, source: "" })
   }
 
   try {
-    const account = Mail.accounts.byId(accountId)
-    if (typeof account.exists === "function" && !account.exists()) {
+    const found = findMessage(Mail, parts)
+    if (found.missing) {
       return JSON.stringify({ found: false, source: "" })
     }
-    const mailboxName = getMailboxName(mailboxUrl)
-    const mailbox = account.mailboxes.byName(mailboxName)
-    if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-      return JSON.stringify({ found: false, source: "" })
-    }
-    const message = mailbox.messages.byId(Number(mailId))
-    if (typeof message.exists === "function" && !message.exists()) {
-      return JSON.stringify({ found: false, source: "" })
-    }
+    const message = found.message
     const source = message.source() || ""
     return JSON.stringify({ found: true, source })
   } catch (error) {
@@ -186,34 +163,22 @@ function run(argv) {
 `
 
 export const LIST_EMAIL_ATTACHMENTS_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
-  const handle = input.handle || {}
-  const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-  const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-  const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-
-  if (!accountId || !mailId || !mailboxUrl) {
+  const parts = readHandle(input.handle || {})
+  if (!parts.accountId || !parts.mailId || !parts.mailboxUrl) {
     return JSON.stringify({ found: false, attachments: [] })
   }
 
   try {
-    const account = Mail.accounts.byId(accountId)
-    if (typeof account.exists === "function" && !account.exists()) {
+    const found = findMessage(Mail, parts)
+    if (found.missing) {
       return JSON.stringify({ found: false, attachments: [] })
     }
-    const mailboxName = getMailboxName(mailboxUrl)
-    const mailbox = account.mailboxes.byName(mailboxName)
-    if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-      return JSON.stringify({ found: false, attachments: [] })
-    }
-    const message = mailbox.messages.byId(Number(mailId))
-    if (typeof message.exists === "function" && !message.exists()) {
-      return JSON.stringify({ found: false, attachments: [] })
-    }
+    const message = found.message
     const attachments = message.mailAttachments()
     const result = attachments.map((att) => ({
       name: att.name(),
@@ -227,36 +192,25 @@ function run(argv) {
 `
 
 export const FETCH_EMAIL_ATTACHMENT_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
-  const handle = input.handle || {}
-  const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-  const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-  const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
+  const parts = readHandle(input.handle || {})
   const attachmentName = typeof input.attachmentName === "string" ? input.attachmentName : ""
   const savePath = typeof input.savePath === "string" ? input.savePath : ""
 
-  if (!accountId || !mailId || !mailboxUrl || !attachmentName || !savePath) {
+  if (!parts.accountId || !parts.mailId || !parts.mailboxUrl || !attachmentName || !savePath) {
     return JSON.stringify({ saved: false, error: "Missing required parameters." })
   }
 
   try {
-    const account = Mail.accounts.byId(accountId)
-    if (typeof account.exists === "function" && !account.exists()) {
-      return JSON.stringify({ saved: false, error: "Account not found." })
+    const found = findMessage(Mail, parts)
+    if (found.missing) {
+      return JSON.stringify({ saved: false, error: MISSING_DETAIL[found.missing] })
     }
-    const mailboxName = getMailboxName(mailboxUrl)
-    const mailbox = account.mailboxes.byName(mailboxName)
-    if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-      return JSON.stringify({ saved: false, error: "Mailbox not found." })
-    }
-    const message = mailbox.messages.byId(Number(mailId))
-    if (typeof message.exists === "function" && !message.exists()) {
-      return JSON.stringify({ saved: false, error: "Message not found." })
-    }
+    const message = found.message
     const attachments = message.mailAttachments()
     let targetAttachment = null
     for (let i = 0; i < attachments.length; i++) {
@@ -280,7 +234,7 @@ function run(argv) {
 `
 
 export const MARK_EMAILS_JUNK_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
@@ -309,59 +263,26 @@ function run(argv) {
     }
 
     try {
-      const handle = target.handle || {}
-      const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-      const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-      const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-      const mailboxName = getMailboxName(mailboxUrl)
-
-      if (!accountId || !mailId || !mailboxName) {
-        return {
-          ...baseResult,
-          status: "invalid_handle",
-          detail: "Missing accountId, mailboxUrl, or mailId.",
-        }
+      const parts = readHandle(target.handle || {})
+      if (!parts.valid) {
+        return { ...baseResult, status: "invalid_handle", detail: INVALID_HANDLE_DETAIL }
       }
 
-      const account = Mail.accounts.byId(accountId)
-
-      if (typeof account.exists === "function" && !account.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-          detail: "Account not found.",
-        }
+      const found = findMessage(Mail, parts)
+      if (found.missing === "account") {
+        return { ...baseResult, status: "not_found", detail: MISSING_DETAIL.account }
       }
 
-      const junkMailbox = findJunkMailbox(account)
-
+      const junkMailbox = findJunkMailbox(found.account)
       if (!junkMailbox) {
-        return {
-          ...baseResult,
-          status: "no_junk_mailbox",
-          detail: "No Junk or Spam mailbox found for this account.",
-        }
+        return { ...baseResult, status: "no_junk_mailbox", detail: "No Junk or Spam mailbox found for this account." }
       }
 
-      const mailbox = account.mailboxes.byName(mailboxName)
-
-      if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-          detail: "Mailbox not found.",
-        }
+      if (found.missing) {
+        return { ...baseResult, status: "not_found", detail: MISSING_DETAIL[found.missing] }
       }
-
-      const matchedMessage = mailbox.messages.byId(Number(mailId))
-
-      if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-          detail: "Message not found.",
-        }
-      }
+      const mailbox = found.mailbox
+      const matchedMessage = found.message
 
       const isAlreadyJunk = matchedMessage.junkMailStatus()
       const currentMailboxName = mailbox.name().toLowerCase()
@@ -395,7 +316,7 @@ function run(argv) {
 `
 
 export const MARK_EMAILS_NOT_JUNK_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
@@ -426,59 +347,26 @@ function run(argv) {
     }
 
     try {
-      const handle = target.handle || {}
-      const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-      const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-      const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-      const mailboxName = getMailboxName(mailboxUrl)
-
-      if (!accountId || !mailId || !mailboxName) {
-        return {
-          ...baseResult,
-          status: "invalid_handle",
-          detail: "Missing accountId, mailboxUrl, or mailId.",
-        }
+      const parts = readHandle(target.handle || {})
+      if (!parts.valid) {
+        return { ...baseResult, status: "invalid_handle", detail: INVALID_HANDLE_DETAIL }
       }
 
-      const account = Mail.accounts.byId(accountId)
-
-      if (typeof account.exists === "function" && !account.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-          detail: "Account not found.",
-        }
+      const found = findMessage(Mail, parts)
+      if (found.missing === "account") {
+        return { ...baseResult, status: "not_found", detail: MISSING_DETAIL.account }
       }
 
-      const inboxMailbox = findInboxMailbox(account)
-
+      const inboxMailbox = findInboxMailbox(found.account)
       if (!inboxMailbox) {
-        return {
-          ...baseResult,
-          status: "no_inbox_mailbox",
-          detail: "No Inbox mailbox found for this account.",
-        }
+        return { ...baseResult, status: "no_inbox_mailbox", detail: "No Inbox mailbox found for this account." }
       }
 
-      const mailbox = account.mailboxes.byName(mailboxName)
-
-      if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-          detail: "Mailbox not found.",
-        }
+      if (found.missing) {
+        return { ...baseResult, status: "not_found", detail: MISSING_DETAIL[found.missing] }
       }
-
-      const matchedMessage = mailbox.messages.byId(Number(mailId))
-
-      if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-          detail: "Message not found.",
-        }
-      }
+      const mailbox = found.mailbox
+      const matchedMessage = found.message
 
       const isJunk = matchedMessage.junkMailStatus()
       const currentMailboxName = mailbox.name().toLowerCase()
@@ -512,7 +400,7 @@ function run(argv) {
 `
 
 export const FLAG_EMAILS_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
@@ -526,46 +414,16 @@ function run(argv) {
     }
 
     try {
-      const handle = target.handle || {}
-      const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-      const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-      const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
-      const mailboxName = getMailboxName(mailboxUrl)
-
-      if (!accountId || !mailId || !mailboxName) {
-        return {
-          ...baseResult,
-          status: "invalid_handle",
-          detail: "Missing accountId, mailboxUrl, or mailId.",
-        }
+      const parts = readHandle(target.handle || {})
+      if (!parts.valid) {
+        return { ...baseResult, status: "invalid_handle", detail: INVALID_HANDLE_DETAIL }
       }
 
-      const account = Mail.accounts.byId(accountId)
-
-      if (typeof account.exists === "function" && !account.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-        }
+      const found = findMessage(Mail, parts)
+      if (found.missing) {
+        return { ...baseResult, status: "not_found" }
       }
-
-      const mailbox = account.mailboxes.byName(mailboxName)
-
-      if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-        }
-      }
-
-      const matchedMessage = mailbox.messages.byId(Number(mailId))
-
-      if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
-        return {
-          ...baseResult,
-          status: "not_found",
-        }
-      }
+      const matchedMessage = found.message
 
       if (typeof target.flagIndex === "number") {
         matchedMessage.flagIndex = target.flagIndex
@@ -597,6 +455,34 @@ function run(argv) {
 `
 
 export const SEND_EMAIL_JXA = String.raw`
+// Reads an account detail that steers which account sends. A read that fails falls back as before
+// (an account whose state cannot be read counts as enabled, with no addresses or name), and is
+// recorded in warnings.
+function readDetail(warnings, what, fallback, get) {
+  try {
+    return get()
+  } catch (error) {
+    warnings.push("Could not read " + what + ": " + (error instanceof Error ? error.message : String(error)))
+    return fallback
+  }
+}
+
+// The enabled account that owns fromAddress or, with no fromAddress, the first enabled account.
+function chooseAccount(accounts, fromAddress, warnings) {
+  const isEnabled = (acct, i) =>
+    typeof acct.enabled !== "function" ||
+    readDetail(warnings, "whether account " + (i + 1) + " is enabled", true, () => acct.enabled())
+  if (!fromAddress) return accounts.find(isEnabled) || null
+  const target = fromAddress.toLowerCase()
+  for (let i = 0; i < accounts.length; i++) {
+    const acct = accounts[i]
+    if (!isEnabled(acct, i)) continue
+    const addresses = readDetail(warnings, "account " + (i + 1) + "'s addresses", [], () => acct.emailAddresses() || [])
+    if (addresses.some((addr) => typeof addr === "string" && addr.toLowerCase() === target)) return acct
+  }
+  return null
+}
+
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
@@ -614,46 +500,16 @@ function run(argv) {
     }
 
     let sender = ""
-    const accounts = Mail.accounts()
-    let chosenAccount = null
-    // Account details steer which account sends. A read that fails falls back as before (an account
-    // whose state cannot be read counts as enabled, with no addresses or name), and is reported.
     const warnings = []
-    const read = (what, fallback, get) => {
-      try {
-        return get()
-      } catch (error) {
-        warnings.push("Could not read " + what + ": " + (error instanceof Error ? error.message : String(error)))
-        return fallback
-      }
-    }
+    const read = (what, fallback, get) => readDetail(warnings, what, fallback, get)
+    const chosenAccount = chooseAccount(Mail.accounts(), fromAddress, warnings)
 
-    if (fromAddress) {
-      const target = fromAddress.toLowerCase()
-      for (let i = 0; i < accounts.length; i++) {
-        const acct = accounts[i]
-        if (typeof acct.enabled === "function" && !read("whether account " + (i + 1) + " is enabled", true, () => acct.enabled())) continue
-        const addresses = read("account " + (i + 1) + "'s addresses", [], () => acct.emailAddresses() || [])
-        const match = addresses.some((addr) => typeof addr === "string" && addr.toLowerCase() === target)
-        if (match) {
-          chosenAccount = acct
-          break
-        }
-      }
-      if (!chosenAccount) {
-        const reasons = warnings.length > 0 ? " (" + warnings.join("; ") + ")" : ""
-        return JSON.stringify({ status: "error", detail: "No enabled account matches 'from' address: " + fromAddress + reasons })
-      }
-    } else {
-      for (let i = 0; i < accounts.length; i++) {
-        const acct = accounts[i]
-        if (typeof acct.enabled === "function" && !read("whether account " + (i + 1) + " is enabled", true, () => acct.enabled())) continue
-        chosenAccount = acct
-        break
-      }
-      if (!chosenAccount) {
-        return JSON.stringify({ status: "error", detail: "No enabled mail account found." })
-      }
+    if (!chosenAccount && fromAddress) {
+      const reasons = warnings.length > 0 ? " (" + warnings.join("; ") + ")" : ""
+      return JSON.stringify({ status: "error", detail: "No enabled account matches 'from' address: " + fromAddress + reasons })
+    }
+    if (!chosenAccount) {
+      return JSON.stringify({ status: "error", detail: "No enabled mail account found." })
     }
 
     const addrs = read("the sending account's addresses", [], () => chosenAccount.emailAddresses() || [])
@@ -702,40 +558,27 @@ function run(argv) {
 `
 
 export const REPLY_EMAIL_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
 
   try {
-    const handle = input.handle || {}
-    const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-    const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-    const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
+    const parts = readHandle(input.handle || {})
     const body = typeof input.body === "string" ? input.body : ""
     const replyAll = input.replyAll === true
     const fromAddress = typeof input.from === "string" ? input.from.trim() : ""
-    const mailboxName = getMailboxName(mailboxUrl)
 
-    if (!accountId || !mailId || !mailboxName) {
-      return JSON.stringify({ status: "invalid_handle", detail: "Missing accountId, mailboxUrl, or mailId." })
+    if (!parts.valid) {
+      return JSON.stringify({ status: "invalid_handle", detail: INVALID_HANDLE_DETAIL })
     }
 
-    const account = Mail.accounts.byId(accountId)
-    if (typeof account.exists === "function" && !account.exists()) {
-      return JSON.stringify({ status: "not_found", detail: "Account not found." })
+    const found = findMessage(Mail, parts)
+    if (found.missing) {
+      return JSON.stringify({ status: "not_found", detail: MISSING_DETAIL[found.missing] })
     }
-
-    const mailbox = account.mailboxes.byName(mailboxName)
-    if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-      return JSON.stringify({ status: "not_found", detail: "Mailbox not found." })
-    }
-
-    const matchedMessage = mailbox.messages.byId(Number(mailId))
-    if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
-      return JSON.stringify({ status: "not_found", detail: "Message not found." })
-    }
+    const matchedMessage = found.message
 
     const reply = matchedMessage.reply({ openingWindow: false, replyToAll: replyAll })
 
@@ -767,46 +610,33 @@ function run(argv) {
 `
 
 export const FORWARD_EMAIL_JXA =
-  MAILBOX_NAME_JXA +
+  MESSAGE_LOOKUP_JXA +
   String.raw`
 function run(argv) {
   const Mail = Application("Mail")
   const input = JSON.parse(argv[0] || "{}")
 
   try {
-    const handle = input.handle || {}
-    const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-    const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-    const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
+    const parts = readHandle(input.handle || {})
     const to = Array.isArray(input.to) ? input.to : []
     const cc = Array.isArray(input.cc) ? input.cc : []
     const bcc = Array.isArray(input.bcc) ? input.bcc : []
     const body = typeof input.body === "string" ? input.body : ""
     const fromAddress = typeof input.from === "string" ? input.from.trim() : ""
-    const mailboxName = getMailboxName(mailboxUrl)
 
-    if (!accountId || !mailId || !mailboxName) {
-      return JSON.stringify({ status: "invalid_handle", detail: "Missing accountId, mailboxUrl, or mailId." })
+    if (!parts.valid) {
+      return JSON.stringify({ status: "invalid_handle", detail: INVALID_HANDLE_DETAIL })
     }
 
     if (to.length === 0) {
       return JSON.stringify({ status: "error", detail: "At least one 'to' recipient is required." })
     }
 
-    const account = Mail.accounts.byId(accountId)
-    if (typeof account.exists === "function" && !account.exists()) {
-      return JSON.stringify({ status: "not_found", detail: "Account not found." })
+    const found = findMessage(Mail, parts)
+    if (found.missing) {
+      return JSON.stringify({ status: "not_found", detail: MISSING_DETAIL[found.missing] })
     }
-
-    const mailbox = account.mailboxes.byName(mailboxName)
-    if (typeof mailbox.exists === "function" && !mailbox.exists()) {
-      return JSON.stringify({ status: "not_found", detail: "Mailbox not found." })
-    }
-
-    const matchedMessage = mailbox.messages.byId(Number(mailId))
-    if (typeof matchedMessage.exists === "function" && !matchedMessage.exists()) {
-      return JSON.stringify({ status: "not_found", detail: "Message not found." })
-    }
+    const matchedMessage = found.message
 
     const fwd = matchedMessage.forward({ openingWindow: false })
 
