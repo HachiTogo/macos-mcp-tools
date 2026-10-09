@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-09
+
 ### Changed
 - **`get_messages` and `send_message` use placeholder examples.** Their parameter descriptions now show a reserved example phone number and generic chat id rather than specific ones.
 - **The integration suite starts all seven servers and snapshots their tool lists.** It previously started only memory in CI. Any change to a tool's name, description, input schema or annotations now fails CI until the snapshot in `src/integration/__snapshots__/` is refreshed on purpose, so the agent-facing contract cannot drift unnoticed.
