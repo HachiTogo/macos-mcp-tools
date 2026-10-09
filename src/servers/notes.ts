@@ -70,7 +70,19 @@ function run(argv) {
 }
 `
 
-const JXA_LIST_NOTES = String.raw`
+// A note's plain text, for snippets and search matching. A note whose text cannot be read is not
+// blanked or dropped silently: it is still returned, with the reason in `warning`.
+export const NOTE_TEXT = String.raw`
+function readText(note) {
+  try {
+    return { text: note.plaintext() };
+  } catch (e) {
+    return { text: "", warning: "Could not read this note's text: " + e.message };
+  }
+}
+`
+
+export const JXA_LIST_NOTES = String.raw`${NOTE_TEXT}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
@@ -83,19 +95,14 @@ function run(argv) {
   const notes = folder.notes();
   const page = notes.slice(offset, offset + limit);
   const result = page.map(n => {
-    let snippet = "";
-    try {
-      const pt = n.plaintext ? n.plaintext() : "";
-      snippet = pt.slice(0, 100);
-    } catch (e) {
-      try { snippet = n.body().replace(/<[^>]+>/g, "").slice(0, 100); } catch (e2) {}
-    }
+    const { text, warning } = readText(n);
     return {
       id: n.id(),
       name: n.name(),
       creationDate: n.creationDate().toISOString(),
       modificationDate: n.modificationDate().toISOString(),
-      snippet,
+      snippet: text.slice(0, 100),
+      ...(warning ? { warning } : {}),
     };
   });
   return JSON.stringify({ notes: result, total: notes.length, offset, limit });
@@ -190,7 +197,7 @@ function run(argv) {
 }
 `
 
-export const JXA_SEARCH_NOTES = String.raw`
+export const JXA_SEARCH_NOTES = String.raw`${NOTE_TEXT}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
@@ -214,26 +221,17 @@ function run(argv) {
     for (const note of notes) {
       if (results.length >= limit) break;
       const title = note.name().toLowerCase();
-      let bodyText = "";
-      try {
-        bodyText = note.plaintext ? note.plaintext().toLowerCase() : note.body().replace(/<[^>]+>/g, "").toLowerCase();
-      } catch (e) {
-        try { bodyText = note.body().replace(/<[^>]+>/g, "").toLowerCase(); } catch (e2) {}
-      }
-      if (title.includes(query) || bodyText.includes(query)) {
-        let snippet = "";
-        try {
-          const pt = note.plaintext ? note.plaintext() : note.body().replace(/<[^>]+>/g, "");
-          const idx = pt.toLowerCase().indexOf(query);
-          const start = Math.max(0, idx - 40);
-          snippet = pt.slice(start, start + 120);
-        } catch (e) {}
+      const { text, warning } = readText(note);
+      // An unreadable note might match, so it is returned with its warning rather than skipped.
+      if (warning || title.includes(query) || text.toLowerCase().includes(query)) {
+        const start = Math.max(0, text.toLowerCase().indexOf(query) - 40);
         results.push({
           id: note.id(),
           name: note.name(),
           folder: folderName,
-          snippet,
+          snippet: text.slice(start, start + 120),
           modificationDate: note.modificationDate().toISOString(),
+          ...(warning ? { warning } : {}),
         });
       }
     }

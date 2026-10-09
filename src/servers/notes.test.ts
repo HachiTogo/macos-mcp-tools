@@ -5,10 +5,12 @@ import {
   JXA_CREATE_NOTE,
   JXA_DELETE_NOTE,
   JXA_GET_NOTE,
+  JXA_LIST_NOTES,
   JXA_MOVE_NOTE,
   JXA_SEARCH_NOTES,
   JXA_UPDATE_NOTE,
   NOTE_LOOKUP,
+  NOTE_TEXT,
   requireNoteRef,
 } from "./notes"
 
@@ -47,6 +49,26 @@ describe("pickNote", () => {
   })
 })
 
+const readText = new Function(`${NOTE_TEXT}; return readText`)() as (note: { plaintext: () => string }) => {
+  text: string
+  warning?: string
+}
+
+describe("readText", () => {
+  test("returns the note's plain text with no warning", () => {
+    expect(readText({ plaintext: () => "Groceries" })).toEqual({ text: "Groceries" })
+  })
+
+  test("an unreadable note yields empty text and the reason, rather than throwing or hiding it", () => {
+    const unreadable = {
+      plaintext: (): string => {
+        throw new Error("Can't get object.")
+      },
+    }
+    expect(readText(unreadable)).toEqual({ text: "", warning: "Could not read this note's text: Can't get object." })
+  })
+})
+
 describe("requireNoteRef", () => {
   test("needs an id or a title", () => {
     expect(() => requireNoteRef({})).toThrow("Pass the note's id or its title.")
@@ -60,7 +82,7 @@ describe("JXA scripts", () => {
   const singleNote = { JXA_GET_NOTE, JXA_UPDATE_NOTE, JXA_MOVE_NOTE, JXA_APPEND_TO_NOTE, JXA_DELETE_NOTE }
 
   test("every script parses as JavaScript", () => {
-    for (const script of [...Object.values(singleNote), JXA_CREATE_NOTE, JXA_SEARCH_NOTES]) {
+    for (const script of [...Object.values(singleNote), JXA_CREATE_NOTE, JXA_LIST_NOTES, JXA_SEARCH_NOTES]) {
       expect(() => new Function(script)).not.toThrow()
     }
   })
