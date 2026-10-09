@@ -1,0 +1,2502 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`tools/list contract mail tools match the snapshot 1`] = `
+[
+  {
+    "annotations": undefined,
+    "description": "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_mail_accounts",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "limit": {
+          "default": 25,
+          "description": "Maximum number of messages to return (1–100). Default: 25.",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "mailbox": {
+          "description": "Substring filter on mailbox name or URL (e.g. 'INBOX', 'work').",
+          "type": "string",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching messages before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "provider": {
+          "description": "Filter to a specific email provider.",
+          "enum": [
+            "gmail",
+            "icloud",
+          ],
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "unread_emails",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "emails": {
+          "description": "Array of email objects to mark as read.",
+          "items": {
+            "properties": {
+              "handle": {
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                  },
+                  "mailId": {
+                    "type": "string",
+                  },
+                  "mailboxUrl": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "accountId",
+                  "mailboxUrl",
+                  "mailId",
+                ],
+                "type": "object",
+              },
+              "id": {
+                "type": "string",
+              },
+              "subject": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "handle",
+            ],
+            "type": "object",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "emails",
+      ],
+      "type": "object",
+    },
+    "name": "mark_emails_read",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Fetch the full body text of a single Apple Mail message by its handle.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "handle": {
+          "description": "Email handle identifying the message.",
+          "properties": {
+            "accountId": {
+              "type": "string",
+            },
+            "mailId": {
+              "type": "string",
+            },
+            "mailboxUrl": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "accountId",
+            "mailboxUrl",
+            "mailId",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "handle",
+      ],
+      "type": "object",
+    },
+    "name": "fetch_email_body",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Extract all hyperlinks from an Apple Mail message as \`{ url, text }\` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "handle": {
+          "description": "Email handle identifying the message.",
+          "properties": {
+            "accountId": {
+              "type": "string",
+            },
+            "mailId": {
+              "type": "string",
+            },
+            "mailboxUrl": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "accountId",
+            "mailboxUrl",
+            "mailId",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "handle",
+      ],
+      "type": "object",
+    },
+    "name": "extract_email_links",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "emails": {
+          "description": "Array of email objects to mark as junk.",
+          "items": {
+            "properties": {
+              "handle": {
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                  },
+                  "mailId": {
+                    "type": "string",
+                  },
+                  "mailboxUrl": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "accountId",
+                  "mailboxUrl",
+                  "mailId",
+                ],
+                "type": "object",
+              },
+              "id": {
+                "type": "string",
+              },
+              "subject": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "handle",
+            ],
+            "type": "object",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "emails",
+      ],
+      "type": "object",
+    },
+    "name": "mark_emails_junk",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "emails": {
+          "description": "Array of email objects to mark as not junk.",
+          "items": {
+            "properties": {
+              "handle": {
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                  },
+                  "mailId": {
+                    "type": "string",
+                  },
+                  "mailboxUrl": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "accountId",
+                  "mailboxUrl",
+                  "mailId",
+                ],
+                "type": "object",
+              },
+              "id": {
+                "type": "string",
+              },
+              "subject": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "handle",
+            ],
+            "type": "object",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "emails",
+      ],
+      "type": "object",
+    },
+    "name": "mark_emails_not_junk",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flagIndex', 'flaggedStatus', or 'backgroundColor'.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "emails": {
+          "description": "Array of email objects to flag.",
+          "items": {
+            "properties": {
+              "backgroundColor": {
+                "description": "Message background color in Mail.app.",
+                "enum": [
+                  "blue",
+                  "gray",
+                  "green",
+                  "none",
+                  "orange",
+                  "purple",
+                  "red",
+                  "yellow",
+                ],
+                "type": "string",
+              },
+              "flagIndex": {
+                "description": "Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray",
+                "maximum": 6,
+                "minimum": -1,
+                "type": "integer",
+              },
+              "flaggedStatus": {
+                "description": "Set flagged status directly. true=flagged, false=unflagged.",
+                "type": "boolean",
+              },
+              "handle": {
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                  },
+                  "mailId": {
+                    "type": "string",
+                  },
+                  "mailboxUrl": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "accountId",
+                  "mailboxUrl",
+                  "mailId",
+                ],
+                "type": "object",
+              },
+              "id": {
+                "type": "string",
+              },
+              "subject": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "handle",
+            ],
+            "type": "object",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "emails",
+      ],
+      "type": "object",
+    },
+    "name": "flag_emails",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Lists attachments on a message without downloading content.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "handle": {
+          "description": "Email handle identifying the message.",
+          "properties": {
+            "accountId": {
+              "type": "string",
+            },
+            "mailId": {
+              "type": "string",
+            },
+            "mailboxUrl": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "accountId",
+            "mailboxUrl",
+            "mailId",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "handle",
+      ],
+      "type": "object",
+    },
+    "name": "list_email_attachments",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Downloads a single attachment and returns its content.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "attachmentName": {
+          "description": "Name of the attachment to fetch.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "format": {
+          "default": "text",
+          "description": "Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'.",
+          "enum": [
+            "text",
+            "base64",
+          ],
+          "type": "string",
+        },
+        "handle": {
+          "description": "Email handle identifying the message.",
+          "properties": {
+            "accountId": {
+              "type": "string",
+            },
+            "mailId": {
+              "type": "string",
+            },
+            "mailboxUrl": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "accountId",
+            "mailboxUrl",
+            "mailId",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "handle",
+        "attachmentName",
+      ],
+      "type": "object",
+    },
+    "name": "fetch_email_attachment",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts, except mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, which it never returns. At least one search criterion (subject, sender, after, before) is required.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "after": {
+          "description": "ISO 8601 date. Only return emails received on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
+          "type": "string",
+        },
+        "before": {
+          "description": "ISO 8601 date. Only return emails received strictly before it. A bare date means local midnight. Example: '2025-03-01'.",
+          "type": "string",
+        },
+        "limit": {
+          "default": 25,
+          "description": "Maximum number of results to return (1–100). Default: 25.",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "mailbox": {
+          "description": "Substring filter on mailbox name or URL (e.g. 'INBOX', 'work').",
+          "type": "string",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching messages before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "provider": {
+          "description": "Filter to a specific email provider.",
+          "enum": [
+            "gmail",
+            "icloud",
+          ],
+          "type": "string",
+        },
+        "sender": {
+          "description": "Substring to match in the sender email address or display name.",
+          "type": "string",
+        },
+        "subject": {
+          "description": "Substring to match in the email subject line.",
+          "type": "string",
+        },
+        "unreadOnly": {
+          "description": "If true, only return unread emails. Defaults to false.",
+          "type": "boolean",
+        },
+      },
+      "type": "object",
+    },
+    "name": "search_emails",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "bcc": {
+          "description": "BCC recipient email addresses.",
+          "items": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "body": {
+          "description": "Plain text email body.",
+          "maxLength": 1000000,
+          "minLength": 1,
+          "type": "string",
+        },
+        "cc": {
+          "description": "CC recipient email addresses.",
+          "items": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "from": {
+          "description": "Optional sender email address. Must match an enabled account.",
+          "format": "email",
+          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "subject": {
+          "description": "Email subject line.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "to": {
+          "description": "Recipient email addresses. At least one required.",
+          "items": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "to",
+        "subject",
+        "body",
+      ],
+      "type": "object",
+    },
+    "name": "send_email",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Reply to an existing Apple Mail message by handle. Set replyAll=true to reply to all recipients.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "body": {
+          "description": "Plain text reply body. Prepended above the quoted original.",
+          "maxLength": 1000000,
+          "minLength": 1,
+          "type": "string",
+        },
+        "from": {
+          "description": "Optional sender email address override.",
+          "format": "email",
+          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "handle": {
+          "description": "Email handle identifying the message being replied to.",
+          "properties": {
+            "accountId": {
+              "type": "string",
+            },
+            "mailId": {
+              "type": "string",
+            },
+            "mailboxUrl": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "accountId",
+            "mailboxUrl",
+            "mailId",
+          ],
+          "type": "object",
+        },
+        "replyAll": {
+          "description": "If true, reply to all recipients of the original message.",
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "handle",
+        "body",
+      ],
+      "type": "object",
+    },
+    "name": "reply_email",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Forward an existing Apple Mail message to new recipients.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "bcc": {
+          "description": "BCC recipient email addresses.",
+          "items": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "body": {
+          "description": "Optional message to prepend above the forwarded content.",
+          "maxLength": 1000000,
+          "type": "string",
+        },
+        "cc": {
+          "description": "CC recipient email addresses.",
+          "items": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "from": {
+          "description": "Optional sender email address override.",
+          "format": "email",
+          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "handle": {
+          "description": "Email handle identifying the message being forwarded.",
+          "properties": {
+            "accountId": {
+              "type": "string",
+            },
+            "mailId": {
+              "type": "string",
+            },
+            "mailboxUrl": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "accountId",
+            "mailboxUrl",
+            "mailId",
+          ],
+          "type": "object",
+        },
+        "to": {
+          "description": "Recipient email addresses. At least one required.",
+          "items": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "handle",
+        "to",
+      ],
+      "type": "object",
+    },
+    "name": "forward_email",
+    "outputSchema": undefined,
+  },
+]
+`;
+
+exports[`tools/list contract contacts tools match the snapshot 1`] = `
+[
+  {
+    "annotations": undefined,
+    "description": "Manage Apple Contacts people. Actions: read (list), search, get (full detail), create, update, delete.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "Operation to perform",
+          "enum": [
+            "read",
+            "search",
+            "get",
+            "create",
+            "update",
+            "delete",
+          ],
+          "type": "string",
+        },
+        "confirm": {
+          "description": "Must be true to confirm delete",
+          "type": "boolean",
+        },
+        "emails": {
+          "description": "Email addresses (create/update — adds, does not remove)",
+          "items": {
+            "properties": {
+              "label": {
+                "type": "string",
+              },
+              "value": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "label",
+              "value",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "first_name": {
+          "description": "First name (create/update)",
+          "type": "string",
+        },
+        "id": {
+          "description": "Contact ID (get/update/delete)",
+          "type": "string",
+        },
+        "job_title": {
+          "description": "Job title (create/update)",
+          "type": "string",
+        },
+        "last_name": {
+          "description": "Last name (create/update)",
+          "type": "string",
+        },
+        "limit": {
+          "default": 100,
+          "description": "Max contacts to return (read/search)",
+          "maximum": 500,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "note": {
+          "description": "Note text (create/update)",
+          "type": "string",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Pagination offset (read/search)",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "organization": {
+          "description": "Organization (create/update)",
+          "type": "string",
+        },
+        "phones": {
+          "description": "Phone numbers (create/update — adds, does not remove)",
+          "items": {
+            "properties": {
+              "label": {
+                "type": "string",
+              },
+              "value": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "label",
+              "value",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "query": {
+          "description": "Search query (search action)",
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+      ],
+      "type": "object",
+    },
+    "name": "contacts_people",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Manage Apple Contacts groups. Actions: read (list all), get (members of a group), create, delete, add_member, remove_member.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "Operation to perform",
+          "enum": [
+            "read",
+            "get",
+            "create",
+            "delete",
+            "add_member",
+            "remove_member",
+          ],
+          "type": "string",
+        },
+        "confirm": {
+          "description": "Must be true to confirm delete",
+          "type": "boolean",
+        },
+        "name": {
+          "description": "Group name (get/create/delete/add_member/remove_member)",
+          "type": "string",
+        },
+        "person_id": {
+          "description": "Contact ID for add_member/remove_member",
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+      ],
+      "type": "object",
+    },
+    "name": "contacts_groups",
+    "outputSchema": undefined,
+  },
+]
+`;
+
+exports[`tools/list contract notes tools match the snapshot 1`] = `
+[
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "List all folders in Apple Notes",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_folders",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a new folder in Apple Notes",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "name": {
+          "description": "Folder name",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "type": "object",
+    },
+    "name": "create_folder",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "List all notes in a specified Apple Notes folder",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "folder": {
+          "description": "Folder name",
+          "type": "string",
+        },
+        "limit": {
+          "default": 50,
+          "description": "Max notes to return",
+          "maximum": 500,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Offset for pagination",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "folder",
+      ],
+      "type": "object",
+    },
+    "name": "list_notes",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Get the full content of one note, by id or by title. A title shared by several notes is an error listing their ids.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "folder": {
+          "description": "Folder name (optional); narrows a title lookup",
+          "type": "string",
+        },
+        "id": {
+          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "type": "string",
+        },
+        "title": {
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "get_note",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a new note in a specified Apple Notes folder. Returns the new note's id.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "body": {
+          "description": "HTML body content",
+          "type": "string",
+        },
+        "folder": {
+          "description": "Folder name",
+          "type": "string",
+        },
+        "title": {
+          "description": "Note title",
+          "type": "string",
+        },
+      },
+      "required": [
+        "title",
+        "body",
+        "folder",
+      ],
+      "type": "object",
+    },
+    "name": "create_note",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Replace the body of one note, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "body": {
+          "description": "New HTML body content",
+          "type": "string",
+        },
+        "folder": {
+          "description": "Folder name (optional); narrows a title lookup",
+          "type": "string",
+        },
+        "id": {
+          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "type": "string",
+        },
+        "title": {
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "body",
+      ],
+      "type": "object",
+    },
+    "name": "update_note",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Move one note to another folder, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "from_folder": {
+          "description": "Source folder name (optional); narrows a title lookup",
+          "type": "string",
+        },
+        "id": {
+          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "type": "string",
+        },
+        "title": {
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "type": "string",
+        },
+        "to_folder": {
+          "description": "Target folder name",
+          "type": "string",
+        },
+      },
+      "required": [
+        "to_folder",
+      ],
+      "type": "object",
+    },
+    "name": "move_note",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Append HTML content to one note without replacing its body, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "content": {
+          "description": "HTML content to append",
+          "type": "string",
+        },
+        "folder": {
+          "description": "Folder name (optional); narrows a title lookup",
+          "type": "string",
+        },
+        "id": {
+          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "type": "string",
+        },
+        "title": {
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "content",
+      ],
+      "type": "object",
+    },
+    "name": "append_to_note",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete one note, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "folder": {
+          "description": "Folder name (optional); narrows a title lookup",
+          "type": "string",
+        },
+        "id": {
+          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "type": "string",
+        },
+        "title": {
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "delete_note",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a folder and all its notes from Apple Notes",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "name": {
+          "description": "Folder name",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "type": "object",
+    },
+    "name": "delete_folder",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content. Results carry each note's id.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "folder": {
+          "description": "Folder name to scope search (optional)",
+          "type": "string",
+        },
+        "limit": {
+          "default": 20,
+          "description": "Max results to return",
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "query": {
+          "description": "Search query",
+          "type": "string",
+        },
+      },
+      "required": [
+        "query",
+      ],
+      "type": "object",
+    },
+    "name": "search_notes",
+    "outputSchema": undefined,
+  },
+]
+`;
+
+exports[`tools/list contract memory tools match the snapshot 1`] = `
+[
+  {
+    "annotations": undefined,
+    "description": "Create a memory, task, event, or note entry with optional aliases.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "aliases": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "body": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "cost_amount": {
+          "anyOf": [
+            {
+              "type": "number",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "cost_currency": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "due_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "end_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "happened_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "kind": {
+          "description": "Entry kind",
+          "enum": [
+            "memory",
+            "task",
+            "event",
+            "note",
+          ],
+          "type": "string",
+        },
+        "object": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "start_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+      },
+      "required": [
+        "kind",
+      ],
+      "type": "object",
+    },
+    "name": "create_entry",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Update an existing entry. Only specified fields are changed.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "aliases": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "body": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "cost_amount": {
+          "anyOf": [
+            {
+              "type": "number",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "cost_currency": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "due_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "end_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "happened_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "id": {
+          "description": "Entry ID",
+          "type": "string",
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "memory",
+                "task",
+                "event",
+                "note",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "object": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "start_at": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "update_entry",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Fetch a single normalized entry with aliases by ID.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "id": {
+          "description": "Entry ID",
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "get_entry",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Search entries with deterministic structured filters and keyword fallback.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "type": "string",
+        },
+        "happened_after": {
+          "type": "string",
+        },
+        "happened_before": {
+          "type": "string",
+        },
+        "keywords": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "kind": {
+          "enum": [
+            "memory",
+            "task",
+            "event",
+            "note",
+          ],
+          "type": "string",
+        },
+        "limit": {
+          "default": 25,
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "object": {
+          "type": "string",
+        },
+        "status": {
+          "type": "string",
+        },
+        "subject": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "search_entries",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Return the most recent matching entry using happened_at, start_at, then created_at.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "type": "string",
+        },
+        "keywords": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "object": {
+          "type": "string",
+        },
+        "subject": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "query_last_occurrence",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Return the most recent matching entry plus elapsed days and hours.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "type": "string",
+        },
+        "keywords": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "object": {
+          "type": "string",
+        },
+        "subject": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "query_duration_since",
+    "outputSchema": undefined,
+  },
+]
+`;
+
+exports[`tools/list contract messages tools match the snapshot 1`] = `
+[
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "List recent iMessage/SMS conversations with last message preview and participant count.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "limit": {
+          "default": 50,
+          "description": "Maximum conversations to return (1–200). Default: 50.",
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_chats",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Get message history for a specific conversation. Use chat_identifier values from list_chats (phone number, email, or group chat ID like 'chat123456').",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "chat_id": {
+          "description": "Chat identifier: phone number (e.g. '+15555550123'), email, or group ID (e.g. 'chat123456789012345678').",
+          "type": "string",
+        },
+        "from_date": {
+          "description": "ISO 8601 date. Only return messages on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2026-01-15' or '2026-01-15T09:00:00Z'.",
+          "type": "string",
+        },
+        "limit": {
+          "default": 50,
+          "description": "Maximum messages to return (1–200). Default: 50.",
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "to_date": {
+          "description": "ISO 8601 date. Only return messages before it. A bare date means local midnight. Example: '2026-02-01'.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "chat_id",
+      ],
+      "type": "object",
+    },
+    "name": "get_messages",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "chat_id": {
+          "description": "Limit search to a specific chat identifier.",
+          "type": "string",
+        },
+        "limit": {
+          "default": 50,
+          "description": "Maximum results to return (1–200). Default: 50.",
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "query": {
+          "description": "Text to search for in message content.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "query",
+      ],
+      "type": "object",
+    },
+    "name": "search_messages",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Get participants of a conversation. Useful for identifying group chat members.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "chat_id": {
+          "description": "Chat identifier from list_chats.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "chat_id",
+      ],
+      "type": "object",
+    },
+    "name": "get_participants",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat123456789012345678') from list_chats.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "text": {
+          "description": "Message text to send.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "to": {
+          "description": "Recipient: phone number (e.g. '+15555550123'), email, or group chat identifier (e.g. 'chat123456789012345678').",
+          "type": "string",
+        },
+      },
+      "required": [
+        "to",
+        "text",
+      ],
+      "type": "object",
+    },
+    "name": "send_message",
+    "outputSchema": undefined,
+  },
+]
+`;
+
+exports[`tools/list contract events tools match the snapshot 1`] = `
+[
+  {
+    "annotations": undefined,
+    "description": "Manages calendar events (time blocks). Supports reading, creating, updating, and deleting calendar events.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "The operation to perform",
+          "enum": [
+            "read",
+            "create",
+            "update",
+            "delete",
+          ],
+          "type": "string",
+        },
+        "alarms": {
+          "description": "Alarms for the event",
+          "items": {
+            "properties": {
+              "absoluteDate": {
+                "description": "Absolute trigger date/time",
+                "type": "string",
+              },
+              "alarmType": {
+                "description": "READ-ONLY: Alarm presentation type",
+                "enum": [
+                  "display",
+                  "audio",
+                  "procedure",
+                  "email",
+                ],
+                "type": "string",
+              },
+              "locationTrigger": {
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                  },
+                  "longitude": {
+                    "type": "number",
+                  },
+                  "proximity": {
+                    "enum": [
+                      "enter",
+                      "leave",
+                    ],
+                    "type": "string",
+                  },
+                  "radius": {
+                    "type": "number",
+                  },
+                  "title": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "title",
+                  "latitude",
+                  "longitude",
+                  "proximity",
+                ],
+                "type": "object",
+              },
+              "relativeOffset": {
+                "description": "Seconds offset (negative = before start)",
+                "type": "number",
+              },
+            },
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "availability": {
+          "description": "Event availability",
+          "enum": [
+            "not-supported",
+            "busy",
+            "free",
+            "tentative",
+            "unavailable",
+          ],
+          "type": "string",
+        },
+        "clearAlarms": {
+          "description": "Set to true to remove all alarms from the event",
+          "type": "boolean",
+        },
+        "clearRecurrence": {
+          "description": "Set to true to remove recurrence rules from the event",
+          "type": "boolean",
+        },
+        "endDate": {
+          "description": "End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+          "type": "string",
+        },
+        "filterAccount": {
+          "description": "Filter events by account name",
+          "type": "string",
+        },
+        "filterCalendar": {
+          "description": "Filter events by a specific calendar name",
+          "type": "string",
+        },
+        "id": {
+          "description": "The unique identifier of the event (REQUIRED for update, delete; optional for read to get that one event, at any date). A recurring event's id names the series; read returns its first occurrence.",
+          "type": "string",
+        },
+        "isAllDay": {
+          "description": "Whether the event is an all-day event",
+          "type": "boolean",
+        },
+        "location": {
+          "description": "Location text for the event",
+          "type": "string",
+        },
+        "note": {
+          "description": "Additional notes for the event",
+          "type": "string",
+        },
+        "recurrenceRules": {
+          "description": "Recurrence rules for repeating events",
+          "items": {
+            "properties": {
+              "daysOfMonth": {
+                "description": "Days of month (1-31)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "daysOfWeek": {
+                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "endDate": {
+                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "type": "string",
+              },
+              "frequency": {
+                "enum": [
+                  "minutely",
+                  "hourly",
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "yearly",
+                ],
+                "type": "string",
+              },
+              "interval": {
+                "description": "Interval between occurrences (default 1)",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "monthsOfYear": {
+                "description": "Months for yearly recurrence (1-12)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "occurrenceCount": {
+                "description": "Number of times to repeat",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "frequency",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "search": {
+          "description": "Search term to filter events by title, notes, or location",
+          "type": "string",
+        },
+        "span": {
+          "description": "Scope for changes to recurring events",
+          "enum": [
+            "this-event",
+            "future-events",
+          ],
+          "type": "string",
+        },
+        "startDate": {
+          "description": "Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+          "type": "string",
+        },
+        "structuredLocation": {
+          "description": "Structured location with optional coordinates",
+          "properties": {
+            "latitude": {
+              "type": "number",
+            },
+            "longitude": {
+              "type": "number",
+            },
+            "radius": {
+              "type": "number",
+            },
+            "title": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "title",
+          ],
+          "type": "object",
+        },
+        "targetCalendar": {
+          "description": "The name of the calendar for create or update operations",
+          "type": "string",
+        },
+        "title": {
+          "description": "The title of the event (REQUIRED for create, optional for update)",
+          "type": "string",
+        },
+        "url": {
+          "description": "A URL to associate with the event",
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+      ],
+      "type": "object",
+    },
+    "name": "calendar_events",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Reads calendar collections. Use to inspect available calendars before creating or updating events.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "The operation to perform on calendars",
+          "enum": [
+            "read",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+      ],
+      "type": "object",
+    },
+    "name": "calendar_calendars",
+    "outputSchema": undefined,
+  },
+]
+`;
+
+exports[`tools/list contract reminders tools match the snapshot 1`] = `
+[
+  {
+    "annotations": undefined,
+    "description": "Manages reminder tasks. Supports reading, creating, updating, and deleting reminders.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "The operation to perform",
+          "enum": [
+            "read",
+            "create",
+            "update",
+            "delete",
+          ],
+          "type": "string",
+        },
+        "addTags": {
+          "description": "Tags to add to the reminder (for update). Merges with existing tags",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "alarms": {
+          "description": "Alarms for the reminder",
+          "items": {
+            "properties": {
+              "absoluteDate": {
+                "description": "Absolute trigger date/time",
+                "type": "string",
+              },
+              "alarmType": {
+                "description": "READ-ONLY: Alarm presentation type",
+                "enum": [
+                  "display",
+                  "audio",
+                  "procedure",
+                  "email",
+                ],
+                "type": "string",
+              },
+              "locationTrigger": {
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                  },
+                  "longitude": {
+                    "type": "number",
+                  },
+                  "proximity": {
+                    "enum": [
+                      "enter",
+                      "leave",
+                    ],
+                    "type": "string",
+                  },
+                  "radius": {
+                    "type": "number",
+                  },
+                  "title": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "title",
+                  "latitude",
+                  "longitude",
+                  "proximity",
+                ],
+                "type": "object",
+              },
+              "relativeOffset": {
+                "description": "Seconds offset (negative = before due/start)",
+                "type": "number",
+              },
+            },
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "clearAlarms": {
+          "description": "Set to true to remove all alarms from the reminder",
+          "type": "boolean",
+        },
+        "clearLocationTrigger": {
+          "description": "Set to true to remove location trigger from an existing reminder (for update)",
+          "type": "boolean",
+        },
+        "clearRecurrence": {
+          "description": "Set to true to remove recurrence from an existing reminder (for update)",
+          "type": "boolean",
+        },
+        "completed": {
+          "description": "The completion status of the reminder (for update)",
+          "type": "boolean",
+        },
+        "completionDate": {
+          "description": "Completion date/time (for update)",
+          "type": "string",
+        },
+        "dueDate": {
+          "description": "Due date. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+          "type": "string",
+        },
+        "dueWithin": {
+          "description": "Filter reminders by a due date range",
+          "enum": [
+            "today",
+            "tomorrow",
+            "this-week",
+            "overdue",
+            "no-date",
+          ],
+          "type": "string",
+        },
+        "filterList": {
+          "description": "Filter reminders by a specific list name",
+          "type": "string",
+        },
+        "filterLocationBased": {
+          "description": "Filter to only show location-based reminders when true",
+          "type": "boolean",
+        },
+        "filterPriority": {
+          "description": "Filter reminders by priority level",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none",
+          ],
+          "type": "string",
+        },
+        "filterRecurring": {
+          "description": "Filter to only show recurring reminders when true",
+          "type": "boolean",
+        },
+        "filterTags": {
+          "description": "Filter reminders by tags (must have ALL specified tags)",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "id": {
+          "description": "The unique identifier of the reminder (REQUIRED for update, delete; optional for read to get single reminder)",
+          "type": "string",
+        },
+        "location": {
+          "description": "Location text for the reminder (not the same as a location-based trigger)",
+          "type": "string",
+        },
+        "locationTrigger": {
+          "description": "Location trigger for geofence-based reminders",
+          "properties": {
+            "latitude": {
+              "description": "Latitude coordinate",
+              "type": "number",
+            },
+            "longitude": {
+              "description": "Longitude coordinate",
+              "type": "number",
+            },
+            "proximity": {
+              "description": "When to trigger: enter or leave",
+              "enum": [
+                "enter",
+                "leave",
+              ],
+              "type": "string",
+            },
+            "radius": {
+              "description": "Geofence radius in meters (default 100)",
+              "type": "number",
+            },
+            "title": {
+              "description": "Location name/title",
+              "type": "string",
+            },
+          },
+          "required": [
+            "title",
+            "latitude",
+            "longitude",
+            "proximity",
+          ],
+          "type": "object",
+        },
+        "note": {
+          "description": "Additional notes for the reminder",
+          "type": "string",
+        },
+        "priority": {
+          "description": "Priority level: 0=none, 1=high, 5=medium, 9=low",
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "type": "integer",
+        },
+        "recurrence": {
+          "description": "Single recurrence rule for repeating reminders",
+          "properties": {
+            "daysOfMonth": {
+              "description": "Days of month (1-31)",
+              "items": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "type": "array",
+            },
+            "daysOfWeek": {
+              "description": "Days of week (1=Sunday, 7=Saturday)",
+              "items": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "type": "array",
+            },
+            "endDate": {
+              "description": "When the recurrence ends (YYYY-MM-DD)",
+              "type": "string",
+            },
+            "frequency": {
+              "enum": [
+                "minutely",
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+              ],
+              "type": "string",
+            },
+            "interval": {
+              "description": "Interval between occurrences (default 1)",
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer",
+            },
+            "monthsOfYear": {
+              "description": "Months for yearly recurrence (1-12)",
+              "items": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "type": "array",
+            },
+            "occurrenceCount": {
+              "description": "Number of times to repeat",
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "frequency",
+          ],
+          "type": "object",
+        },
+        "recurrenceRules": {
+          "description": "Recurrence rules for repeating reminders",
+          "items": {
+            "properties": {
+              "daysOfMonth": {
+                "description": "Days of month (1-31)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "daysOfWeek": {
+                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "endDate": {
+                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "type": "string",
+              },
+              "frequency": {
+                "enum": [
+                  "minutely",
+                  "hourly",
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "yearly",
+                ],
+                "type": "string",
+              },
+              "interval": {
+                "description": "Interval between occurrences (default 1)",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "monthsOfYear": {
+                "description": "Months for yearly recurrence (1-12)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "occurrenceCount": {
+                "description": "Number of times to repeat",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "frequency",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "removeTags": {
+          "description": "Tags to remove from the reminder (for update)",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "search": {
+          "description": "Search term to filter reminders by title or notes",
+          "type": "string",
+        },
+        "showCompleted": {
+          "description": "Include completed reminders in the results",
+          "type": "boolean",
+        },
+        "startDate": {
+          "description": "Start date. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+          "type": "string",
+        },
+        "subtasks": {
+          "description": "Initial subtasks to create with the reminder (for create action). Array of subtask titles",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "tags": {
+          "description": "Tags to set on the reminder (for create). Replaces any existing tags",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "targetList": {
+          "description": "The name of the list for create or update operations",
+          "type": "string",
+        },
+        "title": {
+          "description": "The title of the reminder (REQUIRED for create, optional for update)",
+          "type": "string",
+        },
+        "url": {
+          "description": "A URL to associate with the reminder",
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+      ],
+      "type": "object",
+    },
+    "name": "reminders_tasks",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Manages reminder lists. Supports reading, creating, updating, and deleting reminder lists.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "The operation to perform on a list",
+          "enum": [
+            "read",
+            "create",
+            "update",
+            "delete",
+          ],
+          "type": "string",
+        },
+        "color": {
+          "description": "The hex color code for the list (e.g., '#FF5733')",
+          "type": "string",
+        },
+        "name": {
+          "description": "The current name of the list (for update, delete) or the name of the new list (for create)",
+          "type": "string",
+        },
+        "newName": {
+          "description": "The new name for the list (for update)",
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+      ],
+      "type": "object",
+    },
+    "name": "reminders_lists",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Manages subtasks/checklists within reminders.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "action": {
+          "description": "The operation to perform: read, create, update, delete, toggle, reorder",
+          "enum": [
+            "read",
+            "create",
+            "update",
+            "delete",
+            "toggle",
+            "reorder",
+          ],
+          "type": "string",
+        },
+        "completed": {
+          "description": "The completion status of the subtask (for update)",
+          "type": "boolean",
+        },
+        "order": {
+          "description": "Array of subtask IDs in desired order (REQUIRED for reorder). Must include all subtask IDs",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "reminderId": {
+          "description": "The unique identifier of the parent reminder (REQUIRED for all operations)",
+          "type": "string",
+        },
+        "subtaskId": {
+          "description": "The unique identifier of the subtask (REQUIRED for update, delete, toggle)",
+          "type": "string",
+        },
+        "title": {
+          "description": "The title of the subtask (REQUIRED for create, optional for update)",
+          "type": "string",
+        },
+      },
+      "required": [
+        "action",
+        "reminderId",
+      ],
+      "type": "object",
+    },
+    "name": "reminders_subtasks",
+    "outputSchema": undefined,
+  },
+]
+`;

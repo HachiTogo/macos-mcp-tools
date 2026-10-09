@@ -31,8 +31,8 @@
 - `events.ts` and `reminders.ts` mutate real calendars and reminder lists through EventKit.
 
 ## Testing Reality
-- Unit tests cover pure helpers: four suites under `src/servers/mail/`, plus `mail.test.ts`, `memory.test.ts` and six under `src/lib/eventkit/`.
-- `src/integration/servers.integration.test.ts` runs the memory server over stdio in a temp data dir. Live-app cases need `RUN_APP_INTEGRATION_TESTS=1`.
+- Unit tests cover pure helpers in `src/lib/` and every server except contacts, events and reminders.
+- `src/integration/servers.integration.test.ts` snapshots every server's `tools/list`; refresh intended changes with `RUN_INTEGRATION_TESTS=1 bun test src/integration -u`. Live-app cases need `RUN_APP_INTEGRATION_TESTS=1`.
 - No coverage for live JXA or EventKit behavior (`contacts`, `notes`, `messages`, `events`, `reminders`, mail mutations). Verify manually and say so in the PR.
 
 ## External Dependencies

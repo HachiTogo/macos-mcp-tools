@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **`get_messages` and `send_message` use placeholder examples.** Their parameter descriptions now show a reserved example phone number and generic chat id rather than specific ones.
+- **The integration suite starts all seven servers and snapshots their tool lists.** It previously started only memory in CI. Any change to a tool's name, description, input schema or annotations now fails CI until the snapshot in `src/integration/__snapshots__/` is refreshed on purpose, so the agent-facing contract cannot drift unnoticed.
 
 ### Fixed
 - **Mail tools no longer fail on large messages.** Mail ran its own osascript calls with the default 1 MiB output limit, so `extract_email_links`, which reads a message's whole source, failed with `ENOBUFS` on any message carrying an attachment of more than about 750 KB. Every mail call now goes through the shared runner in `src/lib/jxa.ts`, as the other servers' calls already did: up to 50 MiB of output, and a timeout so a hung Mail.app can no longer stall the server. The timeout is 30 s, plus a second per message for the batch mark and flag tools.

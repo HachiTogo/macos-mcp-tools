@@ -10,7 +10,9 @@ const RUN_INTEGRATION_TESTS = process.env.RUN_INTEGRATION_TESTS === "1"
 const RUN_APP_INTEGRATION_TESTS = process.env.RUN_APP_INTEGRATION_TESTS === "1"
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url))
 
-type ServerName = "mail" | "contacts" | "notes" | "memory"
+const SERVERS = ["mail", "contacts", "notes", "memory", "messages", "events", "reminders"] as const
+
+type ServerName = (typeof SERVERS)[number]
 
 type TestServer = {
   client: Client
@@ -96,6 +98,30 @@ const getTextJsonContent = <T>(result: unknown): T => {
 if (!RUN_INTEGRATION_TESTS) {
   test.skip("integration tests are opt-in; set RUN_INTEGRATION_TESTS=1", () => undefined)
 } else {
+  // The tool contract agents see. Changing any tool's name, description, schema or annotations fails
+  // here until the snapshot is updated on purpose: RUN_INTEGRATION_TESTS=1 bun test src/integration -u
+  // Listing tools needs no app permissions, so every server runs in CI.
+  describe("tools/list contract", () => {
+    for (const serverName of SERVERS) {
+      test(`${serverName} tools match the snapshot`, async () => {
+        const server = await startServer(serverName)
+        try {
+          const { tools } = await server.client.listTools()
+          const contract = tools.map(({ name, description, inputSchema, outputSchema, annotations }) => ({
+            name,
+            description,
+            inputSchema,
+            outputSchema,
+            annotations,
+          }))
+          expect(contract).toMatchSnapshot()
+        } finally {
+          await stopServer(server)
+        }
+      })
+    }
+  })
+
   describe("memory server integration", () => {
     let server: TestServer | undefined
 
