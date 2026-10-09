@@ -8,6 +8,31 @@ import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── JXA scripts ────────────────────────────────────────────────────────
 
+// Shared by the scripts that act on one contact. Neither helper swallows an error: a lookup that
+// fails reports its cause rather than "not found", and a field that cannot be read leaves the rest
+// of the contact intact and is named in `warnings`.
+export const CONTACT_HELPERS = String.raw`
+function findPerson(app, id) {
+  let matches;
+  try {
+    matches = app.people.whose({ id: id })();
+  } catch (e) {
+    throw new Error("Could not look up contact " + id + ": " + e.message);
+  }
+  if (matches.length === 0) throw new Error("Contact not found: " + id);
+  return matches[0];
+}
+
+function readList(warnings, field, read) {
+  try {
+    return read();
+  } catch (e) {
+    warnings.push("Could not read " + field + ": " + e.message);
+    return [];
+  }
+}
+`
+
 const JXA_CONTACTS_READ = String.raw`
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
@@ -74,44 +99,25 @@ function run(argv) {
 }
 `
 
-const JXA_CONTACTS_GET = String.raw`
+export const JXA_CONTACTS_GET = String.raw`${CONTACT_HELPERS}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
-  let p = null;
-  try {
-    const found = app.people.whose({ id: args.id });
-    if (found && found.length > 0) p = found[0];
-  } catch (e) {}
-  if (!p) throw new Error("Contact not found: " + args.id);
-  const emails = [];
-  try {
-    const es = p.emails();
-    for (const e of es) {
-      emails.push({ label: e.label() || "", value: e.value() || "" });
-    }
-  } catch (e) {}
-  const phones = [];
-  try {
-    const ps = p.phones();
-    for (const ph of ps) {
-      phones.push({ label: ph.label() || "", value: ph.value() || "" });
-    }
-  } catch (e) {}
-  const addresses = [];
-  try {
-    const as = p.addresses();
-    for (const a of as) {
-      addresses.push({
-        label: a.label() || "",
-        street: a.street() || "",
-        city: a.city() || "",
-        state: a.state() || "",
-        zip: a.zip() || "",
-        country: a.country() || "",
-      });
-    }
-  } catch (e) {}
+  const p = findPerson(app, args.id);
+  const warnings = [];
+  const emails = readList(warnings, "emails", () =>
+    p.emails().map(e => ({ label: e.label() || "", value: e.value() || "" })));
+  const phones = readList(warnings, "phones", () =>
+    p.phones().map(ph => ({ label: ph.label() || "", value: ph.value() || "" })));
+  const addresses = readList(warnings, "addresses", () =>
+    p.addresses().map(a => ({
+      label: a.label() || "",
+      street: a.street() || "",
+      city: a.city() || "",
+      state: a.state() || "",
+      zip: a.zip() || "",
+      country: a.country() || "",
+    })));
   return JSON.stringify({
     id: p.id(),
     first_name: p.firstName() || "",
@@ -122,6 +128,7 @@ function run(argv) {
     emails,
     phones,
     addresses,
+    ...(warnings.length > 0 ? { warnings } : {}),
   });
 }
 `
@@ -153,16 +160,11 @@ function run(argv) {
 }
 `
 
-const JXA_CONTACTS_UPDATE = String.raw`
+export const JXA_CONTACTS_UPDATE = String.raw`${CONTACT_HELPERS}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
-  let p = null;
-  try {
-    const found = app.people.whose({ id: args.id });
-    if (found && found.length > 0) p = found[0];
-  } catch (e) {}
-  if (!p) throw new Error("Contact not found: " + args.id);
+  const p = findPerson(app, args.id);
   if (args.first_name !== undefined) p.firstName = args.first_name;
   if (args.last_name !== undefined) p.lastName = args.last_name;
   if (args.organization !== undefined) p.organization = args.organization;
@@ -183,17 +185,12 @@ function run(argv) {
 }
 `
 
-const JXA_CONTACTS_DELETE = String.raw`
+export const JXA_CONTACTS_DELETE = String.raw`${CONTACT_HELPERS}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   if (!args.confirm) throw new Error("Set confirm: true to delete");
   const app = Application("Contacts");
-  let p = null;
-  try {
-    const found = app.people.whose({ id: args.id });
-    if (found && found.length > 0) p = found[0];
-  } catch (e) {}
-  if (!p) throw new Error("Contact not found: " + args.id);
+  const p = findPerson(app, args.id);
   app.delete(p);
   app.save();
   return JSON.stringify({ success: true, id: args.id });
@@ -255,16 +252,11 @@ function run(argv) {
 }
 `
 
-const JXA_GROUPS_ADD_MEMBER = String.raw`
+export const JXA_GROUPS_ADD_MEMBER = String.raw`${CONTACT_HELPERS}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
-  let p = null;
-  try {
-    const found = app.people.whose({ id: args.person_id });
-    if (found && found.length > 0) p = found[0];
-  } catch (e) {}
-  if (!p) throw new Error("Contact not found: " + args.person_id);
+  const p = findPerson(app, args.person_id);
   const gFound = app.groups.whose({ name: args.name });
   if (!gFound || gFound.length === 0) throw new Error("Group not found: " + args.name);
   const g = gFound[0];
@@ -274,16 +266,11 @@ function run(argv) {
 }
 `
 
-const JXA_GROUPS_REMOVE_MEMBER = String.raw`
+export const JXA_GROUPS_REMOVE_MEMBER = String.raw`${CONTACT_HELPERS}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
-  let p = null;
-  try {
-    const found = app.people.whose({ id: args.person_id });
-    if (found && found.length > 0) p = found[0];
-  } catch (e) {}
-  if (!p) throw new Error("Contact not found: " + args.person_id);
+  const p = findPerson(app, args.person_id);
   const gFound = app.groups.whose({ name: args.name });
   if (!gFound || gFound.length === 0) throw new Error("Group not found: " + args.name);
   const g = gFound[0];
@@ -292,6 +279,14 @@ function run(argv) {
   return JSON.stringify({ success: true, group: args.name, person_id: args.person_id });
 }
 `
+
+// ── Arguments ──────────────────────────────────────────────────────────
+
+/** A contact lookup needs its id; a missing one would otherwise fail in JXA as "Can't convert types". */
+export const requireArg = (value: string | undefined, name: string, action: string): string => {
+  if (!value) throw new Error(`'${name}' is required for ${action}.`)
+  return value
+}
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
@@ -338,7 +333,7 @@ server.registerTool(
           raw = runJxa(JXA_CONTACTS_SEARCH, { query: args.query, limit: args.limit, offset: args.offset })
           break
         case "get":
-          raw = runJxa(JXA_CONTACTS_GET, { id: args.id })
+          raw = runJxa(JXA_CONTACTS_GET, { id: requireArg(args.id, "id", args.action) })
           break
         case "create":
           raw = runJxa(JXA_CONTACTS_CREATE, {
@@ -353,7 +348,7 @@ server.registerTool(
           break
         case "update":
           raw = runJxa(JXA_CONTACTS_UPDATE, {
-            id: args.id,
+            id: requireArg(args.id, "id", args.action),
             first_name: args.first_name,
             last_name: args.last_name,
             organization: args.organization,
@@ -364,7 +359,7 @@ server.registerTool(
           })
           break
         case "delete":
-          raw = runJxa(JXA_CONTACTS_DELETE, { id: args.id, confirm: args.confirm })
+          raw = runJxa(JXA_CONTACTS_DELETE, { id: requireArg(args.id, "id", args.action), confirm: args.confirm })
           break
         default:
           throw new Error(`Unknown action: ${String(args.action)}`)
@@ -404,10 +399,16 @@ server.registerTool(
           raw = runJxa(JXA_GROUPS_DELETE, { name: args.name, confirm: args.confirm })
           break
         case "add_member":
-          raw = runJxa(JXA_GROUPS_ADD_MEMBER, { name: args.name, person_id: args.person_id })
+          raw = runJxa(JXA_GROUPS_ADD_MEMBER, {
+            name: args.name,
+            person_id: requireArg(args.person_id, "person_id", args.action),
+          })
           break
         case "remove_member":
-          raw = runJxa(JXA_GROUPS_REMOVE_MEMBER, { name: args.name, person_id: args.person_id })
+          raw = runJxa(JXA_GROUPS_REMOVE_MEMBER, {
+            name: args.name,
+            person_id: requireArg(args.person_id, "person_id", args.action),
+          })
           break
         default:
           throw new Error(`Unknown action: ${String(args.action)}`)
