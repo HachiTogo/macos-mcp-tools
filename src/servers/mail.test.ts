@@ -8,8 +8,8 @@ import {
   groupEmailsByAccount,
 } from "./mail/format"
 import { classifyAccountByMailboxUrl, createEmailHandle, getMailboxAccountKey, isExcludedMailbox } from "./mail/mailbox"
+import { extractLinksFromSource } from "./mail/message-content"
 import { isBatchFailure } from "./mail/mutate"
-import { extractLinksFromSource } from "./mail/read"
 import type { NormalizedEmail } from "./mail/types"
 
 const TEST_CONFIG = {

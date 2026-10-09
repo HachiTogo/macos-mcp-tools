@@ -16,15 +16,8 @@ import {
   formatReplyEmailSummary,
   formatSendEmailSummary,
 } from "./format"
-import {
-  FLAG_EMAILS_JXA,
-  FORWARD_EMAIL_JXA,
-  MARK_EMAILS_JUNK_JXA,
-  MARK_EMAILS_NOT_JUNK_JXA,
-  MARK_EMAILS_READ_JXA,
-  REPLY_EMAIL_JXA,
-  SEND_EMAIL_JXA,
-} from "./jxa-scripts"
+import { FORWARD_EMAIL_JXA, REPLY_EMAIL_JXA, SEND_EMAIL_JXA } from "./jxa-compose"
+import { FLAG_EMAILS_JXA, MARK_EMAILS_JUNK_JXA, MARK_EMAILS_NOT_JUNK_JXA, MARK_EMAILS_READ_JXA } from "./jxa-scripts"
 import type {
   FlagEmailsArguments,
   FlagEmailsResult,

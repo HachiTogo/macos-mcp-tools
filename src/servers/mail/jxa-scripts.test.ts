@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test"
 
+import * as compose from "./jxa-compose"
 import * as scripts from "./jxa-scripts"
 
 describe("mail JXA scripts", () => {
   test("every script parses as JavaScript", () => {
-    const sources = Object.entries(scripts).filter((entry): entry is [string, string] => typeof entry[1] === "string")
+    const sources = Object.entries({ ...scripts, ...compose }).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    )
     expect(sources.length).toBeGreaterThan(10)
     for (const [name, source] of sources) {
       // `name` in the message says which script failed to parse.
@@ -82,7 +85,7 @@ describe("findMessage", () => {
 
 type FakeAccountForSend = { enabled: () => boolean; emailAddresses: () => string[]; name: string }
 
-const { chooseAccount } = new Function(`${scripts.SEND_EMAIL_JXA}; return { chooseAccount }`)() as {
+const { chooseAccount } = new Function(`${compose.SEND_EMAIL_JXA}; return { chooseAccount }`)() as {
   chooseAccount: (accounts: FakeAccountForSend[], from: string, warnings: string[]) => FakeAccountForSend | null
 }
 
