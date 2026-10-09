@@ -9,7 +9,7 @@ import {
   normalizeAliases,
   normalizeEntry,
   normalizeText,
-} from "./memory"
+} from "./memory/entries"
 
 const createEntry = (overrides: Partial<NormalizedEntry> = {}): NormalizedEntry => ({
   id: overrides.id ?? "entry-1",
