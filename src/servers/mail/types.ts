@@ -236,6 +236,7 @@ export type SendEmailResult = {
   status: "sent" | "error"
   detail?: string
   recipientCount?: number
+  warnings?: string[]
 }
 
 export type ReplyEmailArguments = {
@@ -248,6 +249,7 @@ export type ReplyEmailArguments = {
 export type ReplyEmailResult = {
   status: "sent" | "not_found" | "invalid_handle" | "error"
   detail?: string
+  warnings?: string[]
 }
 
 export type ForwardEmailArguments = {
@@ -263,6 +265,7 @@ export type ForwardEmailResult = {
   status: "sent" | "not_found" | "invalid_handle" | "error"
   detail?: string
   recipientCount?: number
+  warnings?: string[]
 }
 
 export type MailboxSummary = {
