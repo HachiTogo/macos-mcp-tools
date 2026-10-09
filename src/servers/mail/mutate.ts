@@ -5,6 +5,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
 import { JXA_TIMEOUT_MS, runJxa } from "../../lib/jxa"
+import { errorMessage } from "../../lib/mcp-result"
 
 import {
   formatFlagEmailsSummary,
@@ -94,7 +95,7 @@ export const createMarkEmailsReadResult = async (argumentsValue: MarkEmailsReadA
       ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const results: MarkEmailsReadResult[] = argumentsValue.emails.map((email) => ({
       id: email.id,
       subject: email.subject,
@@ -177,7 +178,7 @@ export const createMarkEmailsJunkResult = async (argumentsValue: MarkEmailsJunkA
       ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const results: MarkEmailsJunkResult[] = argumentsValue.emails.map((email) => ({
       id: email.id,
       subject: email.subject,
@@ -220,7 +221,7 @@ export const createMarkEmailsNotJunkResult = async (
       ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const results: MarkEmailsNotJunkResult[] = argumentsValue.emails.map((email) => ({
       id: email.id,
       subject: email.subject,
@@ -261,7 +262,7 @@ export const createFlagEmailsResult = async (argumentsValue: FlagEmailsArguments
       ...(isBatchFailure(results) ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const results: FlagEmailsResult[] = argumentsValue.emails.map((email) => ({
       id: email.id,
       subject: email.subject,
@@ -323,7 +324,7 @@ export const createSendEmailResult = async (argumentsValue: SendEmailArguments):
       ...(result.status === "error" ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const result: SendEmailResult = { status: "error", detail }
     return {
       content: [{ type: "text", text: formatSendEmailSummary(result) }],
@@ -347,7 +348,7 @@ export const createReplyEmailResult = async (argumentsValue: ReplyEmailArguments
       ...(result.status !== "sent" ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const result: ReplyEmailResult = { status: "error", detail }
     return {
       content: [{ type: "text", text: formatReplyEmailSummary(result) }],
@@ -371,7 +372,7 @@ export const createForwardEmailResult = async (argumentsValue: ForwardEmailArgum
       ...(result.status !== "sent" ? { isError: true } : {}),
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     const result: ForwardEmailResult = { status: "error", detail }
     return {
       content: [{ type: "text", text: formatForwardEmailSummary(result) }],

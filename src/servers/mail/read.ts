@@ -10,6 +10,7 @@ import { join } from "node:path"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
 import { runJxa } from "../../lib/jxa"
+import { errorMessage } from "../../lib/mcp-result"
 
 import { discoverAndWriteConfig, loadEmailConfig, resolveConfigPath } from "./config"
 import { BODY_MAX_CHARS, MAIL_DB_PATH, MAX_LINKS, TIME_ZONE } from "./constants"
@@ -84,7 +85,7 @@ export const createFetchEmailBodyResult = async (argumentsValue: FetchEmailBodyA
       structuredContent: result,
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     return {
       content: [{ type: "text", text: `fetch_email_body failed: ${detail}` }],
       structuredContent: {
@@ -247,7 +248,7 @@ export const createExtractEmailLinksResult = async (
       structuredContent: result,
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     return {
       content: [{ type: "text", text: `extract_email_links failed: ${detail}` }],
       structuredContent: {
@@ -297,7 +298,7 @@ export const createListEmailAttachmentsResult = async (
       structuredContent: result,
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     return {
       content: [{ type: "text", text: `list_email_attachments failed: ${detail}` }],
       structuredContent: {
@@ -369,7 +370,7 @@ export const createFetchEmailAttachmentResult = async (
       structuredContent: result,
     }
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     return {
       content: [{ type: "text", text: `fetch_email_attachment failed: ${detail}` }],
       structuredContent: {
@@ -620,10 +621,7 @@ export const createUnreadEmailsResult = async (argumentsValue: UnreadEmailArgume
     database = new Database(MAIL_DB_PATH, { readonly: true })
     return runUnreadEmailRead(database, argumentsValue)
   } catch (error) {
-    const message =
-      error instanceof EmailToolError
-        ? error.message
-        : `Email read failed: ${error instanceof Error ? error.message : String(error)}`
+    const message = error instanceof EmailToolError ? error.message : `Email read failed: ${errorMessage(error)}`
 
     return {
       content: [
@@ -705,10 +703,7 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
       },
     }
   } catch (error) {
-    const message =
-      error instanceof EmailToolError
-        ? error.message
-        : `Email search failed: ${error instanceof Error ? error.message : String(error)}`
+    const message = error instanceof EmailToolError ? error.message : `Email search failed: ${errorMessage(error)}`
 
     return {
       content: [

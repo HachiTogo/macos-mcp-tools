@@ -4,6 +4,7 @@ import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { errorMessage } from "../mcp-result.js"
 import { FILE_SYSTEM } from "./constants.js"
 import { bufferToString, CliUserError } from "./helpers.js"
 
@@ -314,7 +315,7 @@ const parseCliOutput = <T>(output: string): T => {
   try {
     parsed = JSON.parse(output) as CliResponse<T>
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     throw new Error(`EventKitCLI execution failed: Invalid CLI output - ${detail}`)
   }
 
@@ -349,8 +350,7 @@ const runCli = async <T>(cliPath: string, args: string[]): Promise<T> => {
     if (normalized) {
       return parseCliOutput(normalized)
     }
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    throw new Error(`EventKitCLI execution failed: ${errorMessage}`)
+    throw new Error(`EventKitCLI execution failed: ${errorMessage(error)}`)
   }
 }
 
