@@ -62,6 +62,7 @@ bun run test:integration  # Run opt-in integration tests
 - Unit tests use Bun's built-in test runner
 - Test files: `src/servers/*.test.ts`
 - Integration tests are opt-in and use isolated temporary data directories
+- The integration suite snapshots every server's `tools/list` (names, descriptions, schemas, annotations). A deliberate tool change fails it until you refresh the snapshot with `RUN_INTEGRATION_TESTS=1 bun test src/integration -u` and commit the result; CI never writes snapshots.
 - Tests cover helper logic only; JXA behavior requires manual testing
 
 ## Code Style
