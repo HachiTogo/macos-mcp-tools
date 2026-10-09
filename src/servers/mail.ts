@@ -187,7 +187,7 @@ server.registerTool(
   "search_emails",
   {
     description:
-      "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts. At least one search criterion (subject, sender, after, before) is required.",
+      "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts, except mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, which it never returns. At least one search criterion (subject, sender, after, before) is required.",
     inputSchema: {
       subject: z.string().optional().describe("Substring to match in the email subject line."),
       sender: z.string().optional().describe("Substring to match in the sender email address or display name."),

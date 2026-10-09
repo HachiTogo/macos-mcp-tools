@@ -185,6 +185,8 @@ Uses a hybrid implementation: direct read-only SQLite queries for fast message r
 
 Gmail is handled by label, the way Gmail itself works: Mail stores every Gmail message in `[Gmail]/All Mail` and records inbox and folder membership as labels. `unread_emails` counts unread mail in the inbox or under any label, leaves archived mail (no label) out, and reports each message under its label. Gmail's automatic labels such as Important do not count as filing. Other account types are read exactly as they are stored.
 
+`unread_emails` and `search_emails` skip mailboxes named Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, so mail filed only there never appears in their results.
+
 Start with `list_mail_accounts`: it reports every account and mailbox with its unread count, which is where the values for the `provider` and `mailbox` filters come from. A filter that matches nothing returns an empty result rather than an error, so guessing is hard to tell apart from an empty mailbox.
 
 Tools: `list_mail_accounts`, `unread_emails`, `mark_emails_read`, `fetch_email_body`, `mark_emails_junk`, `mark_emails_not_junk`, `flag_emails`, `list_email_attachments`, `fetch_email_attachment`, `search_emails`, `extract_email_links`, `send_email`, `reply_email`, `forward_email`
