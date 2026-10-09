@@ -22,7 +22,7 @@ import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Formatters ────────────────────────────────────────────────────────
 
-const formatEventMarkdown = (event: {
+export const formatEventMarkdown = (event: {
   title: string
   calendar?: string
   id?: string

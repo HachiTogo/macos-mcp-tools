@@ -53,7 +53,7 @@ import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function rebuildNotesForUpdate(
+export function rebuildNotesForUpdate(
   currentNotes: string | undefined,
   newNote: string | undefined,
   tags: string[] | undefined,
@@ -88,7 +88,7 @@ function rebuildNotesForUpdate(
 
 // ── Reminder formatters ───────────────────────────────────────────────
 
-const formatRecurrence = (recurrence: RecurrenceRule): string => {
+export const formatRecurrence = (recurrence: RecurrenceRule): string => {
   const parts: string[] = []
   const interval = recurrence.interval > 1 ? `every ${recurrence.interval} ` : ""
 
@@ -144,7 +144,7 @@ const formatRecurrenceRules = (rules: RecurrenceRule[]): string => {
   return rules.map((rule) => formatRecurrence(rule)).join("; ")
 }
 
-const formatAlarm = (alarm: Alarm): string => {
+export const formatAlarm = (alarm: Alarm): string => {
   let typeStr = ""
   if (alarm.alarmType) {
     typeStr = ` (${alarm.alarmType})`
@@ -176,7 +176,7 @@ const buildReminderIcons = (reminder: {
   return icons.length > 0 ? ` ${icons.join("")}` : ""
 }
 
-const formatReminderMarkdown = (reminder: {
+export const formatReminderMarkdown = (reminder: {
   title: string
   isCompleted: boolean
   list?: string
@@ -263,7 +263,7 @@ const formatSubtaskMarkdown = (subtask: Subtask, index: number): string => {
   return `${index + 1}. ${checkbox} ${subtask.title} (ID: ${subtask.id})`
 }
 
-const formatSubtasksListMarkdown = (reminderTitle: string, subtasks: Subtask[]): string => {
+export const formatSubtasksListMarkdown = (reminderTitle: string, subtasks: Subtask[]): string => {
   const lines: string[] = []
   const progress = getSubtaskProgress(subtasks)
 
