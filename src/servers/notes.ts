@@ -217,20 +217,34 @@ function run(argv) {
   for (const folder of foldersToSearch) {
     if (results.length >= limit) break;
     const folderName = folder.name();
-    const notes = folder.notes();
-    for (const note of notes) {
+    // Each property is read for the whole folder in one Apple event. Reading them note by note made
+    // a full search take tens of seconds, and common words ran past the 30 s limit.
+    const names = folder.notes.name();
+    let texts;
+    try {
+      texts = folder.notes.plaintext().map(text => ({ text }));
+    } catch (e) {
+      // One unreadable note fails the bulk read; reading this folder note by note confines it to that note.
+      texts = folder.notes().map(readText);
+    }
+    let ids = null;
+    let modificationDates = null;
+    for (let i = 0; i < names.length; i++) {
       if (results.length >= limit) break;
-      const title = note.name().toLowerCase();
-      const { text, warning } = readText(note);
+      const { text, warning } = texts[i];
       // An unreadable note might match, so it is returned with its warning rather than skipped.
-      if (warning || title.includes(query) || text.toLowerCase().includes(query)) {
+      if (warning || names[i].toLowerCase().includes(query) || text.toLowerCase().includes(query)) {
+        if (!ids) {
+          ids = folder.notes.id();
+          modificationDates = folder.notes.modificationDate();
+        }
         const start = Math.max(0, text.toLowerCase().indexOf(query) - 40);
         results.push({
-          id: note.id(),
-          name: note.name(),
+          id: ids[i],
+          name: names[i],
           folder: folderName,
           snippet: text.slice(start, start + 120),
-          modificationDate: note.modificationDate().toISOString(),
+          modificationDate: modificationDates[i].toISOString(),
           ...(warning ? { warning } : {}),
         });
       }
