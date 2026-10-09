@@ -6,6 +6,12 @@ import { runTool } from "../lib/mcp-result"
 import { PACKAGE_VERSION } from "../lib/version"
 import { MAX_EMAIL_BODY_LENGTH } from "./mail/constants"
 import {
+  createExtractEmailLinksResult,
+  createFetchEmailAttachmentResult,
+  createFetchEmailBodyResult,
+  createListEmailAttachmentsResult,
+} from "./mail/message-content"
+import {
   createFlagEmailsResult,
   createForwardEmailResult,
   createMarkEmailsJunkResult,
@@ -14,15 +20,7 @@ import {
   createReplyEmailResult,
   createSendEmailResult,
 } from "./mail/mutate"
-import {
-  createExtractEmailLinksResult,
-  createFetchEmailAttachmentResult,
-  createFetchEmailBodyResult,
-  createListEmailAttachmentsResult,
-  createListMailAccountsResult,
-  createSearchEmailResult,
-  createUnreadEmailsResult,
-} from "./mail/read"
+import { createListMailAccountsResult, createSearchEmailResult, createUnreadEmailsResult } from "./mail/read"
 import {
   emailsArraySchema,
   handleSchema,
