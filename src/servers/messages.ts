@@ -346,7 +346,7 @@ function run(argv) {
   if (!target) return JSON.stringify({ status: "error", to: target, detail: "Recipient is required." })
 
   // Find the chat whose internal ID ends with the target identifier.
-  // 1:1 chats: "any;-;ennea.kyle@icloud.com"  group chats: "any;+;chat64037..."
+  // 1:1 chats: "any;-;person@example.com"  group chats: "any;+;chat123..."
   var suffix = ";" + target
   var chats = Messages.chats()
   for (var i = 0; i < chats.length; i++) {
@@ -441,7 +441,7 @@ server.registerTool(
       chat_id: z
         .string()
         .describe(
-          "Chat identifier: phone number (e.g. '+13109236683'), email, or group ID (e.g. 'chat465552106698701545').",
+          "Chat identifier: phone number (e.g. '+15555550123'), email, or group ID (e.g. 'chat123456789012345678').",
         ),
       limit: z
         .number()
@@ -521,12 +521,12 @@ server.registerTool(
   "send_message",
   {
     description:
-      "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat465552106698701545') from list_chats.",
+      "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat123456789012345678') from list_chats.",
     inputSchema: {
       to: z
         .string()
         .describe(
-          "Recipient: phone number (e.g. '+13109236683'), email, or group chat identifier (e.g. 'chat465552106698701545').",
+          "Recipient: phone number (e.g. '+15555550123'), email, or group chat identifier (e.g. 'chat123456789012345678').",
         ),
       text: z.string().min(1).describe("Message text to send."),
     },

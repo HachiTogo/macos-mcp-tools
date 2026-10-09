@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`get_messages` and `send_message` use placeholder examples.** Their parameter descriptions now show a reserved example phone number and generic chat id rather than specific ones.
+
 ### Fixed
 - **Mail tools no longer fail on large messages.** Mail ran its own osascript calls with the default 1 MiB output limit, so `extract_email_links`, which reads a message's whole source, failed with `ENOBUFS` on any message carrying an attachment of more than about 750 KB. Every mail call now goes through the shared runner in `src/lib/jxa.ts`, as the other servers' calls already did: up to 50 MiB of output, and a timeout so a hung Mail.app can no longer stall the server. The timeout is 30 s, plus a second per message for the batch mark and flag tools.
 - **`search_emails` says which mailboxes it skips.** It has never returned mail from Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, but its description did not say so, so an agent searching for something it sent got an unexplained empty result. The description and README now list them; the behaviour is unchanged.
