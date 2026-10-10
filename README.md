@@ -211,6 +211,8 @@ Structured memory store with subject-action-object triples, aliases, and duratio
 
 Tools: `create_entry`, `update_entry`, `get_entry`, `search_entries`, `query_last_occurrence`, `query_duration_since`
 
+Timestamps (`happened_at`, `start_at`, `end_at`, `due_at`, and the `happened_after`/`happened_before` filters) must be ISO 8601 dates or timestamps, such as `2026-10-08` or `2026-10-08T14:30:00-07:00`. Relative dates like "yesterday" are for the agent to convert; the tool refuses them rather than storing text it cannot compare.
+
 ### Messages
 
 Hybrid implementation: direct read-only SQLite queries against `~/Library/Messages/chat.db` for reading and searching, plus JXA for sending messages. Supports both 1:1 and group chat sending. Inspired by [@griches/apple-messages-mcp](https://github.com/griches/apple-mcp) (MIT).

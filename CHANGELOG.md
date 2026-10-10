@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Notes title lookups skip Recently Deleted.** A trashed note counted as a title match, so deleting "X" and creating a new "X" made the title ambiguous until the trash emptied. A title lookup across folders now ignores Recently Deleted; naming that folder, or passing the note's `id`, still reaches a trashed note. The folder is matched by its English name.
+- **Memory timestamps must be ISO 8601.** `happened_at`, `start_at`, `end_at` and `due_at`, and the `happened_after`/`happened_before` filters, accepted any text: "yesterday" was stored as written and its durations came back `null`. Each field now describes the format and asks the agent to convert relative dates first, and a value that is not an ISO 8601 date or timestamp (or names an impossible day) is refused with an error naming the field. Existing entries are unaffected.
 
 ## [0.9.1] - 2026-10-09
 

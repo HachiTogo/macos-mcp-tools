@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 
-import { isoDateString, parseLocalDate } from "./dates"
+import { isoDateString, isoTimestampString, parseLocalDate } from "./dates"
 
 // CI runs in UTC, where local and UTC midnight coincide and the bug cannot show. Pin a zone west of
 // UTC so a bare date read as UTC lands on the previous evening and fails these tests.
@@ -47,5 +47,24 @@ describe("isoDateString", () => {
     const result = schema.safeParse("last week")
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.message).toContain("Invalid from_date date")
+  })
+})
+
+describe("isoTimestampString", () => {
+  const schema = isoTimestampString("happened_at")
+
+  test("accepts ISO dates and timestamps, with or without a zone", () => {
+    for (const value of ["2026-10-08", "2026-10-08T14:30", "2026-10-08T14:30:00-07:00", "2026-10-08T21:30:00.000Z"]) {
+      expect(schema.safeParse(value).success, value).toBe(true)
+    }
+  })
+
+  test("rejects relative words, other date formats and impossible days, saying what to send", () => {
+    for (const value of ["yesterday", "October 8, 2026", "10/08/2026", "2026-02-30", "2026-13-01"]) {
+      expect(schema.safeParse(value).success, value).toBe(false)
+    }
+    expect(schema.safeParse("yesterday").error?.issues[0]?.message).toContain(
+      'Convert relative dates such as "yesterday"',
+    )
   })
 })

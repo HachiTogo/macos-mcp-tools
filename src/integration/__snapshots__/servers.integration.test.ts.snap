@@ -1209,6 +1209,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it is due. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "end_at": {
           "anyOf": [
@@ -1219,6 +1220,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it ends. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "happened_at": {
           "anyOf": [
@@ -1229,6 +1231,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it happened. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "kind": {
           "description": "Entry kind",
@@ -1269,6 +1272,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it starts. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "status": {
           "anyOf": [
@@ -1370,6 +1374,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it is due. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "end_at": {
           "anyOf": [
@@ -1380,6 +1385,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it ends. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "happened_at": {
           "anyOf": [
@@ -1390,6 +1396,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it happened. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "id": {
           "description": "Entry ID",
@@ -1440,6 +1447,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
+          "description": "When it starts. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
         },
         "status": {
           "anyOf": [
@@ -1513,9 +1521,11 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "string",
         },
         "happened_after": {
+          "description": "Only entries that happened on or after this. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
           "type": "string",
         },
         "happened_before": {
+          "description": "Only entries that happened on or before this. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
           "type": "string",
         },
         "keywords": {

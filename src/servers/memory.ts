@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
+import { isoTimestampString } from "../lib/dates"
 import { jsonResult, runTool, textResult } from "../lib/mcp-result"
 import { PACKAGE_VERSION } from "../lib/version"
 import {
@@ -30,6 +31,13 @@ import {
 const server = new McpServer({ name: "memory", version: PACKAGE_VERSION })
 
 const nullableString = z.union([z.string(), z.null()]).optional()
+
+// Timestamps are stored and compared as text, so they must be ISO 8601. Saying so in the schema lets
+// the agent convert "yesterday" before it calls; a value that slips through is refused, not stored.
+const TIMESTAMP_FORMAT =
+  "ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first."
+const timestamp = (field: string, meaning: string) =>
+  isoTimestampString(field).nullable().optional().describe(`${meaning} ${TIMESTAMP_FORMAT}`)
 const nullableNumber = z.union([z.number(), z.null()]).optional()
 
 server.registerTool(
@@ -45,10 +53,10 @@ server.registerTool(
       body: nullableString,
       source: nullableString,
       status: nullableString,
-      happened_at: nullableString,
-      start_at: nullableString,
-      end_at: nullableString,
-      due_at: nullableString,
+      happened_at: timestamp("happened_at", "When it happened."),
+      start_at: timestamp("start_at", "When it starts."),
+      end_at: timestamp("end_at", "When it ends."),
+      due_at: timestamp("due_at", "When it is due."),
       cost_amount: nullableNumber,
       cost_currency: nullableString,
       aliases: z.array(z.string()).optional(),
@@ -75,10 +83,10 @@ server.registerTool(
       body: nullableString,
       source: nullableString,
       status: nullableString,
-      happened_at: nullableString,
-      start_at: nullableString,
-      end_at: nullableString,
-      due_at: nullableString,
+      happened_at: timestamp("happened_at", "When it happened."),
+      start_at: timestamp("start_at", "When it starts."),
+      end_at: timestamp("end_at", "When it ends."),
+      due_at: timestamp("due_at", "When it is due."),
       cost_amount: nullableNumber,
       cost_currency: nullableString,
       aliases: z.array(z.string()).optional(),
@@ -133,8 +141,12 @@ server.registerTool(
       action: z.string().optional(),
       object: z.string().optional(),
       status: z.string().optional(),
-      happened_after: z.string().optional(),
-      happened_before: z.string().optional(),
+      happened_after: isoTimestampString("happened_after")
+        .optional()
+        .describe(`Only entries that happened on or after this. ${TIMESTAMP_FORMAT}`),
+      happened_before: isoTimestampString("happened_before")
+        .optional()
+        .describe(`Only entries that happened on or before this. ${TIMESTAMP_FORMAT}`),
       keywords: z.array(z.string()).optional(),
       limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional(),
     },
