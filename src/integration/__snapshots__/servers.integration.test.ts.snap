@@ -937,7 +937,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
           "type": "string",
         },
       },
@@ -994,7 +994,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
           "type": "string",
         },
       },
@@ -1021,7 +1021,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
           "type": "string",
         },
         "to_folder": {
@@ -1056,7 +1056,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
           "type": "string",
         },
       },
@@ -1083,7 +1083,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.",
+          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
           "type": "string",
         },
       },

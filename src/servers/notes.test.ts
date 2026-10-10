@@ -49,6 +49,35 @@ describe("pickNote", () => {
   })
 })
 
+type FakeNote = { id: string; name: string }
+type FakeFolder = { name: () => string; notes: { id: () => string[]; name: () => string[] } }
+const folder = (name: string, notes: FakeNote[]): FakeFolder => ({
+  name: () => name,
+  notes: { id: () => notes.map((n) => n.id), name: () => notes.map((n) => n.name) },
+})
+const notesApp = (folders: FakeFolder[]) => ({ folders: () => folders, notes: { byId: (id: string) => ({ id }) } })
+const findNote = new Function(`${NOTE_LOOKUP}; return findNote`)() as (
+  app: ReturnType<typeof notesApp>,
+  args: { title?: string; folder?: string },
+) => { id: string }
+
+describe("findNote by title", () => {
+  const work = folder("Work", [{ id: "live", name: "Plan" }])
+  const trash = folder("Recently Deleted", [{ id: "trashed", name: "Plan" }])
+
+  test("skips Recently Deleted, so a re-created title is not ambiguous", () => {
+    expect(findNote(notesApp([work, trash]), { title: "Plan" }).id).toBe("live")
+  })
+
+  test("a title only in the trash is not found across folders", () => {
+    expect(() => findNote(notesApp([trash]), { title: "Plan" })).toThrow("Note not found: Plan")
+  })
+
+  test("naming Recently Deleted as the folder still reaches a trashed note", () => {
+    expect(findNote(notesApp([work, trash]), { title: "Plan", folder: "Recently Deleted" }).id).toBe("trashed")
+  })
+})
+
 const readText = new Function(`${NOTE_TEXT}; return readText`)() as (note: { plaintext: () => string }) => {
   text: string
   warning?: string

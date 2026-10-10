@@ -26,13 +26,20 @@ function pickNote(matches, title) {
   return matches[0];
 }
 
+// Notes keeps deleted notes here for 30 days. A title lookup across folders skips it, or a re-created
+// note would clash with its trashed predecessor. Naming this folder, or passing the id, still reaches
+// a trashed note. The name is English; on other system languages the trash is matched like any folder.
+const TRASH_FOLDER = "Recently Deleted";
+
 function findNote(app, args) {
   if (args.id) {
     const note = app.notes.byId(args.id);
     try { note.name(); } catch (e) { throw new Error("Note not found: " + args.id); }
     return note;
   }
-  const folders = args.folder ? [findFolder(app, args.folder)] : app.folders();
+  const folders = args.folder
+    ? [findFolder(app, args.folder)]
+    : app.folders().filter(f => f.name() !== TRASH_FOLDER);
   const matches = [];
   for (const folder of folders) {
     const ids = folder.notes.id();
@@ -284,7 +291,9 @@ const noteId = z
 const noteTitle = z
   .string()
   .optional()
-  .describe("Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id.")
+  .describe(
+    "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
+  )
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 

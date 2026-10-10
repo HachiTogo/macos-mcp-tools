@@ -203,7 +203,7 @@ Full CRUD for Apple Notes folders and notes, plus search, via JXA.
 
 Tools: `list_folders`, `create_folder`, `list_notes`, `get_note`, `create_note`, `update_note`, `move_note`, `append_to_note`, `delete_note`, `delete_folder`, `search_notes`
 
-`get_note`, `update_note`, `append_to_note`, `move_note` and `delete_note` take a note's `id` (returned by `list_notes`, `search_notes`, `get_note` and `create_note`) or its `title`. A title shared by several notes is refused, and the error lists each one's id and folder.
+`get_note`, `update_note`, `append_to_note`, `move_note` and `delete_note` take a note's `id` (returned by `list_notes`, `search_notes`, `get_note` and `create_note`) or its `title`. A title shared by several notes is refused, and the error lists each one's id and folder. Notes in Recently Deleted don't count toward a title match unless you name that folder.
 
 ### Memory
 
