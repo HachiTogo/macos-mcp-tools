@@ -14,6 +14,10 @@ struct StandardOutput<T: Codable>: Codable {
 struct ErrorOutput: Codable {
     let status = "error"
     let message: String
+    // Set on permission failures ("permission_denied", with "calendars" or "reminders"), so callers
+    // can tell them apart without reading the message.
+    var code: String? = nil
+    var domain: String? = nil
 }
 
 struct ReadResult: Codable {
@@ -1585,6 +1589,14 @@ func main() {
         }
         exit(1)
     }
+
+    let outputPermissionError = { (message: String, domain: String) in
+        if let data = try? encoder.encode(ErrorOutput(message: message, code: "permission_denied", domain: domain)),
+           let json = String(data: data, encoding: .utf8) {
+            print(json)
+        }
+        exit(1)
+    }
     
     let action = parser.get("action") ?? ""
 
@@ -1603,17 +1615,17 @@ func main() {
                 manager.requestCalendarAccess { granted, error in
                     guard granted else {
                         let errorMsg = error?.localizedDescription ?? "Unknown error"
-                        outputError(subprocessPermissionMessage(domain: "Calendar", tccService: "Calendar", errorMsg: errorMsg))
+                        outputPermissionError(subprocessPermissionMessage(domain: "Calendar", tccService: "Calendar", errorMsg: errorMsg), "calendars")
                         return
                     }
                     handleAction()
                 }
             case .denied, .restricted:
                 // Permission was denied or restricted
-                outputError("Calendar permission denied or restricted.\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars")
+                outputPermissionError("Calendar permission denied or restricted.\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars", "calendars")
             case .writeOnly:
                 // Write-only access is not sufficient for reading calendars
-                outputError("Calendar permission is write-only, but read access is required.\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars")
+                outputPermissionError("Calendar permission is write-only, but read access is required.\n\nPlease grant Full Calendar Access in:\nSystem Settings > Privacy & Security > Calendars", "calendars")
             @unknown default:
                 outputError("Unknown calendar permission status.")
             }
@@ -1628,17 +1640,17 @@ func main() {
                 manager.requestAccess { granted, error in
                     guard granted else {
                         let errorMsg = error?.localizedDescription ?? "Unknown error"
-                        outputError(subprocessPermissionMessage(domain: "Reminder", tccService: "Reminders", errorMsg: errorMsg))
+                        outputPermissionError(subprocessPermissionMessage(domain: "Reminder", tccService: "Reminders", errorMsg: errorMsg), "reminders")
                         return
                     }
                     handleAction()
                 }
             case .denied, .restricted:
                 // Permission was denied or restricted
-                outputError("Reminder permission denied or restricted.\n\nPlease grant reminder permissions in:\nSystem Settings > Privacy & Security > Reminders")
+                outputPermissionError("Reminder permission denied or restricted.\n\nPlease grant reminder permissions in:\nSystem Settings > Privacy & Security > Reminders", "reminders")
             case .writeOnly:
                 // Write-only access is not sufficient for reading reminders
-                outputError("Reminder permission is write-only, but read access is required.\n\nPlease grant full reminder permissions in:\nSystem Settings > Privacy & Security > Reminders")
+                outputPermissionError("Reminder permission is write-only, but read access is required.\n\nPlease grant full reminder permissions in:\nSystem Settings > Privacy & Security > Reminders", "reminders")
             @unknown default:
                 outputError("Unknown reminder permission status.")
             }
