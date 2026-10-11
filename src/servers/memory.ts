@@ -35,10 +35,8 @@ const nullableString = z.union([z.string(), z.null()]).optional()
 
 // Timestamps are stored and compared as text, so they must be ISO 8601. Saying so in the schema lets
 // the agent convert "yesterday" before it calls; a value that slips through is refused, not stored.
-const TIMESTAMP_FORMAT =
-  "ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first."
-const timestamp = (field: string, meaning: string) =>
-  isoTimestampString(field).nullable().optional().describe(`${meaning} ${TIMESTAMP_FORMAT}`)
+const TIMESTAMP_FORMAT = "ISO 8601; convert relative dates like 'yesterday' first"
+const timestamp = (field: string) => isoTimestampString(field).nullable().optional().describe(TIMESTAMP_FORMAT)
 const nullableNumber = z.union([z.number(), z.null()]).optional()
 
 // The structuredContent each read tool declares. Objects are loose, so a field present only
@@ -58,9 +56,9 @@ export const occurrenceOutput = z.looseObject({
 server.registerTool(
   "create_entry",
   {
-    description: "Create a memory, task, event, or note entry with optional aliases.",
+    description: "Create a memory, task, event or note entry, with optional aliases.",
     inputSchema: {
-      kind: z.enum(ENTRY_KINDS).describe("Entry kind"),
+      kind: z.enum(ENTRY_KINDS),
       title: nullableString,
       subject: nullableString,
       action: nullableString,
@@ -68,10 +66,10 @@ server.registerTool(
       body: nullableString,
       source: nullableString,
       status: nullableString,
-      happened_at: timestamp("happened_at", "When it happened."),
-      start_at: timestamp("start_at", "When it starts."),
-      end_at: timestamp("end_at", "When it ends."),
-      due_at: timestamp("due_at", "When it is due."),
+      happened_at: timestamp("happened_at"),
+      start_at: timestamp("start_at"),
+      end_at: timestamp("end_at"),
+      due_at: timestamp("due_at"),
       cost_amount: nullableNumber,
       cost_currency: nullableString,
       aliases: z.array(z.string()).optional(),
@@ -88,9 +86,9 @@ server.registerTool(
 server.registerTool(
   "update_entry",
   {
-    description: "Update an existing entry. Only specified fields are changed.",
+    description: "Update an entry; only the fields given change.",
     inputSchema: {
-      id: z.string().describe("Entry ID"),
+      id: z.string(),
       kind: z.union([z.enum(ENTRY_KINDS), z.null()]).optional(),
       title: nullableString,
       subject: nullableString,
@@ -99,10 +97,10 @@ server.registerTool(
       body: nullableString,
       source: nullableString,
       status: nullableString,
-      happened_at: timestamp("happened_at", "When it happened."),
-      start_at: timestamp("start_at", "When it starts."),
-      end_at: timestamp("end_at", "When it ends."),
-      due_at: timestamp("due_at", "When it is due."),
+      happened_at: timestamp("happened_at"),
+      start_at: timestamp("start_at"),
+      end_at: timestamp("end_at"),
+      due_at: timestamp("due_at"),
       cost_amount: nullableNumber,
       cost_currency: nullableString,
       aliases: z.array(z.string()).optional(),
@@ -127,9 +125,9 @@ server.registerTool(
 server.registerTool(
   "get_entry",
   {
-    description: "Fetch a single normalized entry with aliases by ID.",
+    description: "One entry, with its aliases.",
     inputSchema: {
-      id: z.string().describe("Entry ID"),
+      id: z.string(),
     },
     outputSchema: entryOutput,
     annotations: READ,
@@ -152,22 +150,18 @@ server.registerTool(
 server.registerTool(
   "search_entries",
   {
-    description: "Search entries with deterministic structured filters and keyword fallback.",
+    description: "Search entries by structured fields, falling back to keywords.",
     inputSchema: {
       kind: z.enum(ENTRY_KINDS).optional(),
       subject: z.string().optional(),
       action: z.string().optional(),
       object: z.string().optional(),
       status: z.string().optional(),
-      happened_after: isoTimestampString("happened_after")
-        .optional()
-        .describe(`Only entries that happened on or after this. ${TIMESTAMP_FORMAT}`),
-      happened_before: isoTimestampString("happened_before")
-        .optional()
-        .describe(`Only entries that happened on or before this. ${TIMESTAMP_FORMAT}`),
+      happened_after: isoTimestampString("happened_after").optional().describe(`Inclusive. ${TIMESTAMP_FORMAT}`),
+      happened_before: isoTimestampString("happened_before").optional().describe(`Inclusive. ${TIMESTAMP_FORMAT}`),
       keywords: z.array(z.string()).optional(),
       limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional(),
-      offset: offsetArg("entries"),
+      offset: offsetArg,
     },
     outputSchema: entriesOutput,
     annotations: READ,
@@ -185,7 +179,7 @@ server.registerTool(
 server.registerTool(
   "query_last_occurrence",
   {
-    description: "Return the most recent matching entry using happened_at, start_at, then created_at.",
+    description: "The latest matching entry, by happened_at, then start_at, then created_at.",
     inputSchema: {
       subject: z.string().optional(),
       action: z.string().optional(),
@@ -211,7 +205,7 @@ server.registerTool(
 server.registerTool(
   "query_duration_since",
   {
-    description: "Return the most recent matching entry plus elapsed days and hours.",
+    description: "The latest matching entry and the days and hours since it.",
     inputSchema: {
       subject: z.string().optional(),
       action: z.string().optional(),

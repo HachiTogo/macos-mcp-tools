@@ -40,11 +40,12 @@ import {
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
-const provider = z
-  .string()
-  .min(1)
-  .optional()
-  .describe("Only accounts with this provider, as list_mail_accounts reports it (e.g. 'gmail', 'icloud', 'unknown').")
+// Descriptions say only what a field's name and type cannot.
+const provider = z.string().min(1).optional().describe("From list_mail_accounts, e.g. 'gmail'")
+const mailbox = z.string().optional().describe("Substring of a mailbox name or URL")
+const from = z.string().email().optional().describe("Must match an enabled account")
+/** The mark and junk tools need the objects the read tools return, which agents shorten to handles. */
+const EMAILS = "Pass the email objects list_unread_emails or search_emails returned, not bare handles."
 
 const server = new McpServer({ name: "apple-mail", version: PACKAGE_VERSION })
 
@@ -52,7 +53,7 @@ server.registerTool(
   "list_mail_accounts",
   {
     description:
-      "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
+      "Mail accounts and mailboxes, with unread counts. The provider and mailbox filters take values from here; one that matches nothing returns no mail, not an error.",
     inputSchema: {},
     outputSchema: mailAccountsOutput,
     annotations: READ,
@@ -64,12 +65,12 @@ server.registerTool(
   "list_unread_emails",
   {
     description:
-      "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
+      "Unread messages in every category, without bodies. Gmail mail counts in the inbox or under a label, is reported under its label, and archived mail is left out.",
     inputSchema: {
-      limit: limitSchema.describe("Maximum number of messages to return (1–100). Default: 25."),
-      offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
+      limit: limitSchema,
+      offset: offsetSchema,
       provider,
-      mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
+      mailbox,
     },
     outputSchema: emailListOutput,
     annotations: READ,
@@ -80,10 +81,9 @@ server.registerTool(
 server.registerTool(
   "mark_emails_read",
   {
-    description:
-      "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
+    description: `Mark messages read. ${EMAILS}`,
     inputSchema: {
-      emails: emailsArraySchema.describe("Array of email objects to mark as read."),
+      emails: emailsArraySchema,
     },
     annotations: SET,
   },
@@ -93,9 +93,9 @@ server.registerTool(
 server.registerTool(
   "fetch_email_body",
   {
-    description: "Fetch the full body text of a single Apple Mail message by its handle.",
+    description: "A message's full body text.",
     inputSchema: {
-      handle: handleSchema.describe("Email handle identifying the message."),
+      handle: handleSchema,
     },
     outputSchema: emailBodyOutput,
     annotations: READ,
@@ -107,9 +107,9 @@ server.registerTool(
   "extract_email_links",
   {
     description:
-      "Extract all hyperlinks from an Apple Mail message as `{ url, text }` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
+      "A message's links as { url, text } pairs, read from its HTML source; the HTML itself is not returned.",
     inputSchema: {
-      handle: handleSchema.describe("Email handle identifying the message."),
+      handle: handleSchema,
     },
     outputSchema: emailLinksOutput,
     annotations: READ,
@@ -120,10 +120,9 @@ server.registerTool(
 server.registerTool(
   "mark_emails_junk",
   {
-    description:
-      "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
+    description: `Mark messages as junk. ${EMAILS}`,
     inputSchema: {
-      emails: emailsArraySchema.describe("Array of email objects to mark as junk."),
+      emails: emailsArraySchema,
     },
     annotations: DESTRUCTIVE,
   },
@@ -133,10 +132,9 @@ server.registerTool(
 server.registerTool(
   "mark_emails_not_junk",
   {
-    description:
-      "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
+    description: `Mark messages as not junk. ${EMAILS}`,
     inputSchema: {
-      emails: emailsArraySchema.describe("Array of email objects to mark as not junk."),
+      emails: emailsArraySchema,
     },
     annotations: SET,
   },
@@ -147,7 +145,7 @@ server.registerTool(
   "flag_emails",
   {
     description:
-      "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flag_index', 'flagged_status', or 'background_color'.",
+      "Set flag color, flagged status or background color. Each item needs id, handle and at least one of the three.",
     inputSchema: {
       emails: z
         .array(
@@ -161,19 +159,12 @@ server.registerTool(
               .min(-1)
               .max(6)
               .optional()
-              .describe("Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray"),
-            flagged_status: z
-              .boolean()
-              .optional()
-              .describe("Set flagged status directly. true=flagged, false=unflagged."),
-            background_color: z
-              .enum(["blue", "gray", "green", "none", "orange", "purple", "red", "yellow"])
-              .optional()
-              .describe("Message background color in Mail.app."),
+              .describe("-1 none, 0 red, 1 orange, 2 yellow, 3 green, 4 blue, 5 purple, 6 gray"),
+            flagged_status: z.boolean().optional(),
+            background_color: z.enum(["blue", "gray", "green", "none", "orange", "purple", "red", "yellow"]).optional(),
           }),
         )
-        .min(1)
-        .describe("Array of email objects to flag."),
+        .min(1),
     },
     annotations: SET,
   },
@@ -193,9 +184,9 @@ server.registerTool(
 server.registerTool(
   "list_email_attachments",
   {
-    description: "Lists attachments on a message without downloading content.",
+    description: "A message's attachment names, without downloading them.",
     inputSchema: {
-      handle: handleSchema.describe("Email handle identifying the message."),
+      handle: handleSchema,
     },
     outputSchema: emailAttachmentsOutput,
     annotations: READ,
@@ -206,17 +197,11 @@ server.registerTool(
 server.registerTool(
   "fetch_email_attachment",
   {
-    description: "Downloads a single attachment and returns its content.",
+    description: "One attachment's content: text (PDFs through pdftotext) or base64.",
     inputSchema: {
-      handle: handleSchema.describe("Email handle identifying the message."),
-      attachment_name: z
-        .string()
-        .min(1)
-        .describe("Name of the attachment to fetch, as listed by list_email_attachments."),
-      format: z
-        .enum(["text", "base64"])
-        .default("text")
-        .describe("Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'."),
+      handle: handleSchema,
+      attachment_name: z.string().min(1).describe("As list_email_attachments lists it"),
+      format: z.enum(["text", "base64"]).default("text"),
     },
     outputSchema: emailAttachmentOutput,
     annotations: READ,
@@ -231,25 +216,17 @@ server.registerTool(
   "search_emails",
   {
     description:
-      "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts, except mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, which it never returns. At least one search criterion (subject, sender, after, before) is required.",
+      "Search every account by subject, sender or date; at least one is required. Never returns mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox.",
     inputSchema: {
-      subject: z.string().optional().describe("Substring to match in the email subject line."),
-      sender: z.string().optional().describe("Substring to match in the sender email address or display name."),
-      after: isoDateString("after")
-        .optional()
-        .describe(
-          "ISO 8601 date. Only return emails received on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
-        ),
-      before: isoDateString("before")
-        .optional()
-        .describe(
-          "ISO 8601 date. Only return emails received strictly before it. A bare date means local midnight. Example: '2025-03-01'.",
-        ),
-      limit: limitSchema.describe("Maximum number of results to return (1–100). Default: 25."),
-      offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
+      subject: z.string().optional().describe("Substring"),
+      sender: z.string().optional().describe("Substring of the address or name"),
+      after: isoDateString("after").optional().describe("ISO 8601, inclusive; a bare date is local midnight"),
+      before: isoDateString("before").optional().describe("ISO 8601, exclusive"),
+      limit: limitSchema,
+      offset: offsetSchema,
       provider,
-      mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
-      unread_only: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
+      mailbox,
+      unread_only: z.boolean().optional(),
     },
     outputSchema: emailListOutput,
     annotations: READ,
@@ -268,15 +245,14 @@ server.registerTool(
 server.registerTool(
   "send_email",
   {
-    description:
-      "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
+    description: "Send a new plain-text email.",
     inputSchema: {
-      to: z.array(z.string().email()).min(1).describe("Recipient email addresses. At least one required."),
-      cc: z.array(z.string().email()).optional().describe("CC recipient email addresses."),
-      bcc: z.array(z.string().email()).optional().describe("BCC recipient email addresses."),
-      subject: z.string().min(1).describe("Email subject line."),
-      body: z.string().min(1).max(MAX_EMAIL_BODY_LENGTH).describe("Plain text email body."),
-      from: z.string().email().optional().describe("Optional sender email address. Must match an enabled account."),
+      to: z.array(z.string().email()).min(1),
+      cc: z.array(z.string().email()).optional(),
+      bcc: z.array(z.string().email()).optional(),
+      subject: z.string().min(1),
+      body: z.string().min(1).max(MAX_EMAIL_BODY_LENGTH),
+      from,
     },
     annotations: SEND,
   },
@@ -286,16 +262,12 @@ server.registerTool(
 server.registerTool(
   "reply_email",
   {
-    description: "Reply to an existing Apple Mail message by handle. Set reply_all=true to reply to all recipients.",
+    description: "Reply to a message; the plain-text body goes above the quoted original.",
     inputSchema: {
-      handle: handleSchema.describe("Email handle identifying the message being replied to."),
-      body: z
-        .string()
-        .min(1)
-        .max(MAX_EMAIL_BODY_LENGTH)
-        .describe("Plain text reply body. Prepended above the quoted original."),
-      reply_all: z.boolean().optional().describe("If true, reply to all recipients of the original message."),
-      from: z.string().email().optional().describe("Optional sender email address override."),
+      handle: handleSchema,
+      body: z.string().min(1).max(MAX_EMAIL_BODY_LENGTH),
+      reply_all: z.boolean().optional(),
+      from,
     },
     annotations: SEND,
   },
@@ -306,18 +278,14 @@ server.registerTool(
 server.registerTool(
   "forward_email",
   {
-    description: "Forward an existing Apple Mail message to new recipients.",
+    description: "Forward a message; an optional body goes above it.",
     inputSchema: {
-      handle: handleSchema.describe("Email handle identifying the message being forwarded."),
-      to: z.array(z.string().email()).min(1).describe("Recipient email addresses. At least one required."),
-      cc: z.array(z.string().email()).optional().describe("CC recipient email addresses."),
-      bcc: z.array(z.string().email()).optional().describe("BCC recipient email addresses."),
-      body: z
-        .string()
-        .max(MAX_EMAIL_BODY_LENGTH)
-        .optional()
-        .describe("Optional message to prepend above the forwarded content."),
-      from: z.string().email().optional().describe("Optional sender email address override."),
+      handle: handleSchema,
+      to: z.array(z.string().email()).min(1),
+      cc: z.array(z.string().email()).optional(),
+      bcc: z.array(z.string().email()).optional(),
+      body: z.string().max(MAX_EMAIL_BODY_LENGTH).optional(),
+      from,
     },
     annotations: SEND,
   },

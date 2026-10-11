@@ -130,7 +130,7 @@ server.registerTool(
       location_based: z.boolean().optional(),
       tags: z.array(z.string()).optional().describe("All must match"),
       limit: z.number().int().min(1).optional().describe("Default: all"),
-      offset: offsetArg("reminders"),
+      offset: offsetArg,
     },
     annotations: READ,
   },
