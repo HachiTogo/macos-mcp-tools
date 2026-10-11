@@ -50,7 +50,7 @@ const fakeMail = (has: { account?: boolean; mailbox?: boolean; message?: boolean
 
 describe("readHandle", () => {
   test("reads the handle and decodes the mailbox name", () => {
-    expect(readHandle({ accountId: "A1", mailboxUrl: "imap://A1/Work%20Mail", mailId: "42" })).toEqual({
+    expect(readHandle({ account_id: "A1", mailbox_url: "imap://A1/Work%20Mail", mail_id: "42" })).toEqual({
       accountId: "A1",
       mailboxUrl: "imap://A1/Work%20Mail",
       mailId: "42",
@@ -60,14 +60,14 @@ describe("readHandle", () => {
   })
 
   test("is invalid when any part is missing, including a URL with no mailbox path", () => {
-    expect(readHandle({ mailboxUrl: "imap://A1/INBOX", mailId: "42" }).valid).toBe(false)
-    expect(readHandle({ accountId: "A1", mailboxUrl: "imap://A1", mailId: "42" }).valid).toBe(false)
+    expect(readHandle({ mailbox_url: "imap://A1/INBOX", mail_id: "42" }).valid).toBe(false)
+    expect(readHandle({ account_id: "A1", mailbox_url: "imap://A1", mail_id: "42" }).valid).toBe(false)
     expect(readHandle({}).valid).toBe(false)
   })
 })
 
 describe("findMessage", () => {
-  const parts = readHandle({ accountId: "A1", mailboxUrl: "imap://A1/INBOX", mailId: "42" })
+  const parts = readHandle({ account_id: "A1", mailbox_url: "imap://A1/INBOX", mail_id: "42" })
 
   test("returns the message, its mailbox and account", () => {
     const found = findMessage(fakeMail({}), parts)

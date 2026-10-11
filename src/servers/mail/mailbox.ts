@@ -12,9 +12,9 @@ export const UNKNOWN_ACCOUNT_CLASSIFICATION = {
 export const getMailboxAccountKey = (mailboxUrl: string) => mailboxUrl.match(/^[a-z]+:\/\/([^/]+)/i)?.[1] ?? mailboxUrl
 
 export const createEmailHandle = (mailboxUrl: string, mailId: string): EmailHandle => ({
-  accountId: getMailboxAccountKey(mailboxUrl),
-  mailboxUrl,
-  mailId,
+  account_id: getMailboxAccountKey(mailboxUrl),
+  mailbox_url: mailboxUrl,
+  mail_id: mailId,
 })
 
 export const decodeMailboxPath = (value: string) => {

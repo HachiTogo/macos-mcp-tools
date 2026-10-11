@@ -39,9 +39,9 @@ const INVALID_HANDLE_DETAIL = "Missing accountId, mailboxUrl, or mailId."
 const MISSING_DETAIL = { account: "Account not found.", mailbox: "Mailbox not found.", message: "Message not found." }
 
 const readHandle = (handle) => {
-  const accountId = typeof handle.accountId === "string" ? handle.accountId : ""
-  const mailboxUrl = typeof handle.mailboxUrl === "string" ? handle.mailboxUrl : ""
-  const mailId = typeof handle.mailId === "string" ? handle.mailId : ""
+  const accountId = typeof handle.account_id === "string" ? handle.account_id : ""
+  const mailboxUrl = typeof handle.mailbox_url === "string" ? handle.mailbox_url : ""
+  const mailId = typeof handle.mail_id === "string" ? handle.mail_id : ""
   const mailboxName = getMailboxName(mailboxUrl)
   return { accountId, mailboxUrl, mailId, mailboxName, valid: Boolean(accountId && mailId && mailboxName) }
 }

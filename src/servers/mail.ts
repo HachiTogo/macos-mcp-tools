@@ -38,14 +38,14 @@ server.registerTool(
   "list_mail_accounts",
   {
     description:
-      "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
+      "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
     inputSchema: {},
   },
   async () => runTool("list_mail_accounts", () => createListMailAccountsResult()),
 )
 
 server.registerTool(
-  "unread_emails",
+  "list_unread_emails",
   {
     description:
       "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
@@ -56,14 +56,14 @@ server.registerTool(
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
     },
   },
-  async (args) => runTool("unread_emails", () => createUnreadEmailsResult(args)),
+  async (args) => runTool("list_unread_emails", () => createUnreadEmailsResult(args)),
 )
 
 server.registerTool(
   "mark_emails_read",
   {
     description:
-      "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+      "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as read."),
     },
@@ -98,7 +98,7 @@ server.registerTool(
   "mark_emails_junk",
   {
     description:
-      "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+      "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as junk."),
     },
@@ -110,7 +110,7 @@ server.registerTool(
   "mark_emails_not_junk",
   {
     description:
-      "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+      "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as not junk."),
     },
@@ -122,7 +122,7 @@ server.registerTool(
   "flag_emails",
   {
     description:
-      "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flagIndex', 'flaggedStatus', or 'backgroundColor'.",
+      "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flag_index', 'flagged_status', or 'background_color'.",
     inputSchema: {
       emails: z
         .array(
@@ -130,18 +130,18 @@ server.registerTool(
             id: z.string(),
             subject: z.string().optional(),
             handle: handleSchema,
-            flagIndex: z
+            flag_index: z
               .number()
               .int()
               .min(-1)
               .max(6)
               .optional()
               .describe("Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray"),
-            flaggedStatus: z
+            flagged_status: z
               .boolean()
               .optional()
               .describe("Set flagged status directly. true=flagged, false=unflagged."),
-            backgroundColor: z
+            background_color: z
               .enum(["blue", "gray", "green", "none", "orange", "purple", "red", "yellow"])
               .optional()
               .describe("Message background color in Mail.app."),
@@ -151,7 +151,17 @@ server.registerTool(
         .describe("Array of email objects to flag."),
     },
   },
-  async (args) => runTool("flag_emails", () => createFlagEmailsResult(args)),
+  async ({ emails }) =>
+    runTool("flag_emails", () =>
+      createFlagEmailsResult({
+        emails: emails.map(({ flag_index, flagged_status, background_color, ...email }) => ({
+          ...email,
+          flagIndex: flag_index,
+          flaggedStatus: flagged_status,
+          backgroundColor: background_color,
+        })),
+      }),
+    ),
 )
 
 server.registerTool(
@@ -171,14 +181,20 @@ server.registerTool(
     description: "Downloads a single attachment and returns its content.",
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
-      attachmentName: z.string().min(1).describe("Name of the attachment to fetch."),
+      attachment_name: z
+        .string()
+        .min(1)
+        .describe("Name of the attachment to fetch, as listed by list_email_attachments."),
       format: z
         .enum(["text", "base64"])
         .default("text")
         .describe("Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'."),
     },
   },
-  async (args) => runTool("fetch_email_attachment", () => createFetchEmailAttachmentResult(args)),
+  async ({ attachment_name, ...args }) =>
+    runTool("fetch_email_attachment", () =>
+      createFetchEmailAttachmentResult({ ...args, attachmentName: attachment_name }),
+    ),
 )
 
 server.registerTool(
@@ -203,17 +219,17 @@ server.registerTool(
       offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
       provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
-      unreadOnly: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
+      unread_only: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
     },
   },
-  async (args) =>
+  async ({ unread_only, ...args }) =>
     runTool("search_emails", () => {
       // Not expressible in the input schema: registerTool takes a shape, not an object, so there is
       // nowhere to hang a cross-field refinement.
       if (!hasSearchCriteria(args)) {
         throw new Error("At least one of 'subject', 'sender', 'after', or 'before' is required.")
       }
-      return createSearchEmailResult(args)
+      return createSearchEmailResult({ ...args, unreadOnly: unread_only })
     }),
 )
 
@@ -237,7 +253,7 @@ server.registerTool(
 server.registerTool(
   "reply_email",
   {
-    description: "Reply to an existing Apple Mail message by handle. Set replyAll=true to reply to all recipients.",
+    description: "Reply to an existing Apple Mail message by handle. Set reply_all=true to reply to all recipients.",
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message being replied to."),
       body: z
@@ -245,11 +261,12 @@ server.registerTool(
         .min(1)
         .max(MAX_EMAIL_BODY_LENGTH)
         .describe("Plain text reply body. Prepended above the quoted original."),
-      replyAll: z.boolean().optional().describe("If true, reply to all recipients of the original message."),
+      reply_all: z.boolean().optional().describe("If true, reply to all recipients of the original message."),
       from: z.string().email().optional().describe("Optional sender email address override."),
     },
   },
-  async (args) => runTool("reply_email", () => createReplyEmailResult(args)),
+  async ({ reply_all, ...args }) =>
+    runTool("reply_email", () => createReplyEmailResult({ ...args, replyAll: reply_all })),
 )
 
 server.registerTool(

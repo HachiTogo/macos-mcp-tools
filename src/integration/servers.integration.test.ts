@@ -252,9 +252,9 @@ if (!RUN_INTEGRATION_TESTS) {
       await stopServer(notesServer)
     })
 
-    test("mail unread_emails returns a readable result shape", async () => {
+    test("mail list_unread_emails returns a readable result shape", async () => {
       const unread = await mailServer!.client.callTool({
-        name: "unread_emails",
+        name: "list_unread_emails",
         arguments: { limit: 100 },
       })
       const payload = getStructuredContent<{
@@ -271,10 +271,10 @@ if (!RUN_INTEGRATION_TESTS) {
       expect(unreadCount).toBeGreaterThanOrEqual(0)
     })
 
-    test("contacts_people read returns a total count", async () => {
+    test("list_contacts returns a total count", async () => {
       const contacts = await contactsServer!.client.callTool({
-        name: "contacts_people",
-        arguments: { action: "read", limit: 1, offset: 0 },
+        name: "list_contacts",
+        arguments: { limit: 1, offset: 0 },
       })
       const payload = getTextJsonContent<{
         contacts: Array<Record<string, unknown>>

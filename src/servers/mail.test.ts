@@ -73,9 +73,9 @@ describe("email mailbox classification", () => {
 
   test("creates stable message handles from mailbox URLs and Mail ids", () => {
     expect(createEmailHandle("imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX", "101")).toEqual({
-      accountId: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
-      mailboxUrl: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
-      mailId: "101",
+      account_id: "F56BB519-D39F-403E-AB6A-83A76BAE90CB",
+      mailbox_url: "imap://F56BB519-D39F-403E-AB6A-83A76BAE90CB/INBOX",
+      mail_id: "101",
     })
   })
 })
@@ -198,7 +198,7 @@ describe("mark emails not-junk summary formatting", () => {
     const summary = formatMarkEmailsNotJunkSummary([
       {
         id: "msg-1",
-        handle: { accountId: "a", mailboxUrl: "u", mailId: "1" },
+        handle: { account_id: "a", mailbox_url: "u", mail_id: "1" },
         status: "marked_not_junk",
       },
     ])
@@ -210,17 +210,17 @@ describe("mark emails not-junk summary formatting", () => {
     const summary = formatMarkEmailsNotJunkSummary([
       {
         id: "msg-1",
-        handle: { accountId: "a", mailboxUrl: "u", mailId: "1" },
+        handle: { account_id: "a", mailbox_url: "u", mail_id: "1" },
         status: "marked_not_junk",
       },
       {
         id: "msg-2",
-        handle: { accountId: "a", mailboxUrl: "u", mailId: "2" },
+        handle: { account_id: "a", mailbox_url: "u", mail_id: "2" },
         status: "already_not_junk",
       },
       {
         id: "msg-3",
-        handle: { accountId: "a", mailboxUrl: "u", mailId: "3" },
+        handle: { account_id: "a", mailbox_url: "u", mail_id: "3" },
         status: "no_inbox_mailbox",
       },
     ])
