@@ -39,7 +39,26 @@ describe("leanSchema", () => {
   })
 })
 
+describe("leanSchema type lists", () => {
+  test("spells a nullable anyOf of bare types as a type list, and leaves richer options alone", () => {
+    const nullable = { anyOf: [{ type: "string" }, { type: "null" }], description: "d" }
+    expect(leanSchema(nullable)).toEqual({ type: ["string", "null"], description: "d" })
+    const rich = { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] }
+    expect(leanSchema(rich)).toEqual(rich)
+  })
+})
+
 describe("leanToolList", () => {
+  test("drops execution only when it says the default, taskSupport forbidden", () => {
+    const listed = (execution: object) =>
+      ({ jsonrpc: "2.0", id: 1, result: { tools: [{ name: "t", execution }] } }) as JSONRPCMessage
+    const tools = (message: JSONRPCMessage) => (message as unknown as { result: { tools: object[] } }).result.tools
+    expect(tools(leanToolList(listed({ taskSupport: "forbidden" })))).toEqual([{ name: "t" }])
+    expect(tools(leanToolList(listed({ taskSupport: "optional" })))).toEqual([
+      { name: "t", execution: { taskSupport: "optional" } },
+    ])
+  })
+
   test("leans a tools/list result without mutating it, and passes other messages through", () => {
     const listed = {
       jsonrpc: "2.0",

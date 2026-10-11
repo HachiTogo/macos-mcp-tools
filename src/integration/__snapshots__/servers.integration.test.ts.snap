@@ -2065,13 +2065,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "action": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "aliases": {
@@ -2081,67 +2077,43 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "array",
         },
         "body": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "cost_amount": {
-          "anyOf": [
-            {
-              "type": "number",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "number",
+            "null",
           ],
         },
         "cost_currency": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "due_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "end_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "happened_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "kind": {
           "enum": [
@@ -2153,64 +2125,40 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "string",
         },
         "object": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "source": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "start_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "status": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "subject": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "title": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
       },
@@ -2233,13 +2181,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "action": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "aliases": {
@@ -2249,67 +2193,43 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "array",
         },
         "body": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "cost_amount": {
-          "anyOf": [
-            {
-              "type": "number",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "number",
+            "null",
           ],
         },
         "cost_currency": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "due_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "end_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "happened_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "id": {
           "type": "string",
@@ -2331,64 +2251,40 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           ],
         },
         "object": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "source": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "start_at": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
-          ],
           "description": "ISO 8601; convert relative dates like 'yesterday' first",
+          "type": [
+            "string",
+            "null",
+          ],
         },
         "status": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "subject": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
         "title": {
-          "anyOf": [
-            {
-              "type": "string",
-            },
-            {
-              "type": "null",
-            },
+          "type": [
+            "string",
+            "null",
           ],
         },
       },
