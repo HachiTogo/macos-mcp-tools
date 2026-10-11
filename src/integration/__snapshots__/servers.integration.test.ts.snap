@@ -700,28 +700,92 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
 [
   {
     "annotations": undefined,
-    "description": "Manage Apple Contacts people. Actions: read (list), search, get (full detail), create, update, delete.",
+    "description": "List Apple Contacts people, sorted by last name.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "action": {
-          "description": "Operation to perform",
-          "enum": [
-            "read",
-            "search",
-            "get",
-            "create",
-            "update",
-            "delete",
-          ],
+        "limit": {
+          "default": 100,
+          "description": "Max contacts to return",
+          "maximum": 500,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Pagination offset",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_contacts",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Search Apple Contacts people by name or organization.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "limit": {
+          "default": 100,
+          "description": "Max contacts to return",
+          "maximum": 500,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Pagination offset",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "query": {
+          "description": "Text to match in names or organization",
+          "minLength": 1,
           "type": "string",
         },
-        "confirm": {
-          "description": "Must be true to confirm delete",
-          "type": "boolean",
+      },
+      "required": [
+        "query",
+      ],
+      "type": "object",
+    },
+    "name": "search_contacts",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Get one contact's full details: emails, phones, addresses, note.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "id": {
+          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "minLength": 1,
+          "type": "string",
         },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "get_contact",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a contact.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
         "emails": {
-          "description": "Email addresses (create/update — adds, does not remove)",
+          "description": "Email addresses to add (existing ones are kept)",
           "items": {
             "properties": {
               "label": {
@@ -740,45 +804,27 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           "type": "array",
         },
         "first_name": {
-          "description": "First name (create/update)",
-          "type": "string",
-        },
-        "id": {
-          "description": "Contact ID (get/update/delete)",
+          "description": "First name",
           "type": "string",
         },
         "job_title": {
-          "description": "Job title (create/update)",
+          "description": "Job title",
           "type": "string",
         },
         "last_name": {
-          "description": "Last name (create/update)",
+          "description": "Last name",
           "type": "string",
-        },
-        "limit": {
-          "default": 100,
-          "description": "Max contacts to return (read/search)",
-          "maximum": 500,
-          "minimum": 1,
-          "type": "integer",
         },
         "note": {
-          "description": "Note text (create/update)",
+          "description": "Note text",
           "type": "string",
         },
-        "offset": {
-          "default": 0,
-          "description": "Pagination offset (read/search)",
-          "maximum": 9007199254740991,
-          "minimum": 0,
-          "type": "integer",
-        },
         "organization": {
-          "description": "Organization (create/update)",
+          "description": "Organization",
           "type": "string",
         },
         "phones": {
-          "description": "Phone numbers (create/update — adds, does not remove)",
+          "description": "Phone numbers to add (existing ones are kept)",
           "items": {
             "properties": {
               "label": {
@@ -796,56 +842,239 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           },
           "type": "array",
         },
-        "query": {
-          "description": "Search query (search action)",
-          "type": "string",
-        },
       },
-      "required": [
-        "action",
-      ],
       "type": "object",
     },
-    "name": "contacts_people",
+    "name": "create_contact",
     "outputSchema": undefined,
   },
   {
     "annotations": undefined,
-    "description": "Manage Apple Contacts groups. Actions: read (list all), get (members of a group), create, delete, add_member, remove_member.",
+    "description": "Update a contact. Only the fields given change; emails and phones are added, never removed.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "action": {
-          "description": "Operation to perform",
-          "enum": [
-            "read",
-            "get",
-            "create",
-            "delete",
-            "add_member",
-            "remove_member",
-          ],
+        "emails": {
+          "description": "Email addresses to add (existing ones are kept)",
+          "items": {
+            "properties": {
+              "label": {
+                "type": "string",
+              },
+              "value": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "label",
+              "value",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "first_name": {
+          "description": "First name",
           "type": "string",
         },
+        "id": {
+          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "minLength": 1,
+          "type": "string",
+        },
+        "job_title": {
+          "description": "Job title",
+          "type": "string",
+        },
+        "last_name": {
+          "description": "Last name",
+          "type": "string",
+        },
+        "note": {
+          "description": "Note text",
+          "type": "string",
+        },
+        "organization": {
+          "description": "Organization",
+          "type": "string",
+        },
+        "phones": {
+          "description": "Phone numbers to add (existing ones are kept)",
+          "items": {
+            "properties": {
+              "label": {
+                "type": "string",
+              },
+              "value": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "label",
+              "value",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "update_contact",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a contact.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
         "confirm": {
           "description": "Must be true to confirm delete",
           "type": "boolean",
         },
-        "name": {
-          "description": "Group name (get/create/delete/add_member/remove_member)",
-          "type": "string",
-        },
-        "person_id": {
-          "description": "Contact ID for add_member/remove_member",
+        "id": {
+          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "minLength": 1,
           "type": "string",
         },
       },
       "required": [
-        "action",
+        "id",
       ],
       "type": "object",
     },
-    "name": "contacts_groups",
+    "name": "delete_contact",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "List Apple Contacts groups with their member counts.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_contact_groups",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "List the members of a contact group.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "group": {
+          "description": "Group name, as returned by list_contact_groups",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "group",
+      ],
+      "type": "object",
+    },
+    "name": "get_contact_group",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a contact group.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "name": {
+          "description": "Group name",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "type": "object",
+    },
+    "name": "create_contact_group",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a contact group. Its members are not deleted.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "confirm": {
+          "description": "Must be true to confirm delete",
+          "type": "boolean",
+        },
+        "group": {
+          "description": "Group name, as returned by list_contact_groups",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "group",
+      ],
+      "type": "object",
+    },
+    "name": "delete_contact_group",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Add a contact to a group.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "contact_id": {
+          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "minLength": 1,
+          "type": "string",
+        },
+        "group": {
+          "description": "Group name, as returned by list_contact_groups",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "group",
+        "contact_id",
+      ],
+      "type": "object",
+    },
+    "name": "add_contact_to_group",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Remove a contact from a group. The contact itself is kept.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "contact_id": {
+          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "minLength": 1,
+          "type": "string",
+        },
+        "group": {
+          "description": "Group name, as returned by list_contact_groups",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "group",
+        "contact_id",
+      ],
+      "type": "object",
+    },
+    "name": "remove_contact_from_group",
     "outputSchema": undefined,
   },
 ]
