@@ -4,13 +4,13 @@ import { Database } from "bun:sqlite"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { READ, SEND } from "../lib/annotations"
 import { isoDateString, parseLocalDate } from "../lib/dates.js"
 import { runJxa } from "../lib/jxa.js"
 import { errorMessage, runTool, textResult } from "../lib/mcp-result.js"
 import { offsetArg } from "../lib/paging"
+import { serve } from "../lib/serve"
 import { PACKAGE_VERSION } from "../lib/version"
 
 // ── Constants ─────────────────────────────────────────────────────────
@@ -604,10 +604,7 @@ server.registerTool(
 
 // ── Entry point ───────────────────────────────────────────────────────
 
-export const main = async () => {
-  const transport = new StdioServerTransport()
-  await server.connect(transport)
-}
+export const main = () => serve(server)
 
 // Boot only when executed directly; cli.ts and tests import this module without starting a server.
 if (import.meta.main) {

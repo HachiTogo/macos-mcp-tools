@@ -1,5 +1,4 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { CREATE, DESTRUCTIVE, READ } from "../lib/annotations"
 import {
@@ -17,6 +16,7 @@ import {
   validateToolArgs,
 } from "../lib/eventkit/index.js"
 import { offsetArg, paginate } from "../lib/paging"
+import { serve } from "../lib/serve"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Formatters ────────────────────────────────────────────────────────
@@ -337,10 +337,7 @@ server.registerTool(
 
 // ── Entry point ───────────────────────────────────────────────────────
 
-export const main = async () => {
-  const transport = new StdioServerTransport()
-  await server.connect(transport)
-}
+export const main = () => serve(server)
 
 // Boot only when executed directly; cli.ts and tests import this module without starting a server.
 if (import.meta.main) {

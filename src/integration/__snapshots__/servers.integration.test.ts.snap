@@ -11,25 +11,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {},
       "type": "object",
     },
     "name": "list_mail_accounts",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "accounts": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "accountId": {
                 "type": "string",
               },
               "mailboxes": {
                 "items": {
-                  "additionalProperties": {},
                   "properties": {
                     "mailboxUrl": {
                       "type": "string",
@@ -83,7 +78,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "limit": {
           "default": 25,
@@ -99,7 +93,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching messages before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -113,15 +106,11 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "name": "list_unread_emails",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "messages": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "handle": {
-                "additionalProperties": {},
                 "properties": {
                   "account_id": {
                     "type": "string",
@@ -157,7 +146,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "array",
         },
         "query": {
-          "additionalProperties": {},
           "properties": {
             "limit": {
               "type": "number",
@@ -197,7 +185,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "emails": {
           "description": "Array of email objects to mark as read.",
@@ -256,7 +243,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Fetch the full body text of a single Apple Mail message by its handle.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "handle": {
           "description": "Email handle identifying the message.",
@@ -286,8 +272,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "name": "fetch_email_body",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "body": {
           "type": "string",
@@ -296,7 +280,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "boolean",
         },
         "handle": {
-          "additionalProperties": {},
           "properties": {
             "account_id": {
               "type": "string",
@@ -337,7 +320,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Extract all hyperlinks from an Apple Mail message as \`{ url, text }\` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "handle": {
           "description": "Email handle identifying the message.",
@@ -367,8 +349,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "name": "extract_email_links",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "count": {
           "type": "number",
@@ -377,7 +357,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "boolean",
         },
         "handle": {
-          "additionalProperties": {},
           "properties": {
             "account_id": {
               "type": "string",
@@ -398,7 +377,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         },
         "links": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "text": {
                 "type": "string",
@@ -438,7 +416,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "emails": {
           "description": "Array of email objects to mark as junk.",
@@ -497,7 +474,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "emails": {
           "description": "Array of email objects to mark as not junk.",
@@ -556,7 +532,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flag_index', 'flagged_status', or 'background_color'.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "emails": {
           "description": "Array of email objects to flag.",
@@ -639,7 +614,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Lists attachments on a message without downloading content.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "handle": {
           "description": "Email handle identifying the message.",
@@ -669,12 +643,9 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "name": "list_email_attachments",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "attachments": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "name": {
                 "type": "string",
@@ -691,7 +662,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "boolean",
         },
         "handle": {
-          "additionalProperties": {},
           "properties": {
             "account_id": {
               "type": "string",
@@ -728,7 +698,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Downloads a single attachment and returns its content.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "attachment_name": {
           "description": "Name of the attachment to fetch, as listed by list_email_attachments.",
@@ -773,8 +742,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "name": "fetch_email_attachment",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "content": {
           "type": "string",
@@ -787,7 +754,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "string",
         },
         "handle": {
-          "additionalProperties": {},
           "properties": {
             "account_id": {
               "type": "string",
@@ -836,7 +802,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts, except mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, which it never returns. At least one search criterion (subject, sender, after, before) is required.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "after": {
           "description": "ISO 8601 date. Only return emails received on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
@@ -860,7 +825,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching messages before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -886,15 +850,11 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "name": "search_emails",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "messages": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "handle": {
-                "additionalProperties": {},
                 "properties": {
                   "account_id": {
                     "type": "string",
@@ -930,7 +890,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "array",
         },
         "query": {
-          "additionalProperties": {},
           "properties": {
             "limit": {
               "type": "number",
@@ -970,7 +929,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "bcc": {
           "description": "BCC recipient email addresses.",
@@ -1037,7 +995,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Reply to an existing Apple Mail message by handle. Set reply_all=true to reply to all recipients.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "body": {
           "description": "Plain text reply body. Prepended above the quoted original.",
@@ -1094,7 +1051,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     },
     "description": "Forward an existing Apple Mail message to new recipients.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "bcc": {
           "description": "BCC recipient email addresses.",
@@ -1179,7 +1135,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "List Apple Contacts people, sorted by last name.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "limit": {
           "default": 100,
@@ -1191,7 +1146,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching contacts before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -1200,12 +1154,9 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "name": "list_contacts",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "contacts": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "string",
@@ -1246,7 +1197,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Search Apple Contacts people by name or organization.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "limit": {
           "default": 100,
@@ -1258,7 +1208,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching contacts before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -1275,12 +1224,9 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "name": "search_contacts",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "contacts": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "string",
@@ -1321,7 +1267,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Get one contact's full details: emails, phones, addresses, note.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Contact id, as returned by list_contacts or search_contacts",
@@ -1336,8 +1281,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "name": "get_contact",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "id": {
           "type": "string",
@@ -1358,7 +1301,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Create a contact.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "emails": {
           "description": "Email addresses to add (existing ones are kept)",
@@ -1433,7 +1375,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Update a contact. Only the fields given change; emails and phones are added, never removed.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "emails": {
           "description": "Email addresses to add (existing ones are kept)",
@@ -1516,7 +1457,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Delete a contact.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Contact id, as returned by list_contacts or search_contacts",
@@ -1541,18 +1481,14 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "List Apple Contacts groups with their member counts.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {},
       "type": "object",
     },
     "name": "list_contact_groups",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "result": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "string",
@@ -1585,7 +1521,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "List the members of a contact group.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "group": {
           "description": "Group id or name, as returned by list_contact_groups",
@@ -1600,15 +1535,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "name": "get_contact_group",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "id": {
           "type": "string",
         },
         "members": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "string",
@@ -1642,7 +1574,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Create a contact group.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "name": {
           "description": "Group name",
@@ -1667,7 +1598,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Delete a contact group. Its members are not deleted.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "group": {
           "description": "Group id or name, as returned by list_contact_groups",
@@ -1692,7 +1622,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Add a contact to a group.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "contact_id": {
           "description": "Contact id, as returned by list_contacts or search_contacts",
@@ -1723,7 +1652,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     },
     "description": "Remove a contact from a group. The contact itself is kept.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "contact_id": {
           "description": "Contact id, as returned by list_contacts or search_contacts",
@@ -1759,18 +1687,14 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "List all folders in Apple Notes",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {},
       "type": "object",
     },
     "name": "list_folders",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "result": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "name": {
                 "type": "string",
@@ -1799,7 +1723,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Create a new folder in Apple Notes",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "name": {
           "description": "Folder name",
@@ -1823,7 +1746,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "List all notes in a specified Apple Notes folder",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "folder": {
           "description": "Folder name",
@@ -1839,7 +1761,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching notes before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -1851,15 +1772,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "name": "list_notes",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "limit": {
           "type": "number",
         },
         "notes": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "string",
@@ -1897,7 +1815,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Get the full content of one note, by id or by title. A title shared by several notes is an error listing their ids.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "folder": {
           "description": "Folder name (optional); narrows a title lookup",
@@ -1916,8 +1833,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "name": "get_note",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "body": {
           "type": "string",
@@ -1950,7 +1865,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Create a new note in a specified Apple Notes folder. Returns the new note's id.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "body": {
           "description": "HTML body content",
@@ -1984,7 +1898,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Replace the body of one note, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "body": {
           "description": "New HTML body content",
@@ -2020,7 +1933,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Move one note to another folder, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "from_folder": {
           "description": "Source folder name (optional); narrows a title lookup",
@@ -2056,7 +1968,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Append HTML content to one note without replacing its body, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "content": {
           "description": "HTML content to append",
@@ -2092,7 +2003,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Delete one note, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "folder": {
           "description": "Folder name (optional); narrows a title lookup",
@@ -2121,7 +2031,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Delete a folder and all its notes from Apple Notes",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "name": {
           "description": "Folder name",
@@ -2145,7 +2054,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "description": "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content. Results carry each note's id.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "folder": {
           "description": "Folder name to scope search (optional)",
@@ -2161,7 +2069,6 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching notes before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -2177,12 +2084,9 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     },
     "name": "search_notes",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "result": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "folder": {
                 "type": "string",
@@ -2220,7 +2124,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "description": "Create a memory, task, event, or note entry with optional aliases.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "action": {
           "anyOf": [
@@ -2390,7 +2293,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "description": "Update an existing entry. Only specified fields are changed.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "action": {
           "anyOf": [
@@ -2570,7 +2472,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "description": "Fetch a single normalized entry with aliases by ID.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Entry ID",
@@ -2584,13 +2485,10 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "name": "get_entry",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "entry": {
           "anyOf": [
             {
-              "additionalProperties": {},
               "properties": {
                 "id": {
                   "type": "string",
@@ -2626,7 +2524,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "description": "Search entries with deterministic structured filters and keyword fallback.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "action": {
           "type": "string",
@@ -2666,7 +2563,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching entries before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -2681,12 +2577,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "name": "search_entries",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "entries": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "string",
@@ -2700,7 +2593,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "array",
         },
         "query": {
-          "additionalProperties": {},
           "properties": {},
           "type": "object",
         },
@@ -2725,7 +2617,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "description": "Return the most recent matching entry using happened_at, start_at, then created_at.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "action": {
           "type": "string",
@@ -2747,11 +2638,8 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "name": "query_last_occurrence",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "entry": {
-          "additionalProperties": {},
           "properties": {
             "id": {
               "type": "string",
@@ -2763,7 +2651,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "object",
         },
         "query": {
-          "additionalProperties": {},
           "properties": {},
           "type": "object",
         },
@@ -2795,7 +2682,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "description": "Return the most recent matching entry plus elapsed days and hours.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "action": {
           "type": "string",
@@ -2817,11 +2703,8 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     },
     "name": "query_duration_since",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "entry": {
-          "additionalProperties": {},
           "properties": {
             "id": {
               "type": "string",
@@ -2833,7 +2716,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
           "type": "object",
         },
         "query": {
-          "additionalProperties": {},
           "properties": {},
           "type": "object",
         },
@@ -2870,7 +2752,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "description": "List recent iMessage/SMS conversations with last message preview and participant count.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "limit": {
           "default": 50,
@@ -2882,7 +2763,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching conversations before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -2891,12 +2771,9 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "name": "list_chats",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "chats": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "chatId": {
                 "type": "string",
@@ -2929,7 +2806,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "description": "Get message history for a specific conversation. Use the chat_id list_chats shows (phone number, email, or group chat ID like 'chat123456').",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "chat_id": {
           "description": "Chat identifier: phone number (e.g. '+15555550123'), email, or group ID (e.g. 'chat123456789012345678').",
@@ -2949,7 +2825,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many of the newest matching messages; use with limit to page back in time. Each page is in chronological order.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -2965,15 +2840,12 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "name": "get_messages",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "chatId": {
           "type": "string",
         },
         "messages": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "id": {
                 "type": "number",
@@ -3007,7 +2879,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "description": "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "chat_id": {
           "description": "Limit search to a specific chat identifier.",
@@ -3023,7 +2894,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching messages before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -3040,15 +2910,12 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "name": "search_messages",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "query": {
           "type": "string",
         },
         "results": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "chatId": {
                 "type": "string",
@@ -3086,7 +2953,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "description": "Get participants of a conversation. Useful for identifying group chat members.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "chat_id": {
           "description": "Chat identifier from list_chats.",
@@ -3100,15 +2966,12 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "name": "get_participants",
     "outputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "additionalProperties": {},
       "properties": {
         "chatId": {
           "type": "string",
         },
         "participants": {
           "items": {
-            "additionalProperties": {},
             "properties": {
               "handle": {
                 "type": "string",
@@ -3142,7 +3005,6 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     },
     "description": "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat123456789012345678') from list_chats.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "text": {
           "description": "Message text to send.",
@@ -3177,7 +3039,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     },
     "description": "List calendar events in a date range (the next 14 days by default), optionally filtered by calendar, account, text or availability.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "account": {
           "description": "Only events in this account",
@@ -3204,14 +3065,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
         },
         "limit": {
           "description": "Return at most this many events (all by default)",
-          "maximum": 9007199254740991,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
           "description": "Skip this many matching events before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -3238,7 +3097,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     },
     "description": "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Event id, as returned by list_events. A recurring event's id names the series.",
@@ -3263,7 +3121,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     },
     "description": "Create a calendar event.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "alarms": {
           "description": "Alarms for the event",
@@ -3360,8 +3217,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               "days_of_month": {
                 "description": "Days of month (1-31)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -3369,8 +3224,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               "days_of_week": {
                 "description": "Days of week (1=Sunday, 7=Saturday)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -3392,23 +3245,17 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               },
               "interval": {
                 "description": "Interval between occurrences (default 1)",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
               "months_of_year": {
                 "description": "Months for yearly recurrence (1-12)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
                 "description": "Number of times to repeat",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
             },
@@ -3472,7 +3319,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     },
     "description": "Update a calendar event. Only the fields given change.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "alarms": {
           "description": "Alarms for the event",
@@ -3582,8 +3428,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               "days_of_month": {
                 "description": "Days of month (1-31)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -3591,8 +3435,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               "days_of_week": {
                 "description": "Days of week (1=Sunday, 7=Saturday)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -3614,23 +3456,17 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               },
               "interval": {
                 "description": "Interval between occurrences (default 1)",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
               "months_of_year": {
                 "description": "Months for yearly recurrence (1-12)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
                 "description": "Number of times to repeat",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
             },
@@ -3708,7 +3544,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     },
     "description": "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Event id, as returned by list_events. A recurring event's id names the series.",
@@ -3741,7 +3576,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     },
     "description": "List calendars, to choose one before creating or filtering events.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {},
       "type": "object",
     },
@@ -3762,7 +3596,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "List reminders, incomplete ones by default, optionally filtered by list, text, due date, priority, recurrence, location or tags.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "due_within": {
           "description": "Due date range",
@@ -3777,7 +3610,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
         },
         "limit": {
           "description": "Return at most this many reminders",
-          "maximum": 9007199254740991,
           "minimum": 1,
           "type": "integer",
         },
@@ -3792,7 +3624,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
         "offset": {
           "default": 0,
           "description": "Skip this many matching reminders before returning; use with limit to page.",
-          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
         },
@@ -3840,7 +3671,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Get one reminder by id.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Reminder id, as returned by list_reminders",
@@ -3865,7 +3695,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Create a reminder, optionally with tags and initial subtasks.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "alarms": {
           "description": "Alarms for the reminder",
@@ -3984,8 +3813,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
         },
         "priority": {
           "description": "Priority: 0 none, 1 high, 5 medium, 9 low",
-          "maximum": 9007199254740991,
-          "minimum": -9007199254740991,
           "type": "integer",
         },
         "recurrence_rules": {
@@ -3995,8 +3822,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "days_of_month": {
                 "description": "Days of month (1-31)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -4004,8 +3829,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "days_of_week": {
                 "description": "Days of week (1=Sunday, 7=Saturday)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -4027,23 +3850,17 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               },
               "interval": {
                 "description": "Interval between occurrences (default 1)",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
               "months_of_year": {
                 "description": "Months for yearly recurrence (1-12)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
                 "description": "Number of times to repeat",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
             },
@@ -4098,7 +3915,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Update a reminder. Only the fields given change; tags and subtasks in its notes are kept.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "add_tags": {
           "description": "Tags to add",
@@ -4245,8 +4061,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
         },
         "priority": {
           "description": "Priority: 0 none, 1 high, 5 medium, 9 low",
-          "maximum": 9007199254740991,
-          "minimum": -9007199254740991,
           "type": "integer",
         },
         "recurrence_rules": {
@@ -4256,8 +4070,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "days_of_month": {
                 "description": "Days of month (1-31)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -4265,8 +4077,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "days_of_week": {
                 "description": "Days of week (1=Sunday, 7=Saturday)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
@@ -4288,23 +4098,17 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               },
               "interval": {
                 "description": "Interval between occurrences (default 1)",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
               "months_of_year": {
                 "description": "Months for yearly recurrence (1-12)",
                 "items": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
                 "description": "Number of times to repeat",
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
                 "type": "integer",
               },
             },
@@ -4359,7 +4163,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Delete a reminder.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "id": {
           "description": "Reminder id, as returned by list_reminders",
@@ -4384,7 +4187,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "List the reminder lists.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {},
       "type": "object",
     },
@@ -4400,7 +4202,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Create a reminder list.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "color": {
           "description": "Hex color, e.g. '#FF5733'",
@@ -4429,7 +4230,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Rename a reminder list or change its color.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "color": {
           "description": "Hex color, e.g. '#FF5733'",
@@ -4462,7 +4262,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Delete a reminder list and its reminders.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "name": {
           "description": "Reminder list name or id, as returned by list_reminder_lists",
@@ -4487,7 +4286,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "List a reminder's subtasks with their progress.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "reminder_id": {
           "description": "Reminder id, as returned by list_reminders",
@@ -4512,7 +4310,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Add a subtask to a reminder.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "reminder_id": {
           "description": "Reminder id, as returned by list_reminders",
@@ -4542,7 +4339,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Rename a subtask or set whether it is completed.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "completed": {
           "description": "Completed or not",
@@ -4581,7 +4377,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Flip a subtask between completed and not completed.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "reminder_id": {
           "description": "Reminder id, as returned by list_reminders",
@@ -4612,7 +4407,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Delete a subtask.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "reminder_id": {
           "description": "Reminder id, as returned by list_reminders",
@@ -4643,7 +4437,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     },
     "description": "Reorder a reminder's subtasks.",
     "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "order": {
           "description": "Every subtask id, in the new order",
