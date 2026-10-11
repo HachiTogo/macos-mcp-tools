@@ -2944,7 +2944,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Get an event by id, at any date; a recurring event gives its first occurrence. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
+    "description": "Get an event by id, at any date. A recurring event's id gives the series as first defined, not an occurrence edited on its own. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
     "inputSchema": {
       "properties": {
         "id": {
@@ -3158,7 +3158,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Update an event; only the fields given change. Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
+    "description": "Update an event; only the fields given change. For a whole recurring series, pass span future-events. Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
     "inputSchema": {
       "properties": {
         "alarms": {
@@ -3295,7 +3295,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "array",
         },
         "span": {
-          "description": "Recurring events; default this-event",
+          "description": "Recurring events: this-event (default) is only the first occurrence; future-events is the whole series",
           "enum": [
             "this-event",
             "future-events",
@@ -3355,7 +3355,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Delete an event; for a recurring one, span picks this occurrence or this and later ones.",
+    "description": "Delete an event. For a whole recurring series, pass span future-events.",
     "inputSchema": {
       "properties": {
         "id": {
@@ -3364,7 +3364,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "span": {
-          "description": "Recurring events; default this-event",
+          "description": "Recurring events: this-event (default) is only the first occurrence; future-events is the whole series",
           "enum": [
             "this-event",
             "future-events",
