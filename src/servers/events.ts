@@ -79,67 +79,55 @@ const server = new McpServer({
 
 // ── Argument schemas (snake_case; camelized for the EventKit validators) ──
 
-const dateTime = (what: string) =>
-  z.string().describe(`${what}: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601`)
+// Field descriptions are kept for what a name and type cannot say. The date format is stated once,
+// in each tool's description.
+const DATES = "Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601."
+const date = z.string()
 
-const structuredLocation = z
-  .object({
-    title: z.string(),
-    latitude: z.number().optional(),
-    longitude: z.number().optional(),
-    radius: z.number().optional(),
-  })
-  .describe("Structured location with optional coordinates")
+const structuredLocation = z.object({
+  title: z.string(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  radius: z.number().optional(),
+})
 
-const alarms = z
-  .array(
-    z.object({
-      relative_offset: z.number().optional().describe("Seconds from the start (negative = before)"),
-      absolute_date: z.string().optional().describe("Absolute trigger date and time"),
-      location_trigger: z
-        .object({
-          title: z.string(),
-          latitude: z.number(),
-          longitude: z.number(),
-          radius: z.number().optional(),
-          proximity: z.enum(["enter", "leave"]),
-        })
-        .optional(),
-      alarm_type: z.enum(["display", "audio", "procedure", "email"]).optional().describe("Read-only presentation type"),
-    }),
-  )
-  .describe("Alarms for the event")
+const alarms = z.array(
+  z.object({
+    relative_offset: z.number().optional().describe("Seconds from the start; negative is before"),
+    absolute_date: date.optional(),
+    location_trigger: z
+      .object({
+        title: z.string(),
+        latitude: z.number(),
+        longitude: z.number(),
+        radius: z.number().optional(),
+        proximity: z.enum(["enter", "leave"]),
+      })
+      .optional(),
+  }),
+)
 
-const recurrenceRules = z
-  .array(
-    z.object({
-      frequency: z.enum(["minutely", "hourly", "daily", "weekly", "monthly", "yearly"]),
-      interval: z.number().int().optional().describe("Interval between occurrences (default 1)"),
-      end_date: z.string().optional().describe("When the recurrence ends (YYYY-MM-DD)"),
-      occurrence_count: z.number().int().optional().describe("Number of times to repeat"),
-      days_of_week: z.array(z.number().int()).optional().describe("Days of week (1=Sunday, 7=Saturday)"),
-      days_of_month: z.array(z.number().int()).optional().describe("Days of month (1-31)"),
-      months_of_year: z.array(z.number().int()).optional().describe("Months for yearly recurrence (1-12)"),
-    }),
-  )
-  .describe("Recurrence rules for a repeating event")
+const recurrenceRules = z.array(
+  z.object({
+    frequency: z.enum(["minutely", "hourly", "daily", "weekly", "monthly", "yearly"]),
+    interval: z.number().int().optional(),
+    end_date: z.string().optional().describe("YYYY-MM-DD"),
+    occurrence_count: z.number().int().optional(),
+    days_of_week: z.array(z.number().int()).optional().describe("1 is Sunday, 7 Saturday"),
+    days_of_month: z.array(z.number().int()).optional(),
+    months_of_year: z.array(z.number().int()).optional(),
+  }),
+)
 
-const availability = z
-  .enum(["not-supported", "busy", "free", "tentative", "unavailable"])
-  .describe("Event availability")
-const span = z
-  .enum(["this-event", "future-events"])
-  .describe("For a recurring event: this occurrence or this and later ones")
-const eventId = z
-  .string()
-  .min(1)
-  .describe("Event id, as returned by list_events. A recurring event's id names the series.")
+const availability = z.enum(["not-supported", "busy", "free", "tentative", "unavailable"])
+const span = z.enum(["this-event", "future-events"]).describe("Recurring events; default this-event")
+const eventId = z.string().min(1).describe("From list_events; a recurring event's id names the series")
 
 const eventFields = {
-  note: z.string().optional().describe("Notes for the event"),
-  location: z.string().optional().describe("Location text"),
-  url: z.string().optional().describe("A URL for the event"),
-  is_all_day: z.boolean().optional().describe("Whether it is an all-day event"),
+  note: z.string().optional(),
+  location: z.string().optional(),
+  url: z.string().optional(),
+  is_all_day: z.boolean().optional(),
   availability: availability.optional(),
   alarms: alarms.optional(),
   recurrence_rules: recurrenceRules.optional(),
@@ -160,16 +148,15 @@ const eventChanges = (
 server.registerTool(
   "list_events",
   {
-    description:
-      "List calendar events in a date range (the next 14 days by default), optionally filtered by calendar, account, text or availability.",
+    description: `List events from start_date to end_date (default: the next 14 days). ${DATES}`,
     inputSchema: {
-      start_date: dateTime("Range start").optional(),
-      end_date: dateTime("Range end").optional(),
-      calendar: z.string().optional().describe("Only events in this calendar (title or id from list_calendars)"),
-      account: z.string().optional().describe("Only events in this account"),
-      search: z.string().optional().describe("Text to match in title, notes or location"),
+      start_date: date.optional(),
+      end_date: date.optional(),
+      calendar: z.string().optional().describe("Title or id from list_calendars"),
+      account: z.string().optional().describe("As list_calendars shows it"),
+      search: z.string().optional().describe("Matches title, notes or location"),
       availability: availability.optional(),
-      limit: z.number().int().min(1).optional().describe("Return at most this many events (all by default)"),
+      limit: z.number().int().min(1).optional().describe("Default: all"),
       offset: offsetArg("events"),
     },
     annotations: READ,
@@ -209,7 +196,7 @@ server.registerTool(
   "get_event",
   {
     description:
-      "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
+      "Get an event by id, at any date; a recurring event gives its first occurrence. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
     inputSchema: { id: eventId },
     annotations: READ,
   },
@@ -224,15 +211,12 @@ server.registerTool(
 server.registerTool(
   "create_event",
   {
-    description: "Create a calendar event.",
+    description: `Create an event. ${DATES}`,
     inputSchema: {
-      title: z.string().describe("Event title"),
-      start_date: dateTime("Start"),
-      end_date: dateTime("End"),
-      calendar: z
-        .string()
-        .optional()
-        .describe("Calendar to create it in, by title or id (default calendar if omitted)"),
+      title: z.string(),
+      start_date: date,
+      end_date: date,
+      calendar: z.string().optional().describe("Title or id; default calendar if omitted"),
       structured_location: structuredLocation.optional(),
       ...eventFields,
     },
@@ -259,17 +243,17 @@ server.registerTool(
 server.registerTool(
   "update_event",
   {
-    description: "Update a calendar event. Only the fields given change.",
+    description: `Update an event; only the fields given change. ${DATES}`,
     inputSchema: {
       id: eventId,
-      title: z.string().optional().describe("New title"),
-      start_date: dateTime("New start").optional(),
-      end_date: dateTime("New end").optional(),
-      calendar: z.string().optional().describe("Move the event to this calendar, by title or id"),
-      structured_location: structuredLocation.nullable().optional().describe("Structured location; null removes it"),
+      title: z.string().optional(),
+      start_date: date.optional(),
+      end_date: date.optional(),
+      calendar: z.string().optional().describe("Move to this calendar (title or id)"),
+      structured_location: structuredLocation.nullable().optional().describe("null removes it"),
       ...eventFields,
-      clear_alarms: z.boolean().optional().describe("Remove all alarms"),
-      clear_recurrence: z.boolean().optional().describe("Remove the recurrence rules"),
+      clear_alarms: z.boolean().optional(),
+      clear_recurrence: z.boolean().optional(),
       span: span.optional(),
     },
     annotations: DESTRUCTIVE,
@@ -299,7 +283,7 @@ server.registerTool(
 server.registerTool(
   "delete_event",
   {
-    description: "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
+    description: "Delete an event; for a recurring one, span picks this occurrence or this and later ones.",
     inputSchema: { id: eventId, span: span.optional() },
     annotations: DESTRUCTIVE,
   },
@@ -319,7 +303,7 @@ server.registerTool(
 server.registerTool(
   "list_calendars",
   {
-    description: "List calendars, to choose one before creating or filtering events.",
+    description: "List calendars with their ids and accounts.",
     inputSchema: {},
     annotations: READ,
   },
