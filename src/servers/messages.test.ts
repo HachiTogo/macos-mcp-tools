@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import {
   escapeLikePattern,
   extractTextFromBody,
+  formatChatList,
   getMessages,
   getParticipants,
   isoToAppleNanos,
@@ -182,6 +183,12 @@ describe("chat.db queries", () => {
       ["Next book?", "chat100"],
     ])
     expect(searchMessages("e", { limit: 1, offset: 0 }, db)).toHaveLength(1)
+  })
+
+  test("list_chats text shows each chat's chat_id, which a named group's name does not reveal", () => {
+    const text = formatChatList(listChats({ limit: 10, offset: 0 }, db))
+    expect(text).toContain("1. Book club (group, 2 participants; chat_id: chat100): Dune")
+    expect(text).toContain("2. +15555550101 (1:1; chat_id: +15555550101): Running 10% late")
   })
 
   test("list_chats pages by offset", () => {

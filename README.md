@@ -181,6 +181,8 @@ If the prompt does not appear at all, `doctor` reports the Calendar and Reminder
 
 Every tool that lists or searches your content (mail, contacts, notes, memory entries, chats and messages, events, reminders) pages the same way: `limit` caps the page and `offset` skips that many matches. Tools that list small catalogs, such as accounts, folders, groups, calendars, reminder lists and subtasks, return everything.
 
+An id a list tool returns is accepted wherever that kind of item is named: a calendar, reminder list or contact group can be passed by id or by name, and `list_chats` shows the `chat_id` that `get_messages` takes.
+
 ### Mail
 
 Uses a hybrid implementation: direct read-only SQLite queries for fast message reads and searches, plus JXA for actions like fetching bodies, listing attachments, and mutating message state.

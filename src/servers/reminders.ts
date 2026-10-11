@@ -91,7 +91,7 @@ const recurrenceRules = z
 
 const reminderId = z.string().min(1).describe("Reminder id, as returned by list_reminders")
 const subtaskId = z.string().min(1).describe("Subtask id, as returned by list_subtasks")
-const listName = z.string().min(1).describe("Reminder list name, as returned by list_reminder_lists")
+const listName = z.string().min(1).describe("Reminder list name or id, as returned by list_reminder_lists")
 const priority = z.number().int().describe("Priority: 0 none, 1 high, 5 medium, 9 low")
 
 const reminderFields = {
@@ -126,7 +126,7 @@ server.registerTool(
     description:
       "List reminders, incomplete ones by default, optionally filtered by list, text, due date, priority, recurrence, location or tags.",
     inputSchema: {
-      list: z.string().optional().describe("Only reminders in this list"),
+      list: z.string().optional().describe("Only reminders in this list (name or id from list_reminder_lists)"),
       show_completed: z.boolean().optional().describe("Include completed reminders"),
       search: z.string().optional().describe("Text to match in title or notes"),
       due_within: z
@@ -190,7 +190,7 @@ server.registerTool(
     description: "Create a reminder, optionally with tags and initial subtasks.",
     inputSchema: {
       title: z.string().describe("Reminder title"),
-      list: z.string().optional().describe("List to create it in (default list if omitted)"),
+      list: z.string().optional().describe("List to create it in, by name or id (default list if omitted)"),
       ...reminderFields,
       completed: z.boolean().optional().describe("Create it already completed"),
       tags: z.array(z.string()).optional().describe("Tags to set"),
@@ -229,7 +229,7 @@ server.registerTool(
     inputSchema: {
       id: reminderId,
       title: z.string().optional().describe("New title"),
-      list: z.string().optional().describe("Move it to this list"),
+      list: z.string().optional().describe("Move it to this list, by name or id"),
       ...reminderFields,
       completed: z.boolean().optional().describe("Mark completed or not"),
       completion_date: dateTime("Completion").optional(),

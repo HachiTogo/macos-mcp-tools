@@ -42,6 +42,9 @@ Arguments are snake_case throughout, nested ones included: calendar `startDate`,
 - **Notes title lookups skip Recently Deleted.** A trashed note counted as a title match, so deleting "X" and creating a new "X" made the title ambiguous until the trash emptied. A title lookup across folders now ignores Recently Deleted; naming that folder, or passing the note's `id`, still reaches a trashed note. The folder is matched by its English name.
 - **Memory timestamps must be ISO 8601.** `happened_at`, `start_at`, `end_at` and `due_at`, and the `happened_after`/`happened_before` filters, accepted any text: "yesterday" was stored as written and its durations came back `null`. Each field now describes the format and asks the agent to convert relative dates first, and a value that is not an ISO 8601 date or timestamp (or names an impossible day) is refused with an error naming the field. Existing entries are unaffected.
 
+### Fixed
+- **Ids from list tools are accepted by their sibling tools.** `list_calendars`, `list_reminder_lists` and `list_contact_groups` return an id for each item, but the tools that take a calendar, list or group accepted only a name. A calendar id failed with "not found", a group id with "Group not found", and a list id made `list_reminders` return nothing without an error. They now take the id or the name. `list_chats` text also shows each chat's `chat_id`, the value `get_messages` takes; a named group chat used to show only its name.
+
 ## [0.9.1] - 2026-10-09
 
 ### Changed

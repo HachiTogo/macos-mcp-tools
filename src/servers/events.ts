@@ -164,7 +164,7 @@ server.registerTool(
     inputSchema: {
       start_date: dateTime("Range start").optional(),
       end_date: dateTime("Range end").optional(),
-      calendar: z.string().optional().describe("Only events in this calendar"),
+      calendar: z.string().optional().describe("Only events in this calendar (title or id from list_calendars)"),
       account: z.string().optional().describe("Only events in this account"),
       search: z.string().optional().describe("Text to match in title, notes or location"),
       availability: availability.optional(),
@@ -226,7 +226,10 @@ server.registerTool(
       title: z.string().describe("Event title"),
       start_date: dateTime("Start"),
       end_date: dateTime("End"),
-      calendar: z.string().optional().describe("Calendar to create it in (default calendar if omitted)"),
+      calendar: z
+        .string()
+        .optional()
+        .describe("Calendar to create it in, by title or id (default calendar if omitted)"),
       structured_location: structuredLocation.optional(),
       ...eventFields,
     },
@@ -258,7 +261,7 @@ server.registerTool(
       title: z.string().optional().describe("New title"),
       start_date: dateTime("New start").optional(),
       end_date: dateTime("New end").optional(),
-      calendar: z.string().optional().describe("Move the event to this calendar"),
+      calendar: z.string().optional().describe("Move the event to this calendar, by title or id"),
       structured_location: structuredLocation.nullable().optional().describe("Structured location; null removes it"),
       ...eventFields,
       clear_alarms: z.boolean().optional().describe("Remove all alarms"),
