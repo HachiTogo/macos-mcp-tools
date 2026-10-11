@@ -5,6 +5,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 import { getMailboxName } from "./mailbox"
+import { emailListOutput, mailAccountsOutput } from "./output"
 import { buildMailboxInventoryQuery, buildUnreadMessagesQuery, getSchemaInfo } from "./queries"
 import { describeMailAccounts, runUnreadEmailRead, summarizeMailAccounts } from "./read"
 
@@ -213,5 +214,24 @@ describe("Gmail through runUnreadEmailRead", () => {
       "gmail:[Gmail]/Important": 1, // 13, by label
       "other:INBOX": 1, // 20, stored directly: non-Gmail counting is unchanged
     })
+  })
+})
+
+// The SDK refuses a result whose structuredContent does not match the tool's declared outputSchema,
+// on the server for successes and on the client for anything carrying structuredContent.
+describe("declared output schemas", () => {
+  test("an unread read matches, with results or with none", () => {
+    expect(emailListOutput.parse(read(seed(3, 2)).structuredContent)).toBeTruthy()
+    expect(emailListOutput.parse(read(seed(0, 0)).structuredContent)).toBeTruthy()
+  })
+
+  test("the failure shape the read and search catch branches return matches", () => {
+    const failed = { source: "apple-mail", query: { limit: 25, offset: 0, timeZone: "UTC" }, messages: [] }
+    expect(emailListOutput.parse(failed)).toBeTruthy()
+  })
+
+  test("the account listing matches", () => {
+    const rows = [{ mailboxUrl: `${NOISY}/INBOX`, unreadCount: 2 }]
+    expect(mailAccountsOutput.parse(summarizeMailAccounts(rows, { accounts: {}, displayOrder: [] }, "/x"))).toBeTruthy()
   })
 })

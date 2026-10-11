@@ -20,6 +20,14 @@ import {
   createReplyEmailResult,
   createSendEmailResult,
 } from "./mail/mutate"
+import {
+  emailAttachmentOutput,
+  emailAttachmentsOutput,
+  emailBodyOutput,
+  emailLinksOutput,
+  emailListOutput,
+  mailAccountsOutput,
+} from "./mail/output"
 import { createListMailAccountsResult, createSearchEmailResult, createUnreadEmailsResult } from "./mail/read"
 import {
   emailsArraySchema,
@@ -46,6 +54,7 @@ server.registerTool(
     description:
       "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
     inputSchema: {},
+    outputSchema: mailAccountsOutput,
     annotations: READ,
   },
   async () => runTool("list_mail_accounts", () => createListMailAccountsResult()),
@@ -62,6 +71,7 @@ server.registerTool(
       provider,
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
     },
+    outputSchema: emailListOutput,
     annotations: READ,
   },
   async (args) => runTool("list_unread_emails", () => createUnreadEmailsResult(args)),
@@ -87,6 +97,7 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
+    outputSchema: emailBodyOutput,
     annotations: READ,
   },
   async (args) => runTool("fetch_email_body", () => createFetchEmailBodyResult(args)),
@@ -100,6 +111,7 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
+    outputSchema: emailLinksOutput,
     annotations: READ,
   },
   async (args) => runTool("extract_email_links", () => createExtractEmailLinksResult(args)),
@@ -185,6 +197,7 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
+    outputSchema: emailAttachmentsOutput,
     annotations: READ,
   },
   async (args) => runTool("list_email_attachments", () => createListEmailAttachmentsResult(args)),
@@ -205,6 +218,7 @@ server.registerTool(
         .default("text")
         .describe("Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'."),
     },
+    outputSchema: emailAttachmentOutput,
     annotations: READ,
   },
   async ({ attachment_name, ...args }) =>
@@ -237,6 +251,7 @@ server.registerTool(
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
       unread_only: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
     },
+    outputSchema: emailListOutput,
     annotations: READ,
   },
   async ({ unread_only, ...args }) =>

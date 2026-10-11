@@ -16,7 +16,63 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_mail_accounts",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "accounts": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "accountId": {
+                "type": "string",
+              },
+              "mailboxes": {
+                "items": {
+                  "additionalProperties": {},
+                  "properties": {
+                    "mailboxUrl": {
+                      "type": "string",
+                    },
+                    "name": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "name",
+                    "mailboxUrl",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "provider": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "accountId",
+              "provider",
+              "mailboxes",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "configPath": {
+          "type": "string",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "configPath",
+        "accounts",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -56,7 +112,81 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_unread_emails",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "messages": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "handle": {
+                "additionalProperties": {},
+                "properties": {
+                  "account_id": {
+                    "type": "string",
+                  },
+                  "mail_id": {
+                    "type": "string",
+                  },
+                  "mailbox_url": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "account_id",
+                  "mailbox_url",
+                  "mail_id",
+                ],
+                "type": "object",
+              },
+              "id": {
+                "type": "string",
+              },
+              "subject": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "subject",
+              "handle",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "query": {
+          "additionalProperties": {},
+          "properties": {
+            "limit": {
+              "type": "number",
+            },
+            "offset": {
+              "type": "number",
+            },
+            "timeZone": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "limit",
+            "offset",
+            "timeZone",
+          ],
+          "type": "object",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "query",
+        "messages",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -155,7 +285,48 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "fetch_email_body",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "body": {
+          "type": "string",
+        },
+        "found": {
+          "type": "boolean",
+        },
+        "handle": {
+          "additionalProperties": {},
+          "properties": {
+            "account_id": {
+              "type": "string",
+            },
+            "mail_id": {
+              "type": "string",
+            },
+            "mailbox_url": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "account_id",
+            "mailbox_url",
+            "mail_id",
+          ],
+          "type": "object",
+        },
+        "truncated": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "handle",
+        "found",
+        "body",
+        "truncated",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -195,7 +366,68 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "extract_email_links",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "count": {
+          "type": "number",
+        },
+        "found": {
+          "type": "boolean",
+        },
+        "handle": {
+          "additionalProperties": {},
+          "properties": {
+            "account_id": {
+              "type": "string",
+            },
+            "mail_id": {
+              "type": "string",
+            },
+            "mailbox_url": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "account_id",
+            "mailbox_url",
+            "mail_id",
+          ],
+          "type": "object",
+        },
+        "links": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "text": {
+                "type": "string",
+              },
+              "url": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "url",
+              "text",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "truncated": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "handle",
+        "found",
+        "links",
+        "count",
+        "truncated",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -436,7 +668,56 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_email_attachments",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "attachments": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "name": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "name",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "found": {
+          "type": "boolean",
+        },
+        "handle": {
+          "additionalProperties": {},
+          "properties": {
+            "account_id": {
+              "type": "string",
+            },
+            "mail_id": {
+              "type": "string",
+            },
+            "mailbox_url": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "account_id",
+            "mailbox_url",
+            "mail_id",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "handle",
+        "found",
+        "attachments",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -491,7 +772,60 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "fetch_email_attachment",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "content": {
+          "type": "string",
+        },
+        "format": {
+          "enum": [
+            "text",
+            "base64",
+          ],
+          "type": "string",
+        },
+        "handle": {
+          "additionalProperties": {},
+          "properties": {
+            "account_id": {
+              "type": "string",
+            },
+            "mail_id": {
+              "type": "string",
+            },
+            "mailbox_url": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "account_id",
+            "mailbox_url",
+            "mail_id",
+          ],
+          "type": "object",
+        },
+        "mimeType": {
+          "type": "string",
+        },
+        "name": {
+          "type": "string",
+        },
+        "sizeBytes": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "handle",
+        "name",
+        "mimeType",
+        "sizeBytes",
+        "content",
+        "format",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -551,7 +885,81 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "search_emails",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "messages": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "handle": {
+                "additionalProperties": {},
+                "properties": {
+                  "account_id": {
+                    "type": "string",
+                  },
+                  "mail_id": {
+                    "type": "string",
+                  },
+                  "mailbox_url": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "account_id",
+                  "mailbox_url",
+                  "mail_id",
+                ],
+                "type": "object",
+              },
+              "id": {
+                "type": "string",
+              },
+              "subject": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "subject",
+              "handle",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "query": {
+          "additionalProperties": {},
+          "properties": {
+            "limit": {
+              "type": "number",
+            },
+            "offset": {
+              "type": "number",
+            },
+            "timeZone": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "limit",
+            "offset",
+            "timeZone",
+          ],
+          "type": "object",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "query",
+        "messages",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2084,7 +2492,35 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_chats",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "chats": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "chatId": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "chatId",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "chats",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2130,7 +2566,39 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_messages",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "chatId": {
+          "type": "string",
+        },
+        "messages": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "number",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "chatId",
+        "messages",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2173,7 +2641,43 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "search_messages",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "query": {
+          "type": "string",
+        },
+        "results": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "chatId": {
+                "type": "string",
+              },
+              "id": {
+                "type": "number",
+              },
+            },
+            "required": [
+              "id",
+              "chatId",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "query",
+        "results",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2197,7 +2701,39 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_participants",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "chatId": {
+          "type": "string",
+        },
+        "participants": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "handle": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "handle",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "chatId",
+        "participants",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {

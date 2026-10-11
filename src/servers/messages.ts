@@ -432,6 +432,25 @@ const formatSendResult = (result: SendResult): string =>
 
 const server = new McpServer({ name: "apple-messages", version: PACKAGE_VERSION })
 
+// The structuredContent each read tool declares. Objects are loose, so a field added later never
+// fails a call that worked; nested items detail only the ids agents pass back.
+export const chatsOutput = z.looseObject({ source: z.string(), chats: z.array(z.looseObject({ chatId: z.string() })) })
+export const messagesOutput = z.looseObject({
+  source: z.string(),
+  chatId: z.string(),
+  messages: z.array(z.looseObject({ id: z.number() })),
+})
+export const searchOutput = z.looseObject({
+  source: z.string(),
+  query: z.string(),
+  results: z.array(z.looseObject({ id: z.number(), chatId: z.string() })),
+})
+export const participantsOutput = z.looseObject({
+  source: z.string(),
+  chatId: z.string(),
+  participants: z.array(z.looseObject({ handle: z.string() })),
+})
+
 server.registerTool(
   "list_chats",
   {
@@ -447,6 +466,7 @@ server.registerTool(
         .describe("Maximum conversations to return (1–200). Default: 50."),
       offset: offsetArg("conversations"),
     },
+    outputSchema: chatsOutput,
     annotations: READ,
   },
   async ({ limit, offset }) =>
@@ -489,6 +509,7 @@ server.registerTool(
           "ISO 8601 date. Only return messages before it. A bare date means local midnight. Example: '2026-02-01'.",
         ),
     },
+    outputSchema: messagesOutput,
     annotations: READ,
   },
   async ({ chat_id, limit, offset, from_date, to_date }) =>
@@ -521,6 +542,7 @@ server.registerTool(
         .describe("Maximum results to return (1–200). Default: 50."),
       offset: offsetArg("messages"),
     },
+    outputSchema: searchOutput,
     annotations: READ,
   },
   async ({ query, chat_id, limit, offset }) =>
@@ -537,6 +559,7 @@ server.registerTool(
     inputSchema: {
       chat_id: z.string().describe("Chat identifier from list_chats."),
     },
+    outputSchema: participantsOutput,
     annotations: READ,
   },
   async ({ chat_id }) =>
