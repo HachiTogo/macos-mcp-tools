@@ -33,6 +33,7 @@ Arguments are snake_case throughout, nested ones included: calendar `startDate`,
 | Mail handles `{ accountId, mailboxUrl, mailId }` | `{ account_id, mailbox_url, mail_id }`, both returned and accepted |
 | `fetch_email_attachment` `attachmentName`; `search_emails` `unreadOnly`; `reply_email` `replyAll` | `attachment_name`; `unread_only`; `reply_all` |
 | `flag_emails` items `flagIndex`, `flaggedStatus`, `backgroundColor` | `flag_index`, `flagged_status`, `background_color` |
+| Mail `provider` on an account `email.json` leaves as `unknown` | Reported as `unknown`, no longer `icloud`; set the account's `provider` in `email.json` to keep filtering by `icloud` |
 | `delete_contact` / `delete_contact_group` `confirm: true` | Removed, as no other delete had it; a stale `confirm` is ignored. Hosts ask before destructive tools instead |
 
 ### Added
@@ -45,6 +46,7 @@ Arguments are snake_case throughout, nested ones included: calendar `startDate`,
 - **Memory timestamps must be ISO 8601.** `happened_at`, `start_at`, `end_at` and `due_at`, and the `happened_after`/`happened_before` filters, accepted any text: "yesterday" was stored as written and its durations came back `null`. Each field now describes the format and asks the agent to convert relative dates first, and a value that is not an ISO 8601 date or timestamp (or names an impossible day) is refused with an error naming the field. Existing entries are unaffected.
 
 ### Fixed
+- **Mail's `provider` filter takes what `list_mail_accounts` reports.** It accepted only `gmail` or `icloud`, so an Exchange or Fastmail account had no valid value. And `list_mail_accounts` reported an unclassified account as `unknown` while its emails said `icloud`, so the listed value was refused as a filter. Emails now report the account's provider from `email.json` (`unknown` until you set one), and the filter accepts any value.
 - **Ids from list tools are accepted by their sibling tools.** `list_calendars`, `list_reminder_lists` and `list_contact_groups` return an id for each item, but the tools that take a calendar, list or group accepted only a name. A calendar id failed with "not found", a group id with "Group not found", and a list id made `list_reminders` return nothing without an error. They now take the id or the name. `list_chats` text also shows each chat's `chat_id`, the value `get_messages` takes; a named group chat used to show only its name.
 
 ## [0.9.1] - 2026-10-09

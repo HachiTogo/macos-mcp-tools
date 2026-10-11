@@ -36,7 +36,7 @@ export type NormalizedEmail = {
   senderAddress: string
   mailboxName: string
   mailboxUrl: string
-  provider: "gmail" | "icloud"
+  provider: string
   accountLabel: string
   accountCategory: string
   receivedAt: string
@@ -60,7 +60,8 @@ export type AccountClassification = Pick<NormalizedEmail, "accountLabel" | "acco
 export type EmailAccountConfig = {
   label: string
   category: string
-  provider: "gmail" | "icloud" | "unknown"
+  /** "gmail", "icloud", "unknown" as first written, or whatever the user sets. */
+  provider: string
 }
 
 export type EmailConfig = {
@@ -76,7 +77,7 @@ export type UnreadEmailArguments = {
   offset: number
   limit: number
   mailbox?: string
-  provider?: "gmail" | "icloud"
+  provider?: string
 }
 
 export type SearchEmailArguments = {
@@ -86,7 +87,7 @@ export type SearchEmailArguments = {
   after?: string
   before?: string
   mailbox?: string
-  provider?: "gmail" | "icloud"
+  provider?: string
   unreadOnly?: boolean
   limit: number
 }

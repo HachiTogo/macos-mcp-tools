@@ -48,11 +48,8 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "integer",
         },
         "provider": {
-          "description": "Filter to a specific email provider.",
-          "enum": [
-            "gmail",
-            "icloud",
-          ],
+          "description": "Only accounts with this provider, as list_mail_accounts reports it (e.g. 'gmail', 'icloud', 'unknown').",
+          "minLength": 1,
           "type": "string",
         },
       },
@@ -534,11 +531,8 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "integer",
         },
         "provider": {
-          "description": "Filter to a specific email provider.",
-          "enum": [
-            "gmail",
-            "icloud",
-          ],
+          "description": "Only accounts with this provider, as list_mail_accounts reports it (e.g. 'gmail', 'icloud', 'unknown').",
+          "minLength": 1,
           "type": "string",
         },
         "sender": {

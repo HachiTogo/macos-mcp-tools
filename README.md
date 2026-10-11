@@ -397,6 +397,8 @@ The mail server classifies each Apple Mail account — a label, a category and a
 
 On first use it scans your mailboxes and writes a starting point with every account labelled `unknown`. Edit it to give each account a real label and category; `list_unread_emails` groups and orders its output by them, and its warning names the full path.
 
+The provider starts as `gmail` for accounts with Gmail's mailboxes and `unknown` for the rest. Set it to anything that describes the account, such as `icloud` or `exchange`: emails report it, `list_mail_accounts` lists it, and the `provider` filter matches it.
+
 **A file it cannot parse is never overwritten.** If you introduce a JSON error, mail reads fail with an error naming the file and the problem, rather than silently replacing your labels with defaults. Fix or delete the file and reads resume.
 
 Upgrading from 0.7.1 or earlier: the config used to live inside the install directory, where every upgrade discarded it. An existing file is copied to the new location the first time a mail tool runs.

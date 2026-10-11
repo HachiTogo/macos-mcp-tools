@@ -94,13 +94,21 @@ const UNREAD = { includeArchivedGmail: false }
 const SEARCH = { includeArchivedGmail: true }
 
 describe("normalizeEmail", () => {
-  const providers = new Map<string, "gmail" | "icloud">([[ACCOUNT, "gmail"]])
+  const providers = new Map<string, string>([[ACCOUNT, "gmail"]])
 
   test("carries the account classification from config", () => {
     const email = normalizeEmail(row(), providers, CONFIG, UNREAD)
     expect(email?.accountLabel).toBe("Work")
     expect(email?.accountCategory).toBe("work")
     expect(email?.provider).toBe("gmail")
+  })
+
+  test("reports the provider list_mail_accounts shows: any configured value, else unknown", () => {
+    const exchange = new Map([[ACCOUNT, "exchange"]])
+    expect(normalizeEmail(row(), exchange, CONFIG, UNREAD)?.provider).toBe("exchange")
+    // An account the config does not classify was reported as "icloud", which no filter could match
+    // against list_mail_accounts' "unknown".
+    expect(normalizeEmail(row(), new Map(), CONFIG, UNREAD)?.provider).toBe("unknown")
   })
 
   test("drops rows with no mailbox URL and rows in excluded mailboxes", () => {

@@ -41,10 +41,11 @@ export const getMailboxName = (mailboxUrl: string) =>
     .map(decodeMailboxPath)
     .join("/")
 
-export const getProviderByAccount = (config: EmailConfig): Map<string, "gmail" | "icloud"> => {
-  const result = new Map<string, "gmail" | "icloud">()
+/** Each configured account's provider, exactly as list_mail_accounts reports it. */
+export const getProviderByAccount = (config: EmailConfig): Map<string, string> => {
+  const result = new Map<string, string>()
   for (const [key, account] of Object.entries(config.accounts)) {
-    if (account.provider === "gmail" || account.provider === "icloud") {
+    if (typeof account.provider === "string" && account.provider) {
       result.set(key, account.provider)
     }
   }

@@ -136,7 +136,7 @@ export type NormalizeOptions = {
 
 export const normalizeEmail = (
   row: EmailRow,
-  providerByAccount: Map<string, "gmail" | "icloud">,
+  providerByAccount: Map<string, string>,
   config: EmailConfig,
   options: NormalizeOptions,
 ) => {
@@ -148,7 +148,9 @@ export const normalizeEmail = (
 
   const mailboxName = getMailboxName(mailboxUrl)
   const accountKey = getMailboxAccountKey(mailboxUrl)
-  let provider = providerByAccount.get(accountKey) ?? "icloud"
+  // The provider list_mail_accounts reports, so its value works as a filter. An account the config
+  // does not classify is "unknown", not a guess.
+  let provider = providerByAccount.get(accountKey) ?? "unknown"
 
   // Where the message is reported. Every account but Gmail: the mailbox it is stored in.
   let displayMailboxName = mailboxName
