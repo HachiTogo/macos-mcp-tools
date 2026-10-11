@@ -146,7 +146,9 @@ export const escapeLikePattern = (value: string): string => value.replace(/[\\%_
 
 const openDb = (): Database => new Database(CHAT_DB_PATH, { readonly: true })
 
-const withDb = <T>(fn: (db: Database) => T): T => {
+// The tools open chat.db read-only for each call; tests pass an in-memory fixture instead.
+const withDb = <T>(database: Database | undefined, fn: (db: Database) => T): T => {
+  if (database) return fn(database)
   const db = openDb()
   try {
     return fn(db)
@@ -157,8 +159,8 @@ const withDb = <T>(fn: (db: Database) => T): T => {
 
 // ── Query functions ───────────────────────────────────────────────────
 
-const listChats = (limit: number): NormalizedChat[] =>
-  withDb((db) => {
+export const listChats = (limit: number, database?: Database): NormalizedChat[] =>
+  withDb(database, (db) => {
     const rows = db
       .query(`
       SELECT
@@ -204,8 +206,14 @@ const listChats = (limit: number): NormalizedChat[] =>
     })
   })
 
-const getMessages = (chatIdentifier: string, limit: number, fromDate?: string, toDate?: string): NormalizedMessage[] =>
-  withDb((db) => {
+export const getMessages = (
+  chatIdentifier: string,
+  limit: number,
+  fromDate?: string,
+  toDate?: string,
+  database?: Database,
+): NormalizedMessage[] =>
+  withDb(database, (db) => {
     const conditions = ["c.chat_identifier = ?", "m.associated_message_type = 0"]
     const params: (string | number)[] = [chatIdentifier]
 
@@ -258,8 +266,9 @@ export const searchMessages = (
   query: string,
   limit: number,
   chatIdentifier?: string,
+  database?: Database,
 ): (NormalizedMessage & { chatId: string })[] =>
-  withDb((db) => {
+  withDb(database, (db) => {
     // Modern Messages rows often have text = NULL with the body only in attributedBody, so the SQL
     // LIKE alone misses them. Rows with NULL text are decoded in JS via resolveText, exactly as
     // get_messages renders them, and matched case-insensitively there.
@@ -315,8 +324,8 @@ export const searchMessages = (
     return results
   })
 
-const getParticipants = (chatIdentifier: string): NormalizedParticipant[] =>
-  withDb((db) => {
+export const getParticipants = (chatIdentifier: string, database?: Database): NormalizedParticipant[] =>
+  withDb(database, (db) => {
     const rows = db
       .query(`
       SELECT h.id AS handleId, h.service AS service
