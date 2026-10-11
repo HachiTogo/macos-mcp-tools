@@ -1561,9 +1561,13 @@ struct ArgumentParser {
         var i = 0
         let arguments = Array(CommandLine.arguments.dropFirst())
 
+        // Arguments always arrive as flag-value pairs, so the value is simply the next argument, even
+        // when it starts with "--". Free text can: a note holding only subtasks opens with
+        // "---SUBTASKS---", and was stored as "true" when values starting with "--" were read as flags.
         while i < arguments.count {
-            let key = arguments[i].replacingOccurrences(of: "--", with: "")
-            if i + 1 < arguments.count && !arguments[i + 1].hasPrefix("--") {
+            let flag = arguments[i]
+            let key = flag.hasPrefix("--") ? String(flag.dropFirst(2)) : flag
+            if i + 1 < arguments.count {
                 dict[key] = arguments[i + 1]
                 i += 2
             } else {
