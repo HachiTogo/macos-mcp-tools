@@ -3492,7 +3492,36 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_reminders",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "properties": {
+        "offset": {
+          "type": "number",
+        },
+        "reminders": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "total": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "reminders",
+        "total",
+        "offset",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -3516,7 +3545,25 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_reminder",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "properties": {
+        "reminder": {
+          "properties": {
+            "id": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "reminder",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -3958,7 +4005,32 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_reminder_lists",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "properties": {
+        "lists": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+              "title": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "title",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "lists",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -4064,7 +4136,32 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_subtasks",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "properties": {
+        "reminder_id": {
+          "type": "string",
+        },
+        "subtasks": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "reminder_id",
+        "subtasks",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {

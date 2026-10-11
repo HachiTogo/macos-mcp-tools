@@ -8,6 +8,7 @@ import {
   stripSubtasks,
   stripTags,
 } from "../lib/eventkit/index.js"
+import { reminderListsOutput, reminderOutput, remindersOutput, structuredReminder, subtasksOutput } from "./reminders"
 import {
   formatAlarm,
   formatRecurrence,
@@ -100,5 +101,44 @@ describe("formatSubtasksListMarkdown", () => {
       '### Subtasks for "Bread"\n\n**Progress:** 1/2 (50%)\n\n1. [x] Buy flour (ID: a1b2c3d4)\n2. [ ] Bake (ID: e5f6a7b8)',
     )
     expect(formatSubtasksListMarkdown("Empty", [])).toContain("No subtasks found.")
+  })
+})
+
+describe("structured results", () => {
+  const notes = combineSubtasksAndNotes(subtasks, combineTagsAndNotes(["home"], "Bring the recipe"))
+  const reminder = {
+    id: "R1",
+    title: "Bread",
+    list: "Home",
+    isCompleted: false,
+    priority: 1,
+    dueDate: "2026-10-12 09:00:00",
+    notes,
+    tags: extractTags(notes),
+    subtasks: parseSubtasks(notes),
+    recurrenceRules: [{ frequency: "weekly" as const, interval: 1, daysOfWeek: [7] }],
+  }
+
+  test("a reminder comes back in the arguments' casing; note is the notes without tags and subtasks", () => {
+    const structured = structuredReminder(reminder)
+    expect(structured).toMatchObject({
+      due_date: "2026-10-12 09:00:00",
+      is_completed: false,
+      note: "Bring the recipe",
+      tags: ["home"],
+      subtasks: [{ id: "a1b2c3d4", title: "Buy flour", is_completed: true }, { id: "e5f6a7b8" }],
+      recurrence_rules: [{ frequency: "weekly", interval: 1, days_of_week: [7] }],
+    })
+    expect(structured).not.toHaveProperty("notes")
+    expect(structuredReminder({ ...reminder, notes: undefined }).note).toBeUndefined()
+  })
+
+  test("each read result matches its tool's declared output schema", () => {
+    expect(remindersOutput.parse({ reminders: [structuredReminder(reminder)], total: 1, offset: 0 })).toBeTruthy()
+    expect(remindersOutput.parse({ reminders: [], total: 0, offset: 0 })).toBeTruthy()
+    expect(reminderOutput.parse({ reminder: structuredReminder(reminder) })).toBeTruthy()
+    expect(reminderListsOutput.parse({ lists: [{ id: "L1", title: "Home", color: "#FF5733" }] })).toBeTruthy()
+    const listed = { reminder_id: "R1", subtasks: [{ id: "a1b2c3d4", title: "Buy flour", is_completed: true }] }
+    expect(subtasksOutput.parse(listed)).toBeTruthy()
   })
 })

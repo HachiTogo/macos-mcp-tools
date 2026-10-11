@@ -16,7 +16,7 @@ const SERVERS = ["mail", "contacts", "notes", "memory", "messages", "events", "r
 // not a target: growth past it fails, and so does shrinking more than SCHEMA_BUDGET_SLACK below it,
 // so a saving is locked in by lowering the budget. 0.9.1 was 44,467; the 0.10.0 contract, with
 // per-action tools, hints and output schemas, is larger.
-const SCHEMA_BUDGET_BYTES = 51_462
+const SCHEMA_BUDGET_BYTES = 52_311
 const SCHEMA_BUDGET_SLACK = 1024
 
 const HINTS = ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] as const

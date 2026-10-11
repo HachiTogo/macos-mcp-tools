@@ -16,14 +16,19 @@ import {
   formatDeleteMessage,
   formatListMarkdown,
   formatSuccessMessage,
+  getSubtaskProgress,
   handleAsyncOperation,
   parseSubtasks,
   ReadRemindersSchema,
   ReadSubtasksSchema,
+  type Reminder,
   ReorderSubtasksSchema,
   reminderRepository,
   removeSubtask,
   reorderSubtasks,
+  snakeKeys,
+  stripSubtasks,
+  stripTags,
   ToggleSubtaskSchema,
   toggleSubtask,
   UpdateReminderListSchema,
@@ -102,6 +107,24 @@ const reminderFields = {
   location_trigger: locationTrigger.optional(),
 }
 
+// The structuredContent each read tool declares. Objects are loose, so a field present only
+// sometimes never fails a call that worked; only ids are pinned.
+const withId = z.looseObject({ id: z.string() })
+export const remindersOutput = z.looseObject({ reminders: z.array(withId), total: z.number(), offset: z.number() })
+export const reminderOutput = z.looseObject({ reminder: withId })
+export const reminderListsOutput = z.looseObject({
+  lists: z.array(z.looseObject({ id: z.string(), title: z.string() })),
+})
+export const subtasksOutput = z.looseObject({ reminder_id: z.string(), subtasks: z.array(withId) })
+
+/**
+ * A reminder as structuredContent, in the arguments' casing. Its notes hold encoded tags and
+ * subtasks, which come back as `tags` and `subtasks`; `note` is the rest, the part update_reminder's
+ * `note` replaces.
+ */
+export const structuredReminder = ({ notes, ...reminder }: Reminder) =>
+  snakeKeys({ ...reminder, note: stripSubtasks(stripTags(notes)) || undefined }) as Record<string, unknown>
+
 /** Snake_case tool arguments as the camelCase object the EventKit schemas validate. */
 const camel = (args: object, renames: Record<string, string> = {}) => {
   const out = camelizeKeys(args) as Record<string, unknown>
@@ -132,6 +155,7 @@ server.registerTool(
       limit: z.number().int().min(1).optional().describe("Default: all"),
       offset: offsetArg,
     },
+    outputSchema: remindersOutput,
     annotations: READ,
   },
   async ({ limit, offset, ...filters }) =>
@@ -156,24 +180,39 @@ server.registerTool(
         locationBased: validated.filterLocationBased,
         tags: validated.filterTags,
       })
-      return formatListMarkdown(
-        "Reminders",
-        paginate(reminders, offset, limit),
-        formatReminderMarkdown,
-        "No reminders found matching the criteria.",
-        { offset, total: reminders.length },
-      )
+      const page = paginate(reminders, offset, limit)
+      return {
+        text: formatListMarkdown(
+          "Reminders",
+          page,
+          formatReminderMarkdown,
+          "No reminders found matching the criteria.",
+          {
+            offset,
+            total: reminders.length,
+          },
+        ),
+        structured: { reminders: page.map(structuredReminder), total: reminders.length, offset },
+      }
     }, "read reminders"),
 )
 
 server.registerTool(
   "get_reminder",
-  { description: "Get one reminder by id.", inputSchema: { id: reminderId }, annotations: READ },
+  {
+    description: "Get one reminder by id.",
+    inputSchema: { id: reminderId },
+    outputSchema: reminderOutput,
+    annotations: READ,
+  },
   async ({ id }) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs({ id }, ReadRemindersSchema)
       const reminder = await reminderRepository.findReminderById(validated.id as string)
-      return ["### Reminder", "", ...formatReminderMarkdown(reminder)].join("\n")
+      return {
+        text: ["### Reminder", "", ...formatReminderMarkdown(reminder)].join("\n"),
+        structured: { reminder: structuredReminder(reminder) },
+      }
     }, "read reminders"),
 )
 
@@ -290,11 +329,14 @@ const color = z.string().describe("Hex, e.g. '#FF5733'")
 
 server.registerTool(
   "list_reminder_lists",
-  { description: "List the reminder lists.", inputSchema: {}, annotations: READ },
+  { description: "List the reminder lists.", inputSchema: {}, outputSchema: reminderListsOutput, annotations: READ },
   async () =>
     handleAsyncOperation(async () => {
       const lists = await reminderRepository.findAllLists()
-      return formatListMarkdown("Reminder Lists", lists, formatReminderList, "No reminder lists found.")
+      return {
+        text: formatListMarkdown("Reminder Lists", lists, formatReminderList, "No reminder lists found."),
+        structured: { lists: snakeKeys(lists) },
+      }
     }, "read reminder lists"),
 )
 
@@ -354,13 +396,21 @@ server.registerTool(
   {
     description: "List a reminder's subtasks with their progress.",
     inputSchema: { reminder_id: reminderId },
+    outputSchema: subtasksOutput,
     annotations: READ,
   },
   async (args) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs(camel(args), ReadSubtasksSchema)
       const reminder = await reminderRepository.findReminderById(validated.reminderId)
-      return formatSubtasksListMarkdown(reminder.title, parseSubtasks(reminder.notes))
+      const subtasks = parseSubtasks(reminder.notes)
+      return {
+        text: formatSubtasksListMarkdown(reminder.title, subtasks),
+        structured: snakeKeys({ reminderId: reminder.id, subtasks, progress: getSubtaskProgress(subtasks) }) as Record<
+          string,
+          unknown
+        >,
+      }
     }, "read subtasks"),
 )
 
