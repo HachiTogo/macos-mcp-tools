@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-
+import { entriesOutput, entryOutput, occurrenceOutput } from "./memory"
 import {
   chooseOccurrenceTimestamp,
   compareEntriesForRecency,
@@ -10,7 +10,7 @@ import {
   normalizeEntry,
   normalizeText,
 } from "./memory/entries"
-import { selectSearchResults } from "./memory/store"
+import { selectBestMatch, selectSearchResults } from "./memory/store"
 
 const createEntry = (overrides: Partial<NormalizedEntry> = {}): NormalizedEntry => ({
   id: overrides.id ?? "entry-1",
@@ -312,5 +312,29 @@ describe("selectSearchResults", () => {
     expect(ids(2, 0)).toEqual(["d", "c"])
     expect(ids(2, 2)).toEqual(["b", "a"])
     expect(ids(2, 4)).toEqual([])
+  })
+})
+
+describe("read tools' declared output schemas", () => {
+  // Built as the handlers build them; the SDK checks each against the tool's outputSchema.
+  const source = "memory"
+  const entries = [
+    createEntry({ id: "a", subject: "car", action: "serviced", happened_at: "2026-03-01T00:00:00.000Z" }),
+  ]
+
+  test("get_entry, found or not, and search_entries match", () => {
+    expect(entryOutput.parse({ source, entry: entries[0] })).toBeTruthy()
+    expect(entryOutput.parse({ source, entry: null })).toBeTruthy()
+    const query = { subject: "car", limit: 25, offset: 0 }
+    expect(entriesOutput.parse({ source, query, entries: selectSearchResults(entries, query, 25) })).toBeTruthy()
+  })
+
+  test("an occurrence query matches whether or not it finds an entry", () => {
+    const query = { subject: "car", action: "serviced" }
+    const match = selectBestMatch(entries, query)
+    expect(match).toBeDefined()
+    const matched = { source, query, status: "matched", ...match, ...computeDurationSince(match!.timestamp) }
+    expect(occurrenceOutput.parse(matched)).toBeTruthy()
+    expect(occurrenceOutput.parse({ source, query: { subject: "boat" }, status: "no_match" })).toBeTruthy()
   })
 })

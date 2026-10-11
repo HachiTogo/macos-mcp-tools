@@ -1,12 +1,21 @@
 import { describe, expect, test } from "bun:test"
 
+import { jsonResult } from "../lib/mcp-result"
 import {
   CONTACT_HELPERS,
+  contactGroupOutput,
+  contactGroupsOutput,
+  contactOutput,
+  contactsPageOutput,
   GROUP_LOOKUP,
   JXA_CONTACTS_DELETE,
   JXA_CONTACTS_GET,
+  JXA_CONTACTS_READ,
+  JXA_CONTACTS_SEARCH,
   JXA_CONTACTS_UPDATE,
   JXA_GROUPS_ADD_MEMBER,
+  JXA_GROUPS_GET,
+  JXA_GROUPS_READ,
   JXA_GROUPS_REMOVE_MEMBER,
 } from "./contacts"
 
@@ -100,5 +109,59 @@ describe("JXA scripts", () => {
     ]) {
       expect(() => new Function(script)).not.toThrow()
     }
+  })
+})
+
+/** Runs a script's run() against a fake app, as osascript runs it against Contacts. */
+const runAgainst = (script: string, app: unknown, args: object = {}) =>
+  JSON.parse(new Function("Application", `${script}; return run`)(() => app)([JSON.stringify(args)]))
+
+describe("read tools' declared output schemas", () => {
+  const person = (id: string, first: string, last: string, emails: () => unknown[]) => ({
+    id: () => id,
+    firstName: () => first,
+    lastName: () => last,
+    organization: () => "",
+    jobTitle: () => "",
+    note: () => "",
+    emails,
+    phones: () => [],
+    addresses: () => [],
+  })
+  const people = [
+    person("p1", "Ada", "Lovelace", () => [{ label: () => "work", value: () => "ada@example.com" }]),
+    person("p2", "Alan", "Turing", () => {
+      throw new Error("Can't get object.")
+    }),
+  ]
+  const friends = { id: () => "g1:ABGroup", name: () => "Friends", people: () => people }
+  const app = {
+    people: Object.assign(() => people, {
+      id: () => people.map((p) => p.id()),
+      firstName: () => people.map((p) => p.firstName()),
+      lastName: () => people.map((p) => p.lastName()),
+      organization: () => people.map((p) => p.organization()),
+      whose: (query: { id: string }) => () => people.filter((p) => p.id() === query.id),
+    }),
+    groups: Object.assign(() => [friends], {
+      whose: (query: Partial<Group>) =>
+        [friends].filter((g) => (query.id !== undefined ? g.id() === query.id : g.name() === query.name)),
+    }),
+  }
+  // Each handler returns jsonResult of the script's output; the SDK checks that against the schema.
+  const structured = (script: string, args?: object) => jsonResult(runAgainst(script, app, args)).structuredContent
+
+  test("every read script's result matches its tool's schema", () => {
+    expect(contactsPageOutput.parse(structured(JXA_CONTACTS_READ, { limit: 10 }))).toBeTruthy()
+    expect(contactsPageOutput.parse(structured(JXA_CONTACTS_SEARCH, { query: "zz-nobody" }))).toBeTruthy()
+    expect(contactOutput.parse(structured(JXA_CONTACTS_GET, { id: "p1" }))).toBeTruthy()
+    expect(contactGroupsOutput.parse(structured(JXA_GROUPS_READ))).toBeTruthy()
+    expect(contactGroupOutput.parse(structured(JXA_GROUPS_GET, { group: "g1:ABGroup" }))).toBeTruthy()
+  })
+
+  test("a contact read with warnings still matches", () => {
+    const contact = structured(JXA_CONTACTS_GET, { id: "p2" })
+    expect(contact?.warnings).toEqual(["Could not read emails: Can't get object."])
+    expect(contactOutput.parse(contact)).toBeTruthy()
   })
 })

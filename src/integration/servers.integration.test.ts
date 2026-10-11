@@ -139,6 +139,8 @@ if (!RUN_INTEGRATION_TESTS) {
 
     beforeAll(async () => {
       server = await startServer("memory")
+      // Listing the tools gives the client each outputSchema, so every call below is checked against it.
+      await server.client.listTools()
     })
 
     afterAll(async () => {
@@ -242,6 +244,18 @@ if (!RUN_INTEGRATION_TESTS) {
       expect(durationPayload.entry.id).toBe(entryId)
       expect(durationPayload.elapsed_days).toBeGreaterThanOrEqual(0)
       expect(durationPayload.elapsed_hours).toBeGreaterThanOrEqual(0)
+
+      // Not-found and no-match results carry structuredContent too, and this client, having listed
+      // the tools, checks every one against the tool's declared outputSchema.
+      const missing = await server!.client.callTool({ name: "get_entry", arguments: { id: "no-such-entry" } })
+      expect(missing.isError).toBe(true)
+      expect(getStructuredContent<{ entry: null }>(missing).entry).toBeNull()
+
+      const noMatch = await server!.client.callTool({
+        name: "query_last_occurrence",
+        arguments: { subject: "nobody-did-this" },
+      })
+      expect(getStructuredContent<{ status: string }>(noMatch).status).toBe("no_match")
     })
   })
 

@@ -41,6 +41,20 @@ const timestamp = (field: string, meaning: string) =>
   isoTimestampString(field).nullable().optional().describe(`${meaning} ${TIMESTAMP_FORMAT}`)
 const nullableNumber = z.union([z.number(), z.null()]).optional()
 
+// The structuredContent each read tool declares. Objects are loose, so a field present only
+// sometimes, or added later, never fails a call that worked; nested items detail only what agents
+// pass back.
+const entry = z.looseObject({ id: z.string() })
+export const entryOutput = z.looseObject({ source: z.string(), entry: entry.nullable() })
+export const entriesOutput = z.looseObject({ source: z.string(), query: z.looseObject({}), entries: z.array(entry) })
+/** query_last_occurrence and query_duration_since: matched, with the entry, or no_match. */
+export const occurrenceOutput = z.looseObject({
+  source: z.string(),
+  query: z.looseObject({}),
+  status: z.enum(["matched", "no_match"]),
+  entry: entry.optional(),
+})
+
 server.registerTool(
   "create_entry",
   {
@@ -117,6 +131,7 @@ server.registerTool(
     inputSchema: {
       id: z.string().describe("Entry ID"),
     },
+    outputSchema: entryOutput,
     annotations: READ,
   },
   async (args) =>
@@ -154,6 +169,7 @@ server.registerTool(
       limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional(),
       offset: offsetArg("entries"),
     },
+    outputSchema: entriesOutput,
     annotations: READ,
   },
   async (args) =>
@@ -176,6 +192,7 @@ server.registerTool(
       object: z.string().optional(),
       keywords: z.array(z.string()).optional(),
     },
+    outputSchema: occurrenceOutput,
     annotations: READ,
   },
   async (args) =>
@@ -201,6 +218,7 @@ server.registerTool(
       object: z.string().optional(),
       keywords: z.array(z.string()).optional(),
     },
+    outputSchema: occurrenceOutput,
     annotations: READ,
   },
   async (args) =>
