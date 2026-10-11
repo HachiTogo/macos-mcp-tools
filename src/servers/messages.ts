@@ -6,6 +6,7 @@ import { join } from "node:path"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
+import { READ, SEND } from "../lib/annotations"
 import { isoDateString, parseLocalDate } from "../lib/dates.js"
 import { runJxa } from "../lib/jxa.js"
 import { errorMessage, runTool, textResult } from "../lib/mcp-result.js"
@@ -446,7 +447,7 @@ server.registerTool(
         .describe("Maximum conversations to return (1–200). Default: 50."),
       offset: offsetArg("conversations"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ limit, offset }) =>
     runTool("list_chats", () => {
@@ -488,7 +489,7 @@ server.registerTool(
           "ISO 8601 date. Only return messages before it. A bare date means local midnight. Example: '2026-02-01'.",
         ),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ chat_id, limit, offset, from_date, to_date }) =>
     runTool("get_messages", () => {
@@ -520,7 +521,7 @@ server.registerTool(
         .describe("Maximum results to return (1–200). Default: 50."),
       offset: offsetArg("messages"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ query, chat_id, limit, offset }) =>
     runTool("search_messages", () => {
@@ -536,7 +537,7 @@ server.registerTool(
     inputSchema: {
       chat_id: z.string().describe("Chat identifier from list_chats."),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ chat_id }) =>
     runTool("get_participants", () => {
@@ -562,6 +563,7 @@ server.registerTool(
         ),
       text: z.string().min(1).describe("Message text to send."),
     },
+    annotations: SEND,
   },
   async ({ to, text }) => {
     let result: SendResult

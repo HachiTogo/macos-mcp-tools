@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
+import { CREATE, DESTRUCTIVE, READ } from "../lib/annotations"
 import {
   CreateCalendarEventSchema,
   calendarRepository,
@@ -171,6 +172,7 @@ server.registerTool(
       limit: z.number().int().min(1).optional().describe("Return at most this many events (all by default)"),
       offset: offsetArg("events"),
     },
+    annotations: READ,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -209,6 +211,7 @@ server.registerTool(
     description:
       "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
     inputSchema: { id: eventId },
+    annotations: READ,
   },
   async ({ id }) =>
     handleAsyncOperation(async () => {
@@ -233,6 +236,7 @@ server.registerTool(
       structured_location: structuredLocation.optional(),
       ...eventFields,
     },
+    annotations: CREATE,
   },
   async ({ calendar, ...rest }) =>
     handleAsyncOperation(async () => {
@@ -268,6 +272,7 @@ server.registerTool(
       clear_recurrence: z.boolean().optional().describe("Remove the recurrence rules"),
       span: span.optional(),
     },
+    annotations: DESTRUCTIVE,
   },
   async ({ calendar, ...rest }) =>
     handleAsyncOperation(async () => {
@@ -296,6 +301,7 @@ server.registerTool(
   {
     description: "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
     inputSchema: { id: eventId, span: span.optional() },
+    annotations: DESTRUCTIVE,
   },
   async ({ id, span }) =>
     handleAsyncOperation(async () => {
@@ -315,6 +321,7 @@ server.registerTool(
   {
     description: "List calendars, to choose one before creating or filtering events.",
     inputSchema: {},
+    annotations: READ,
   },
   async () =>
     handleAsyncOperation(async () => {

@@ -3,7 +3,12 @@
 exports[`tools/list contract mail tools match the snapshot 1`] = `
 [
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -14,7 +19,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -52,7 +62,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -106,7 +121,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Fetch the full body text of a single Apple Mail message by its handle.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -141,7 +161,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Extract all hyperlinks from an Apple Mail message as \`{ url, text }\` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -176,7 +201,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -230,7 +260,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -284,7 +319,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flag_index', 'flagged_status', or 'background_color'.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -362,7 +402,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Lists attachments on a message without downloading content.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -397,7 +442,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Downloads a single attachment and returns its content.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -447,7 +497,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts, except mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, which it never returns. At least one search criterion (subject, sender, after, before) is required.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -505,7 +560,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
     "description": "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -567,7 +627,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
     "description": "Reply to an existing Apple Mail message by handle. Set reply_all=true to reply to all recipients.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -619,7 +684,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
     "description": "Forward an existing Apple Mail message to new recipients.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -699,7 +769,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
 exports[`tools/list contract contacts tools match the snapshot 1`] = `
 [
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List Apple Contacts people, sorted by last name.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -725,7 +800,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Search Apple Contacts people by name or organization.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -759,7 +839,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Get one contact's full details: emails, phones, addresses, note.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -779,7 +864,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a contact.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -849,7 +939,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Update a contact. Only the fields given change; emails and phones are added, never removed.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -927,15 +1022,16 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a contact.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "confirm": {
-          "description": "Must be true to confirm delete",
-          "type": "boolean",
-        },
         "id": {
           "description": "Contact id, as returned by list_contacts or search_contacts",
           "minLength": 1,
@@ -951,7 +1047,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List Apple Contacts groups with their member counts.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -962,7 +1063,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List the members of a contact group.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -982,7 +1088,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a contact group.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1002,15 +1113,16 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a contact group. Its members are not deleted.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "confirm": {
-          "description": "Must be true to confirm delete",
-          "type": "boolean",
-        },
         "group": {
           "description": "Group id or name, as returned by list_contact_groups",
           "minLength": 1,
@@ -1026,7 +1138,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Add a contact to a group.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1052,7 +1169,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Remove a contact from a group. The contact itself is kept.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1084,6 +1206,9 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
 [
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "List all folders in Apple Notes",
@@ -1096,7 +1221,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a new folder in Apple Notes",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1116,6 +1246,9 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "List all notes in a specified Apple Notes folder",
@@ -1151,6 +1284,9 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Get the full content of one note, by id or by title. A title shared by several notes is an error listing their ids.",
@@ -1176,7 +1312,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a new note in a specified Apple Notes folder. Returns the new note's id.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1205,7 +1346,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Replace the body of one note, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1236,7 +1382,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Move one note to another folder, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1267,7 +1418,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Append HTML content to one note without replacing its body, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1298,7 +1454,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete one note, by id or by title. A title shared by several notes is refused, listing their ids.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1322,7 +1483,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a folder and all its notes from Apple Notes",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1342,6 +1508,9 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content. Results carry each note's id.",
@@ -1385,7 +1554,12 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
 exports[`tools/list contract memory tools match the snapshot 1`] = `
 [
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a memory, task, event, or note entry with optional aliases.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1550,7 +1724,12 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Update an existing entry. Only specified fields are changed.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1726,6 +1905,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Fetch a single normalized entry with aliases by ID.",
@@ -1747,6 +1929,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Search entries with deterministic structured filters and keyword fallback.",
@@ -1809,6 +1994,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Return the most recent matching entry using happened_at, start_at, then created_at.",
@@ -1838,6 +2026,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Return the most recent matching entry plus elapsed days and hours.",
@@ -1872,6 +2063,9 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
 [
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "List recent iMessage/SMS conversations with last message preview and participant count.",
@@ -1900,6 +2094,9 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Get message history for a specific conversation. Use the chat_id list_chats shows (phone number, email, or group chat ID like 'chat123456').",
@@ -1943,6 +2140,9 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
@@ -1983,6 +2183,9 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
   },
   {
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
       "readOnlyHint": true,
     },
     "description": "Get participants of a conversation. Useful for identifying group chat members.",
@@ -2003,7 +2206,12 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
     "description": "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat123456789012345678') from list_chats.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2033,7 +2241,12 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
 exports[`tools/list contract events tools match the snapshot 1`] = `
 [
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List calendar events in a date range (the next 14 days by default), optionally filtered by calendar, account, text or availability.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2089,7 +2302,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2109,7 +2327,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a calendar event.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2313,7 +2536,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Update a calendar event. Only the fields given change.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2544,7 +2772,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2572,7 +2805,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List calendars, to choose one before creating or filtering events.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2588,7 +2826,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
 exports[`tools/list contract reminders tools match the snapshot 1`] = `
 [
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List reminders, incomplete ones by default, optionally filtered by list, text, due date, priority, recurrence, location or tags.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2661,7 +2904,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "Get one reminder by id.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2681,7 +2929,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a reminder, optionally with tags and initial subtasks.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2909,7 +3162,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Update a reminder. Only the fields given change; tags and subtasks in its notes are kept.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3165,7 +3423,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a reminder.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3185,7 +3448,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List the reminder lists.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3196,7 +3464,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Create a reminder list.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3220,7 +3493,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Rename a reminder list or change its color.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3248,7 +3526,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a reminder list and its reminders.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3268,7 +3551,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
     "description": "List a reminder's subtasks with their progress.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3288,7 +3576,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Add a subtask to a reminder.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3313,7 +3606,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Rename a subtask or set whether it is completed.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3347,7 +3645,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Flip a subtask between completed and not completed.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3373,7 +3676,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Delete a subtask.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3399,7 +3707,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "outputSchema": undefined,
   },
   {
-    "annotations": undefined,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
     "description": "Reorder a reminder's subtasks.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
