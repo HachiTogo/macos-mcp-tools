@@ -318,7 +318,7 @@ export const updateEntry = (argumentsValue: UpdateEntryArguments) => {
   })
 }
 
-export const selectSearchResults = (entries: NormalizedEntry[], matcher: EntryMatcher, limit: number) => {
+export const selectSearchResults = (entries: NormalizedEntry[], matcher: EntryMatcher, limit: number, offset = 0) => {
   const hasTerms = Boolean(matcher.subject || matcher.action || matcher.object || matcher.keywords?.length)
 
   return entries
@@ -345,7 +345,7 @@ export const selectSearchResults = (entries: NormalizedEntry[], matcher: EntryMa
 
       return compareEntriesForRecency(left.entry, right.entry)
     })
-    .slice(0, limit)
+    .slice(offset, offset + limit)
     .map((item) => item.entry)
 }
 

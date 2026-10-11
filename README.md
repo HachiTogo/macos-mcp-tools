@@ -179,6 +179,8 @@ If the prompt does not appear at all, `doctor` reports the Calendar and Reminder
 
 ## Servers
 
+Every tool that lists or searches your content (mail, contacts, notes, memory entries, chats and messages, events, reminders) pages the same way: `limit` caps the page and `offset` skips that many matches. Tools that list small catalogs, such as accounts, folders, groups, calendars, reminder lists and subtasks, return everything.
+
 ### Mail
 
 Uses a hybrid implementation: direct read-only SQLite queries for fast message reads and searches, plus JXA for actions like fetching bodies, listing attachments, and mutating message state.
@@ -218,6 +220,8 @@ Timestamps (`happened_at`, `start_at`, `end_at`, `due_at`, and the `happened_aft
 Hybrid implementation: direct read-only SQLite queries against `~/Library/Messages/chat.db` for reading and searching, plus JXA for sending messages. Supports both 1:1 and group chat sending. Inspired by [@griches/apple-messages-mcp](https://github.com/griches/apple-mcp) (MIT).
 
 Tools: `list_chats`, `get_messages`, `search_messages`, `get_participants`, `send_message`
+
+`get_messages` returns the newest messages in a chat, oldest first. Its `offset` pages back in time: `offset: 50` skips the 50 newest.
 
 ### Events
 

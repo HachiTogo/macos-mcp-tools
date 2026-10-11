@@ -10,6 +10,7 @@ import {
   normalizeEntry,
   normalizeText,
 } from "./memory/entries"
+import { selectSearchResults } from "./memory/store"
 
 const createEntry = (overrides: Partial<NormalizedEntry> = {}): NormalizedEntry => ({
   id: overrides.id ?? "entry-1",
@@ -298,5 +299,18 @@ describe("memory pure helpers", () => {
         }),
       ),
     ).toBeLessThan(0)
+  })
+})
+
+describe("selectSearchResults", () => {
+  test("pages by offset over the ranked results, with no overlap between pages", () => {
+    const entries = ["a", "b", "c", "d"].map((id, index) =>
+      createEntry({ id, happened_at: `2026-03-0${index + 1}T00:00:00.000Z` }),
+    )
+    const ids = (limit: number, offset?: number) => selectSearchResults(entries, {}, limit, offset).map((e) => e.id)
+    expect(ids(4)).toEqual(["d", "c", "b", "a"])
+    expect(ids(2, 0)).toEqual(["d", "c"])
+    expect(ids(2, 2)).toEqual(["b", "a"])
+    expect(ids(2, 4)).toEqual([])
   })
 })

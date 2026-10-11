@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { runJxa } from "../lib/jxa.js"
 import { jsonResult, runTool } from "../lib/mcp-result.js"
+import { offsetArg } from "../lib/paging"
 
 import { PACKAGE_VERSION } from "../lib/version.js"
 
@@ -294,7 +295,7 @@ const runScript = (operation: string, script: string, args: Record<string, unkno
 const contactId = z.string().min(1).describe("Contact id, as returned by list_contacts or search_contacts")
 const groupName = z.string().min(1).describe("Group name, as returned by list_contact_groups")
 const limit = z.number().int().min(1).max(500).default(100).optional().describe("Max contacts to return")
-const offset = z.number().int().min(0).default(0).optional().describe("Pagination offset")
+const offset = offsetArg("contacts")
 const contactFields = {
   first_name: z.string().optional().describe("First name"),
   last_name: z.string().optional().describe("Last name"),

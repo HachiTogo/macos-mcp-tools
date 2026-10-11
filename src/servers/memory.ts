@@ -4,6 +4,7 @@ import { z } from "zod"
 
 import { isoTimestampString } from "../lib/dates"
 import { jsonResult, runTool, textResult } from "../lib/mcp-result"
+import { offsetArg } from "../lib/paging"
 import { PACKAGE_VERSION } from "../lib/version"
 import {
   type CreateEntryArguments,
@@ -149,6 +150,7 @@ server.registerTool(
         .describe(`Only entries that happened on or before this. ${TIMESTAMP_FORMAT}`),
       keywords: z.array(z.string()).optional(),
       limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional(),
+      offset: offsetArg("entries"),
     },
     annotations: { readOnlyHint: true },
   },
@@ -157,7 +159,7 @@ server.registerTool(
       const limit = args.limit ?? DEFAULT_LIMIT
       const searchArgs: SearchEntriesArguments = { ...args, limit }
       const entries = listEntries(getDatabase(), searchArgs)
-      const results = selectSearchResults(entries, searchArgs, limit)
+      const results = selectSearchResults(entries, searchArgs, limit, args.offset)
       return jsonResult({ source: SOURCE_NAME, query: searchArgs, entries: results })
     }),
 )

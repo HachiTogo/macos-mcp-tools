@@ -9,6 +9,7 @@ import { z } from "zod"
 import { isoDateString, parseLocalDate } from "../lib/dates.js"
 import { runJxa } from "../lib/jxa.js"
 import { errorMessage, runTool, textResult } from "../lib/mcp-result.js"
+import { offsetArg } from "../lib/paging"
 import { PACKAGE_VERSION } from "../lib/version"
 
 // ── Constants ─────────────────────────────────────────────────────────
@@ -159,7 +160,9 @@ const withDb = <T>(database: Database | undefined, fn: (db: Database) => T): T =
 
 // ── Query functions ───────────────────────────────────────────────────
 
-export const listChats = (limit: number, database?: Database): NormalizedChat[] =>
+type Page = { limit: number; offset: number }
+
+export const listChats = ({ limit, offset }: Page, database?: Database): NormalizedChat[] =>
   withDb(database, (db) => {
     const rows = db
       .query(`
@@ -187,9 +190,9 @@ export const listChats = (limit: number, database?: Database): NormalizedChat[] 
         SELECT 1 FROM chat_message_join cmj WHERE cmj.chat_id = c.ROWID
       )
       ORDER BY lastMessageDate DESC
-      LIMIT ?
+      LIMIT ? OFFSET ?
     `)
-      .all(limit) as ChatRow[]
+      .all(limit, offset) as ChatRow[]
 
     return rows.map((row) => {
       const lastText = resolveText({ text: row.lastMessageText, attributedBody: row.lastMessageBody })
@@ -208,9 +211,7 @@ export const listChats = (limit: number, database?: Database): NormalizedChat[] 
 
 export const getMessages = (
   chatIdentifier: string,
-  limit: number,
-  fromDate?: string,
-  toDate?: string,
+  { limit, offset, fromDate, toDate }: Page & { fromDate?: string; toDate?: string },
   database?: Database,
 ): NormalizedMessage[] =>
   withDb(database, (db) => {
@@ -226,7 +227,7 @@ export const getMessages = (
       params.push(isoToAppleNanos(toDate))
     }
 
-    params.push(limit)
+    params.push(limit, offset)
 
     const rows = db
       .query(`
@@ -246,7 +247,7 @@ export const getMessages = (
       LEFT JOIN handle h ON m.handle_id = h.ROWID
       WHERE ${conditions.join(" AND ")}
       ORDER BY m.date DESC
-      LIMIT ?
+      LIMIT ? OFFSET ?
     `)
       .all(...params) as MessageRow[]
 
@@ -264,8 +265,7 @@ export const getMessages = (
 
 export const searchMessages = (
   query: string,
-  limit: number,
-  chatIdentifier?: string,
+  { limit, offset, chatIdentifier }: Page & { chatIdentifier?: string },
   database?: Database,
 ): (NormalizedMessage & { chatId: string })[] =>
   withDb(database, (db) => {
@@ -283,7 +283,9 @@ export const searchMessages = (
       params.push(chatIdentifier)
     }
 
-    const statement = db.query(`
+    // prepare, not query: query caches the statement, and one the early break leaves mid-iteration
+    // cannot be iterated again on the same connection.
+    const statement = db.prepare(`
       SELECT
         m.ROWID            AS rowid,
         m.guid             AS guid,
@@ -305,21 +307,31 @@ export const searchMessages = (
 
     const needle = query.toLowerCase()
     const results: (NormalizedMessage & { chatId: string })[] = []
-    for (const row of statement.iterate(...params) as IterableIterator<MessageRow & { chatIdentifier: string }>) {
-      const text = resolveText(row)
-      if (!text?.toLowerCase().includes(needle)) continue
-      results.push({
-        id: row.rowid,
-        text,
-        isFromMe: row.isFromMe === 1,
-        sender: row.isFromMe === 1 ? "me" : row.senderId || "unknown",
-        date: appleNanosToIso(row.date),
-        dateLocal: appleNanosToLocal(row.date),
-        isRead: row.isRead === 1,
-        chatId: row.chatIdentifier,
-        source: SOURCE_NAME,
-      })
-      if (results.length >= limit) break
+    // Matching happens here, not in SQL, so the offset counts matches rather than rows.
+    let skipped = 0
+    try {
+      for (const row of statement.iterate(...params) as IterableIterator<MessageRow & { chatIdentifier: string }>) {
+        const text = resolveText(row)
+        if (!text?.toLowerCase().includes(needle)) continue
+        if (skipped < offset) {
+          skipped++
+          continue
+        }
+        results.push({
+          id: row.rowid,
+          text,
+          isFromMe: row.isFromMe === 1,
+          sender: row.isFromMe === 1 ? "me" : row.senderId || "unknown",
+          date: appleNanosToIso(row.date),
+          dateLocal: appleNanosToLocal(row.date),
+          isRead: row.isRead === 1,
+          chatId: row.chatIdentifier,
+          source: SOURCE_NAME,
+        })
+        if (results.length >= limit) break
+      }
+    } finally {
+      statement.finalize()
     }
     return results
   })
@@ -431,12 +443,13 @@ server.registerTool(
         .default(DEFAULT_LIMIT)
         .optional()
         .describe("Maximum conversations to return (1–200). Default: 50."),
+      offset: offsetArg("conversations"),
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ limit }) =>
+  async ({ limit, offset }) =>
     runTool("list_chats", () => {
-      const chats = listChats(limit ?? DEFAULT_LIMIT)
+      const chats = listChats({ limit: limit ?? DEFAULT_LIMIT, offset })
       return textResult(formatChatList(chats), { source: SOURCE_NAME, chats })
     }),
 )
@@ -460,6 +473,9 @@ server.registerTool(
         .default(DEFAULT_LIMIT)
         .optional()
         .describe("Maximum messages to return (1–200). Default: 50."),
+      offset: offsetArg("messages").describe(
+        "Skip this many of the newest matching messages; use with limit to page back in time. Each page is in chronological order.",
+      ),
       from_date: isoDateString("from_date")
         .optional()
         .describe(
@@ -473,9 +489,14 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ chat_id, limit, from_date, to_date }) =>
+  async ({ chat_id, limit, offset, from_date, to_date }) =>
     runTool("get_messages", () => {
-      const messages = getMessages(chat_id, limit ?? DEFAULT_LIMIT, from_date, to_date)
+      const messages = getMessages(chat_id, {
+        limit: limit ?? DEFAULT_LIMIT,
+        offset,
+        fromDate: from_date,
+        toDate: to_date,
+      })
       return textResult(formatMessages(messages, chat_id), { source: SOURCE_NAME, chatId: chat_id, messages })
     }),
 )
@@ -496,12 +517,13 @@ server.registerTool(
         .default(DEFAULT_LIMIT)
         .optional()
         .describe("Maximum results to return (1–200). Default: 50."),
+      offset: offsetArg("messages"),
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ query, chat_id, limit }) =>
+  async ({ query, chat_id, limit, offset }) =>
     runTool("search_messages", () => {
-      const results = searchMessages(query, limit ?? DEFAULT_LIMIT, chat_id)
+      const results = searchMessages(query, { limit: limit ?? DEFAULT_LIMIT, offset, chatIdentifier: chat_id })
       return textResult(formatSearchResults(results, query), { source: SOURCE_NAME, query, results })
     }),
 )
