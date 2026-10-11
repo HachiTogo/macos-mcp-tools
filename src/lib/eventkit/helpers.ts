@@ -103,6 +103,26 @@ export async function handleAsyncOperation(
 
 // Shared handler helpers
 
+/**
+ * The tools take snake_case arguments, nested objects included; the validation schemas and the
+ * repositories below them use camelCase. Converting at the tool boundary leaves both unchanged.
+ */
+export const camelizeKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(camelizeKeys)
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, inner]) => [
+        key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()),
+        camelizeKeys(inner),
+      ]),
+    )
+  }
+  return value
+}
+
+/** Validates already-camelized tool arguments against an EventKit schema. */
+export const validateToolArgs = <T>(args: unknown, schema: z.ZodType<T>): T => validateInput(schema, args)
+
 export const extractAndValidateArgs = <T>(
   args: RemindersToolArgs | ListsToolArgs | SubtasksToolArgs | CalendarToolArgs | CalendarsToolArgs | undefined,
   schema: z.ZodType<T>,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { CliUserError, createErrorMessage, nullToUndefined } from "./helpers.js"
+import { CliUserError, camelizeKeys, createErrorMessage, nullToUndefined } from "./helpers.js"
 import { ValidationError } from "./schemas.js"
 
 describe("helpers", () => {
@@ -99,6 +99,26 @@ describe("helpers", () => {
     it("never hides the detail behind a generic string", () => {
       expect(createErrorMessage("update event", new Error("boom"))).toBe("update event failed: boom")
       expect(createErrorMessage("update event", "not an Error object")).toBe("update event failed: not an Error object")
+    })
+  })
+})
+
+describe("camelizeKeys", () => {
+  it("converts snake_case keys at every depth and leaves values alone", () => {
+    expect(
+      camelizeKeys({
+        start_date: "2026-10-10 09:00:00",
+        is_all_day: false,
+        alarms: [{ relative_offset: -600, location_trigger: { title: "Home", proximity: "enter" } }],
+        recurrence_rules: [{ frequency: "weekly", days_of_week: [2, 4] }],
+        note: "keep_this_value",
+      }),
+    ).toEqual({
+      startDate: "2026-10-10 09:00:00",
+      isAllDay: false,
+      alarms: [{ relativeOffset: -600, locationTrigger: { title: "Home", proximity: "enter" } }],
+      recurrenceRules: [{ frequency: "weekly", daysOfWeek: [2, 4] }],
+      note: "keep_this_value",
     })
   })
 })

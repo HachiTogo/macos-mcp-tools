@@ -223,7 +223,7 @@ Tools: `list_chats`, `get_messages`, `search_messages`, `get_participants`, `sen
 
 Manages Apple Calendar events via a compiled Swift binary using EventKit. Supports full CRUD with structured locations, alarms, recurrence rules, and availability status.
 
-Tools: `calendar_events`, `calendar_calendars`
+Tools: `list_events`, `get_event`, `create_event`, `update_event`, `delete_event`, `list_calendars`
 
 ### Reminders
 
@@ -288,7 +288,7 @@ Follow-ups: *"Mark the toner one done"* (`reminders_tasks` with `action: "update
 
 ### "What's on my calendar tomorrow?"
 
-Claude calls `calendar_events` on `apple_events` with `{ "action": "read", "startDate": "2026-09-19 00:00:00", "endDate": "2026-09-20 00:00:00" }`:
+Claude calls `list_events` on `apple_events` with `{ "start_date": "2026-09-19 00:00:00", "end_date": "2026-09-20 00:00:00" }`:
 
 ```text
 ### Calendar Events (Total: 2)
@@ -324,7 +324,7 @@ Found 2 message(s) matching "Saturday":
 
 > Yes. Dana asked last night if Saturday is still on and suggested 7am from the ferry; you replied that 7 works and to bring lights. Want me to add it to the Family calendar?
 
-Follow-up: *"Yes, 7 to 10, call it Group ride"* (`calendar_events` with `action: "create"`).
+Follow-up: *"Yes, 7 to 10, call it Group ride"* (`create_event`).
 
 ### "Save a note with the three action items from today's review"
 
