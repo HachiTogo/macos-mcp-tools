@@ -33,6 +33,7 @@
 ## Testing Reality
 - Unit tests cover pure helpers in `src/lib/` and every server except contacts, events and reminders.
 - `src/integration/servers.integration.test.ts` snapshots every server's `tools/list`; refresh intended changes with `RUN_INTEGRATION_TESTS=1 bun test src/integration -u`. Live-app cases need `RUN_APP_INTEGRATION_TESTS=1`.
+- The same suite caps serialized `tools/list` at `SCHEMA_BUDGET_BYTES`. Growth past it fails, and so does shrinking more than 1 KB below it; change the constant on purpose, never to silence the test.
 - No coverage for live JXA or EventKit behavior (`contacts`, `notes`, `messages`, `events`, `reminders`, mail mutations). Verify manually and say so in the PR.
 
 ## External Dependencies
