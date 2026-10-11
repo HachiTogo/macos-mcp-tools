@@ -44,8 +44,7 @@ flowchart LR
 - macOS 14 (Sonoma) or newer, on Apple Silicon or Intel
 - [Bun](https://bun.sh) 1.0+
 - Optional: `pdftotext` for PDF attachment text extraction
-- Full Disk Access for the host process (required by the mail server to read `~/Library/Mail/V10/MailData/Envelope Index` and by the messages server to read `~/Library/Messages/chat.db`)
-- Automation permission for Mail, Contacts, Notes and Messages; macOS prompts on first use of each
+- macOS permissions for the app that launches the servers, listed per server under [Permissions](#permissions)
 - Xcode Command Line Tools, only to build the EventKitCLI Swift binary with `bun run build:swift`. Installs from npm ship a prebuilt universal `bin/EventKitCLI` covering both architectures; a git checkout does not, because the binary is built by CI rather than committed.
 
 Install Bun with Homebrew:
@@ -59,6 +58,22 @@ Optional dependency for PDF extraction:
 ```bash
 brew install poppler
 ```
+
+### Permissions
+
+macOS grants each permission to the app that launches the servers (Claude Desktop, Cursor, or your terminal for Claude Code and OpenCode), and asks the first time a server needs it. Full Disk Access is never prompted: enable it yourself under System Settings → Privacy & Security.
+
+| Server | Needs | Why |
+|---|---|---|
+| `mail` | Full Disk Access; Automation for Mail | Reads Mail's Envelope Index; marks, flags, fetches and sends through Mail |
+| `messages` | Full Disk Access; Automation for Messages | Reads `chat.db`; sends through Messages |
+| `contacts` | Automation for Contacts | Every call goes through Contacts |
+| `notes` | Automation for Notes | Every call goes through Notes |
+| `events` | Calendars | `EventKitCLI` reads and writes calendars (see below on re-granting after updates) |
+| `reminders` | Reminders | `EventKitCLI` reads and writes reminders |
+| `memory` | None | Its own SQLite file in the data directory |
+
+`doctor` checks Full Disk Access and Calendar and Reminders access.
 
 ## Quick Start
 
@@ -130,7 +145,27 @@ for s in mail contacts notes memory messages events reminders; do claude mcp add
 }
 ```
 
-### 5. Check your setup
+### 5. Configure Cursor
+
+Edit `~/.cursor/mcp.json` (or `.cursor/mcp.json` in a project). It takes the same shape as Claude Desktop, with the path from step 1:
+
+```json
+{
+  "mcpServers": {
+    "apple_mail":      { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["mail"] },
+    "apple_contacts":  { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["contacts"] },
+    "apple_notes":     { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["notes"] },
+    "memory":          { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["memory"] },
+    "apple_messages":  { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["messages"] },
+    "apple_events":    { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["events"] },
+    "apple_reminders": { "command": "/Users/<you>/.cache/.bun/bin/macos-mcp-tools", "args": ["reminders"] }
+  }
+}
+```
+
+Cursor gets its own grants for the permissions listed under [Permissions](#permissions), even if Terminal already has them.
+
+### 6. Check your setup
 
 ```bash
 "$(bun pm bin -g)/macos-mcp-tools" doctor
@@ -153,7 +188,7 @@ for s in mail contacts notes memory messages events reminders; do claude mcp add
 
 Calendar and Reminders access is granted per launching app, so a warning there from Terminal does not mean the host is affected.
 
-### 6. Updating
+### 7. Updating
 
 A global install does not update itself. After a new release, clear Bun's cached registry metadata first, then reinstall:
 

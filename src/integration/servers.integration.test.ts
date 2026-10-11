@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
-import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -24,6 +24,24 @@ const HINTS = ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHi
 const MUST_BE_DESTRUCTIVE = /^(send|reply|forward|delete|remove)_|^mark_emails_junk$/
 
 type ServerName = (typeof SERVERS)[number]
+
+const README_SECTION: Record<ServerName, string> = {
+  mail: "Mail",
+  contacts: "Contacts",
+  notes: "Notes",
+  memory: "Memory",
+  messages: "Messages",
+  events: "Events",
+  reminders: "Reminders",
+}
+
+/** The tools a server's README section names on its "Tools:" line, so the docs cannot drift. */
+const readmeTools = (serverName: ServerName): string[] => {
+  const readme = readFileSync(join(REPO_ROOT, "README.md"), "utf8")
+  const section = readme.split(`\n### ${README_SECTION[serverName]}\n`)[1]?.split(/\n##+ /)[0] ?? ""
+  const line = section.split("\n").find((text) => text.startsWith("Tools: ")) ?? ""
+  return [...line.matchAll(/`([a-z_]+)`/g)].map((match) => match[1] as string).sort()
+}
 
 type TestServer = {
   client: Client
@@ -126,6 +144,10 @@ if (!RUN_INTEGRATION_TESTS) {
             annotations,
           }))
           expect(contract).toMatchSnapshot()
+          expect({ serverName, readme: readmeTools(serverName) }).toEqual({
+            serverName,
+            readme: tools.map((tool) => tool.name).sort(),
+          })
           for (const { name, annotations, inputSchema } of tools) {
             const unset = HINTS.filter((hint) => typeof annotations?.[hint] !== "boolean")
             expect({ name, unset }).toEqual({ name, unset: [] })
