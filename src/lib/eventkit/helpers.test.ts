@@ -1,5 +1,12 @@
 import { describe, expect, it } from "bun:test"
-import { CliUserError, camelizeKeys, createErrorMessage, formatListMarkdown, nullToUndefined } from "./helpers.js"
+import {
+  CliUserError,
+  camelizeKeys,
+  createErrorMessage,
+  formatListMarkdown,
+  nullToUndefined,
+  snakeKeys,
+} from "./helpers.js"
 import { ValidationError } from "./schemas.js"
 
 describe("helpers", () => {
@@ -120,6 +127,30 @@ describe("camelizeKeys", () => {
       recurrenceRules: [{ frequency: "weekly", daysOfWeek: [2, 4] }],
       note: "keep_this_value",
     })
+  })
+})
+
+describe("snakeKeys", () => {
+  const event = {
+    startDate: "2026-10-10 09:00:00",
+    isAllDay: false,
+    alarms: [{ relativeOffset: -600, locationTrigger: { title: "Home", proximity: "enter" } }],
+    recurrenceRules: [{ frequency: "weekly", daysOfWeek: [2, 4], occurrenceCount: 3 }],
+    note: "keep_thisValue",
+  }
+
+  it("converts camelCase keys at every depth and leaves values alone", () => {
+    expect(snakeKeys(event)).toEqual({
+      start_date: "2026-10-10 09:00:00",
+      is_all_day: false,
+      alarms: [{ relative_offset: -600, location_trigger: { title: "Home", proximity: "enter" } }],
+      recurrence_rules: [{ frequency: "weekly", days_of_week: [2, 4], occurrence_count: 3 }],
+      note: "keep_thisValue",
+    })
+  })
+
+  it("round-trips through camelizeKeys, so a value read back can be passed to an update", () => {
+    expect(camelizeKeys(snakeKeys(event))).toEqual(event)
   })
 })
 
