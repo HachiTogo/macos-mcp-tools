@@ -2,13 +2,6 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import type { z } from "zod"
 import { errorMessage, textResult } from "../mcp-result.js"
 import { validateInput } from "./schemas.js"
-import type {
-  CalendarsToolArgs,
-  CalendarToolArgs,
-  ListsToolArgs,
-  RemindersToolArgs,
-  SubtasksToolArgs,
-} from "./types.js"
 
 // CLI argument helpers
 
@@ -122,14 +115,6 @@ export const camelizeKeys = (value: unknown): unknown => {
 
 /** Validates already-camelized tool arguments against an EventKit schema. */
 export const validateToolArgs = <T>(args: unknown, schema: z.ZodType<T>): T => validateInput(schema, args)
-
-export const extractAndValidateArgs = <T>(
-  args: RemindersToolArgs | ListsToolArgs | SubtasksToolArgs | CalendarToolArgs | CalendarsToolArgs | undefined,
-  schema: z.ZodType<T>,
-): T => {
-  const { action: _, ...rest } = args ?? {}
-  return validateInput(schema, rest)
-}
 
 export const formatListMarkdown = <T>(
   title: string,
