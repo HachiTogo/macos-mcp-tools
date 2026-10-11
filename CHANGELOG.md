@@ -24,6 +24,11 @@ Arguments are snake_case throughout, nested ones included: calendar `startDate`,
 | `calendar_events` `read` with `id` | `get_event` |
 | `calendar_events` `create` / `update` / `delete` | `create_event` / `update_event` / `delete_event` |
 | `calendar_calendars` `read` | `list_calendars` |
+| `reminders_tasks` `read` (no `id`) | `list_reminders` (`list`, `show_completed`, `search`, `due_within`, `priority`, `recurring`, `location_based`, `tags`, new `limit`) |
+| `reminders_tasks` `read` with `id` | `get_reminder` |
+| `reminders_tasks` `create` / `update` / `delete` | `create_reminder` / `update_reminder` / `delete_reminder` (`list` replaces `targetList`; the single `recurrence` object is gone, use `recurrence_rules`) |
+| `reminders_lists` `read` / `create` / `update` / `delete` | `list_reminder_lists` / `create_reminder_list` / `update_reminder_list` (`new_name`) / `delete_reminder_list` |
+| `reminders_subtasks` `read` / `create` / `update` / `toggle` / `delete` / `reorder` | `list_subtasks` / `add_subtask` / `update_subtask` / `toggle_subtask` / `delete_subtask` / `reorder_subtasks` (`reminder_id`, `subtask_id`) |
 
 ### Changed
 - **EventKit permission failures are identified by code.** The Swift CLI now marks them `code: "permission_denied"` with `domain` `calendars` or `reminders`, replacing eight regular expressions over the message text. The unused binary path and hash checks (`SWIFT_BINARY_HASH` was never set) are removed; a missing binary is reported as before.
