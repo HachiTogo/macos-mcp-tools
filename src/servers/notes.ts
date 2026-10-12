@@ -288,17 +288,15 @@ export const requireNoteRef = ({ id, title }: { id?: string; title?: string }) =
   if (!id && !title) throw new Error("Pass the note's id or its title.")
 }
 
-const noteId = z
-  .string()
-  .optional()
-  .describe("Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.")
+// Descriptions say only what a field's name and type cannot.
+const noteId = z.string().optional().describe("From list_notes or search_notes; exact, unlike a title")
 
 const noteTitle = z
   .string()
   .optional()
-  .describe(
-    "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
-  )
+  .describe("Must match one note, or the error lists each match's id. Recently Deleted counts only as the folder")
+
+const titleFolder = z.string().optional().describe("Narrows a title lookup")
 
 // The structuredContent each read tool declares. Objects are loose, so a field present only
 // sometimes, or added later, never fails a call that worked; nested items detail only what agents
@@ -325,7 +323,7 @@ const server = new McpServer({
 server.registerTool(
   "list_folders",
   {
-    description: "List all folders in Apple Notes",
+    description: "Notes folders, with note counts.",
     inputSchema: {},
     outputSchema: foldersOutput,
     annotations: READ,
@@ -336,9 +334,9 @@ server.registerTool(
 server.registerTool(
   "create_folder",
   {
-    description: "Create a new folder in Apple Notes",
+    description: "Create a Notes folder.",
     inputSchema: {
-      name: z.string().describe("Folder name"),
+      name: z.string(),
     },
     annotations: CREATE,
   },
@@ -348,11 +346,11 @@ server.registerTool(
 server.registerTool(
   "list_notes",
   {
-    description: "List all notes in a specified Apple Notes folder",
+    description: "The notes in a folder, with a text snippet each.",
     inputSchema: {
-      folder: z.string().describe("Folder name"),
-      limit: z.number().int().min(1).max(500).default(50).describe("Max notes to return"),
-      offset: offsetArg("notes"),
+      folder: z.string(),
+      limit: z.number().int().min(1).max(500).default(50),
+      offset: offsetArg,
     },
     outputSchema: notesPageOutput,
     annotations: READ,
@@ -364,12 +362,11 @@ server.registerTool(
 server.registerTool(
   "get_note",
   {
-    description:
-      "Get the full content of one note, by id or by title. A title shared by several notes is an error listing their ids.",
+    description: "A note's full HTML content, by id or title.",
     inputSchema: {
       id: noteId,
       title: noteTitle,
-      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
+      folder: titleFolder,
     },
     outputSchema: noteOutput,
     annotations: READ,
@@ -384,11 +381,11 @@ server.registerTool(
 server.registerTool(
   "create_note",
   {
-    description: "Create a new note in a specified Apple Notes folder. Returns the new note's id.",
+    description: "Create a note in a folder; returns its id.",
     inputSchema: {
-      title: z.string().describe("Note title"),
-      body: z.string().describe("HTML body content"),
-      folder: z.string().describe("Folder name"),
+      title: z.string(),
+      body: z.string().describe("HTML"),
+      folder: z.string(),
     },
     annotations: CREATE,
   },
@@ -399,13 +396,12 @@ server.registerTool(
 server.registerTool(
   "update_note",
   {
-    description:
-      "Replace the body of one note, by id or by title. A title shared by several notes is refused, listing their ids.",
+    description: "Replace a note's body, by id or title.",
     inputSchema: {
       id: noteId,
       title: noteTitle,
-      body: z.string().describe("New HTML body content"),
-      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
+      body: z.string().describe("HTML"),
+      folder: titleFolder,
     },
     annotations: DESTRUCTIVE,
   },
@@ -419,13 +415,12 @@ server.registerTool(
 server.registerTool(
   "move_note",
   {
-    description:
-      "Move one note to another folder, by id or by title. A title shared by several notes is refused, listing their ids.",
+    description: "Move a note to another folder, by id or title.",
     inputSchema: {
       id: noteId,
       title: noteTitle,
-      from_folder: z.string().optional().describe("Source folder name (optional); narrows a title lookup"),
-      to_folder: z.string().describe("Target folder name"),
+      from_folder: titleFolder,
+      to_folder: z.string(),
     },
     annotations: SET,
   },
@@ -439,13 +434,12 @@ server.registerTool(
 server.registerTool(
   "append_to_note",
   {
-    description:
-      "Append HTML content to one note without replacing its body, by id or by title. A title shared by several notes is refused, listing their ids.",
+    description: "Append HTML to a note, by id or title, keeping its body.",
     inputSchema: {
       id: noteId,
       title: noteTitle,
-      content: z.string().describe("HTML content to append"),
-      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
+      content: z.string().describe("HTML"),
+      folder: titleFolder,
     },
     annotations: CREATE,
   },
@@ -459,11 +453,11 @@ server.registerTool(
 server.registerTool(
   "delete_note",
   {
-    description: "Delete one note, by id or by title. A title shared by several notes is refused, listing their ids.",
+    description: "Delete a note, by id or title.",
     inputSchema: {
       id: noteId,
       title: noteTitle,
-      folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
+      folder: titleFolder,
     },
     annotations: DESTRUCTIVE,
   },
@@ -477,9 +471,9 @@ server.registerTool(
 server.registerTool(
   "delete_folder",
   {
-    description: "Delete a folder and all its notes from Apple Notes",
+    description: "Delete a folder and every note in it.",
     inputSchema: {
-      name: z.string().describe("Folder name"),
+      name: z.string(),
     },
     annotations: DESTRUCTIVE,
   },
@@ -489,13 +483,12 @@ server.registerTool(
 server.registerTool(
   "search_notes",
   {
-    description:
-      "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content. Results carry each note's id.",
+    description: "Search note titles and text, in every folder or one; results carry ids.",
     inputSchema: {
-      query: z.string().describe("Search query"),
-      folder: z.string().optional().describe("Folder name to scope search (optional)"),
-      limit: z.number().int().min(1).max(200).default(20).describe("Max results to return"),
-      offset: offsetArg("notes"),
+      query: z.string(),
+      folder: z.string().optional(),
+      limit: z.number().int().min(1).max(200).default(20),
+      offset: offsetArg,
     },
     outputSchema: noteSearchOutput,
     annotations: READ,

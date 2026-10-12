@@ -9,7 +9,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
+    "description": "Mail accounts and mailboxes, with unread counts. The provider and mailbox filters take values from here; one that matches nothing returns no mail, not an error.",
     "inputSchema": {
       "properties": {},
       "type": "object",
@@ -76,28 +76,26 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Read unread Apple Mail messages without fetching bodies. Counts every unread message, in every category. For Gmail, that means mail in the inbox or under any label; archived mail with no label is left out, and each message is reported under its label rather than as INBOX.",
+    "description": "Unread messages in every category, without bodies. Gmail mail counts in the inbox or under a label, is reported under its label, and archived mail is left out.",
     "inputSchema": {
       "properties": {
         "limit": {
           "default": 25,
-          "description": "Maximum number of messages to return (1–100). Default: 25.",
           "maximum": 100,
           "minimum": 1,
           "type": "integer",
         },
         "mailbox": {
-          "description": "Substring filter on mailbox name or URL (e.g. 'INBOX', 'work').",
+          "description": "Substring of a mailbox name or URL",
           "type": "string",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching messages before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
         "provider": {
-          "description": "Only accounts with this provider, as list_mail_accounts reports it (e.g. 'gmail', 'icloud', 'unknown').",
+          "description": "From list_mail_accounts, e.g. 'gmail'",
           "minLength": 1,
           "type": "string",
         },
@@ -183,11 +181,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
+    "description": "Mark messages read. Pass the email objects list_unread_emails or search_emails returned, not bare handles.",
     "inputSchema": {
       "properties": {
         "emails": {
-          "description": "Array of email objects to mark as read.",
           "items": {
             "properties": {
               "handle": {
@@ -241,11 +238,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Fetch the full body text of a single Apple Mail message by its handle.",
+    "description": "A message's full body text.",
     "inputSchema": {
       "properties": {
         "handle": {
-          "description": "Email handle identifying the message.",
           "properties": {
             "account_id": {
               "type": "string",
@@ -318,11 +314,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Extract all hyperlinks from an Apple Mail message as \`{ url, text }\` pairs. Reads the raw HTML source server-side (never returned to the caller) and returns just the link pairs. Use this when you need URLs for navigation, link auditing, or extracting actionable links from marketing emails.",
+    "description": "A message's links as { url, text } pairs, read from its HTML source; the HTML itself is not returned.",
     "inputSchema": {
       "properties": {
         "handle": {
-          "description": "Email handle identifying the message.",
           "properties": {
             "account_id": {
               "type": "string",
@@ -414,11 +409,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
+    "description": "Mark messages as junk. Pass the email objects list_unread_emails or search_emails returned, not bare handles.",
     "inputSchema": {
       "properties": {
         "emails": {
-          "description": "Array of email objects to mark as junk.",
           "items": {
             "properties": {
               "handle": {
@@ -472,11 +466,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
+    "description": "Mark messages as not junk. Pass the email objects list_unread_emails or search_emails returned, not bare handles.",
     "inputSchema": {
       "properties": {
         "emails": {
-          "description": "Array of email objects to mark as not junk.",
           "items": {
             "properties": {
               "handle": {
@@ -530,15 +523,13 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flag_index', 'flagged_status', or 'background_color'.",
+    "description": "Set flag color, flagged status or background color. Each item needs id, handle and at least one of the three.",
     "inputSchema": {
       "properties": {
         "emails": {
-          "description": "Array of email objects to flag.",
           "items": {
             "properties": {
               "background_color": {
-                "description": "Message background color in Mail.app.",
                 "enum": [
                   "blue",
                   "gray",
@@ -552,13 +543,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
                 "type": "string",
               },
               "flag_index": {
-                "description": "Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray",
+                "description": "-1 none, 0 red, 1 orange, 2 yellow, 3 green, 4 blue, 5 purple, 6 gray",
                 "maximum": 6,
                 "minimum": -1,
                 "type": "integer",
               },
               "flagged_status": {
-                "description": "Set flagged status directly. true=flagged, false=unflagged.",
                 "type": "boolean",
               },
               "handle": {
@@ -612,11 +602,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Lists attachments on a message without downloading content.",
+    "description": "A message's attachment names, without downloading them.",
     "inputSchema": {
       "properties": {
         "handle": {
-          "description": "Email handle identifying the message.",
           "properties": {
             "account_id": {
               "type": "string",
@@ -696,17 +685,16 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Downloads a single attachment and returns its content.",
+    "description": "One attachment's content: text (PDFs through pdftotext) or base64.",
     "inputSchema": {
       "properties": {
         "attachment_name": {
-          "description": "Name of the attachment to fetch, as listed by list_email_attachments.",
+          "description": "As list_email_attachments lists it",
           "minLength": 1,
           "type": "string",
         },
         "format": {
           "default": "text",
-          "description": "Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'.",
           "enum": [
             "text",
             "base64",
@@ -714,7 +702,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "string",
         },
         "handle": {
-          "description": "Email handle identifying the message.",
           "properties": {
             "account_id": {
               "type": "string",
@@ -800,49 +787,46 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Search emails by subject, sender, and/or date range. Returns matching emails from all accounts, except mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox, which it never returns. At least one search criterion (subject, sender, after, before) is required.",
+    "description": "Search every account by subject, sender or date; at least one is required. Never returns mail in Junk, Spam, Trash, Deleted Messages, Sent Messages, Sent Mail, Drafts or Outbox.",
     "inputSchema": {
       "properties": {
         "after": {
-          "description": "ISO 8601 date. Only return emails received on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2025-01-15' or '2025-01-15T09:00:00Z'.",
+          "description": "ISO 8601, inclusive; a bare date is local midnight",
           "type": "string",
         },
         "before": {
-          "description": "ISO 8601 date. Only return emails received strictly before it. A bare date means local midnight. Example: '2025-03-01'.",
+          "description": "ISO 8601, exclusive",
           "type": "string",
         },
         "limit": {
           "default": 25,
-          "description": "Maximum number of results to return (1–100). Default: 25.",
           "maximum": 100,
           "minimum": 1,
           "type": "integer",
         },
         "mailbox": {
-          "description": "Substring filter on mailbox name or URL (e.g. 'INBOX', 'work').",
+          "description": "Substring of a mailbox name or URL",
           "type": "string",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching messages before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
         "provider": {
-          "description": "Only accounts with this provider, as list_mail_accounts reports it (e.g. 'gmail', 'icloud', 'unknown').",
+          "description": "From list_mail_accounts, e.g. 'gmail'",
           "minLength": 1,
           "type": "string",
         },
         "sender": {
-          "description": "Substring to match in the sender email address or display name.",
+          "description": "Substring of the address or name",
           "type": "string",
         },
         "subject": {
-          "description": "Substring to match in the email subject line.",
+          "description": "Substring",
           "type": "string",
         },
         "unread_only": {
-          "description": "If true, only return unread emails. Defaults to false.",
           "type": "boolean",
         },
       },
@@ -927,11 +911,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": true,
       "readOnlyHint": false,
     },
-    "description": "Compose and send a new email via Apple Mail. Requires at least one 'to' recipient. Plain text body only.",
+    "description": "Send a new plain-text email.",
     "inputSchema": {
       "properties": {
         "bcc": {
-          "description": "BCC recipient email addresses.",
           "items": {
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
@@ -940,13 +923,11 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "array",
         },
         "body": {
-          "description": "Plain text email body.",
           "maxLength": 1000000,
           "minLength": 1,
           "type": "string",
         },
         "cc": {
-          "description": "CC recipient email addresses.",
           "items": {
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
@@ -955,18 +936,16 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "array",
         },
         "from": {
-          "description": "Optional sender email address. Must match an enabled account.",
+          "description": "Must match an enabled account",
           "format": "email",
           "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
           "type": "string",
         },
         "subject": {
-          "description": "Email subject line.",
           "minLength": 1,
           "type": "string",
         },
         "to": {
-          "description": "Recipient email addresses. At least one required.",
           "items": {
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
@@ -993,23 +972,21 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": true,
       "readOnlyHint": false,
     },
-    "description": "Reply to an existing Apple Mail message by handle. Set reply_all=true to reply to all recipients.",
+    "description": "Reply to a message; the plain-text body goes above the quoted original.",
     "inputSchema": {
       "properties": {
         "body": {
-          "description": "Plain text reply body. Prepended above the quoted original.",
           "maxLength": 1000000,
           "minLength": 1,
           "type": "string",
         },
         "from": {
-          "description": "Optional sender email address override.",
+          "description": "Must match an enabled account",
           "format": "email",
           "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
           "type": "string",
         },
         "handle": {
-          "description": "Email handle identifying the message being replied to.",
           "properties": {
             "account_id": {
               "type": "string",
@@ -1029,7 +1006,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "object",
         },
         "reply_all": {
-          "description": "If true, reply to all recipients of the original message.",
           "type": "boolean",
         },
       },
@@ -1049,11 +1025,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": true,
       "readOnlyHint": false,
     },
-    "description": "Forward an existing Apple Mail message to new recipients.",
+    "description": "Forward a message; an optional body goes above it.",
     "inputSchema": {
       "properties": {
         "bcc": {
-          "description": "BCC recipient email addresses.",
           "items": {
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
@@ -1062,12 +1037,10 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "array",
         },
         "body": {
-          "description": "Optional message to prepend above the forwarded content.",
           "maxLength": 1000000,
           "type": "string",
         },
         "cc": {
-          "description": "CC recipient email addresses.",
           "items": {
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
@@ -1076,13 +1049,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "array",
         },
         "from": {
-          "description": "Optional sender email address override.",
+          "description": "Must match an enabled account",
           "format": "email",
           "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
           "type": "string",
         },
         "handle": {
-          "description": "Email handle identifying the message being forwarded.",
           "properties": {
             "account_id": {
               "type": "string",
@@ -1102,7 +1074,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "type": "object",
         },
         "to": {
-          "description": "Recipient email addresses. At least one required.",
           "items": {
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
@@ -1133,19 +1104,17 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List Apple Contacts people, sorted by last name.",
+    "description": "Contacts, sorted by last name.",
     "inputSchema": {
       "properties": {
         "limit": {
           "default": 100,
-          "description": "Max contacts to return",
           "maximum": 500,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching contacts before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
@@ -1195,24 +1164,21 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Search Apple Contacts people by name or organization.",
+    "description": "Search contacts by name or organization.",
     "inputSchema": {
       "properties": {
         "limit": {
           "default": 100,
-          "description": "Max contacts to return",
           "maximum": 500,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching contacts before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
         "query": {
-          "description": "Text to match in names or organization",
           "minLength": 1,
           "type": "string",
         },
@@ -1265,11 +1231,11 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Get one contact's full details: emails, phones, addresses, note.",
+    "description": "A contact's details: emails, phones, addresses and note.",
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "description": "From list_contacts or search_contacts",
           "minLength": 1,
           "type": "string",
         },
@@ -1303,7 +1269,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "emails": {
-          "description": "Email addresses to add (existing ones are kept)",
           "items": {
             "properties": {
               "label": {
@@ -1322,27 +1287,21 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           "type": "array",
         },
         "first_name": {
-          "description": "First name",
           "type": "string",
         },
         "job_title": {
-          "description": "Job title",
           "type": "string",
         },
         "last_name": {
-          "description": "Last name",
           "type": "string",
         },
         "note": {
-          "description": "Note text",
           "type": "string",
         },
         "organization": {
-          "description": "Organization",
           "type": "string",
         },
         "phones": {
-          "description": "Phone numbers to add (existing ones are kept)",
           "items": {
             "properties": {
               "label": {
@@ -1377,7 +1336,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "emails": {
-          "description": "Email addresses to add (existing ones are kept)",
           "items": {
             "properties": {
               "label": {
@@ -1396,32 +1354,26 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           "type": "array",
         },
         "first_name": {
-          "description": "First name",
           "type": "string",
         },
         "id": {
-          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "description": "From list_contacts or search_contacts",
           "minLength": 1,
           "type": "string",
         },
         "job_title": {
-          "description": "Job title",
           "type": "string",
         },
         "last_name": {
-          "description": "Last name",
           "type": "string",
         },
         "note": {
-          "description": "Note text",
           "type": "string",
         },
         "organization": {
-          "description": "Organization",
           "type": "string",
         },
         "phones": {
-          "description": "Phone numbers to add (existing ones are kept)",
           "items": {
             "properties": {
               "label": {
@@ -1459,7 +1411,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "description": "From list_contacts or search_contacts",
           "minLength": 1,
           "type": "string",
         },
@@ -1479,7 +1431,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List Apple Contacts groups with their member counts.",
+    "description": "Contact groups, with ids and member counts.",
     "inputSchema": {
       "properties": {},
       "type": "object",
@@ -1519,11 +1471,11 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List the members of a contact group.",
+    "description": "A contact group's members.",
     "inputSchema": {
       "properties": {
         "group": {
-          "description": "Group id or name, as returned by list_contact_groups",
+          "description": "Id or name from list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1576,7 +1528,6 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "name": {
-          "description": "Group name",
           "minLength": 1,
           "type": "string",
         },
@@ -1600,7 +1551,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "group": {
-          "description": "Group id or name, as returned by list_contact_groups",
+          "description": "Id or name from list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1624,12 +1575,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "contact_id": {
-          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "description": "From list_contacts or search_contacts",
           "minLength": 1,
           "type": "string",
         },
         "group": {
-          "description": "Group id or name, as returned by list_contact_groups",
+          "description": "Id or name from list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1654,12 +1605,12 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "contact_id": {
-          "description": "Contact id, as returned by list_contacts or search_contacts",
+          "description": "From list_contacts or search_contacts",
           "minLength": 1,
           "type": "string",
         },
         "group": {
-          "description": "Group id or name, as returned by list_contact_groups",
+          "description": "Id or name from list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1685,7 +1636,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List all folders in Apple Notes",
+    "description": "Notes folders, with note counts.",
     "inputSchema": {
       "properties": {},
       "type": "object",
@@ -1721,11 +1672,10 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Create a new folder in Apple Notes",
+    "description": "Create a Notes folder.",
     "inputSchema": {
       "properties": {
         "name": {
-          "description": "Folder name",
           "type": "string",
         },
       },
@@ -1744,23 +1694,20 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List all notes in a specified Apple Notes folder",
+    "description": "The notes in a folder, with a text snippet each.",
     "inputSchema": {
       "properties": {
         "folder": {
-          "description": "Folder name",
           "type": "string",
         },
         "limit": {
           "default": 50,
-          "description": "Max notes to return",
           "maximum": 500,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching notes before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
@@ -1813,19 +1760,19 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Get the full content of one note, by id or by title. A title shared by several notes is an error listing their ids.",
+    "description": "A note's full HTML content, by id or title.",
     "inputSchema": {
       "properties": {
         "folder": {
-          "description": "Folder name (optional); narrows a title lookup",
+          "description": "Narrows a title lookup",
           "type": "string",
         },
         "id": {
-          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "description": "From list_notes or search_notes; exact, unlike a title",
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
+          "description": "Must match one note, or the error lists each match's id. Recently Deleted counts only as the folder",
           "type": "string",
         },
       },
@@ -1863,19 +1810,17 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Create a new note in a specified Apple Notes folder. Returns the new note's id.",
+    "description": "Create a note in a folder; returns its id.",
     "inputSchema": {
       "properties": {
         "body": {
-          "description": "HTML body content",
+          "description": "HTML",
           "type": "string",
         },
         "folder": {
-          "description": "Folder name",
           "type": "string",
         },
         "title": {
-          "description": "Note title",
           "type": "string",
         },
       },
@@ -1896,23 +1841,23 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Replace the body of one note, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "description": "Replace a note's body, by id or title.",
     "inputSchema": {
       "properties": {
         "body": {
-          "description": "New HTML body content",
+          "description": "HTML",
           "type": "string",
         },
         "folder": {
-          "description": "Folder name (optional); narrows a title lookup",
+          "description": "Narrows a title lookup",
           "type": "string",
         },
         "id": {
-          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "description": "From list_notes or search_notes; exact, unlike a title",
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
+          "description": "Must match one note, or the error lists each match's id. Recently Deleted counts only as the folder",
           "type": "string",
         },
       },
@@ -1931,23 +1876,22 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Move one note to another folder, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "description": "Move a note to another folder, by id or title.",
     "inputSchema": {
       "properties": {
         "from_folder": {
-          "description": "Source folder name (optional); narrows a title lookup",
+          "description": "Narrows a title lookup",
           "type": "string",
         },
         "id": {
-          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "description": "From list_notes or search_notes; exact, unlike a title",
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
+          "description": "Must match one note, or the error lists each match's id. Recently Deleted counts only as the folder",
           "type": "string",
         },
         "to_folder": {
-          "description": "Target folder name",
           "type": "string",
         },
       },
@@ -1966,23 +1910,23 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Append HTML content to one note without replacing its body, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "description": "Append HTML to a note, by id or title, keeping its body.",
     "inputSchema": {
       "properties": {
         "content": {
-          "description": "HTML content to append",
+          "description": "HTML",
           "type": "string",
         },
         "folder": {
-          "description": "Folder name (optional); narrows a title lookup",
+          "description": "Narrows a title lookup",
           "type": "string",
         },
         "id": {
-          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "description": "From list_notes or search_notes; exact, unlike a title",
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
+          "description": "Must match one note, or the error lists each match's id. Recently Deleted counts only as the folder",
           "type": "string",
         },
       },
@@ -2001,19 +1945,19 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Delete one note, by id or by title. A title shared by several notes is refused, listing their ids.",
+    "description": "Delete a note, by id or title.",
     "inputSchema": {
       "properties": {
         "folder": {
-          "description": "Folder name (optional); narrows a title lookup",
+          "description": "Narrows a title lookup",
           "type": "string",
         },
         "id": {
-          "description": "Note id from list_notes, search_notes, get_note or create_note. Exact; use it when titles repeat.",
+          "description": "From list_notes or search_notes; exact, unlike a title",
           "type": "string",
         },
         "title": {
-          "description": "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
+          "description": "Must match one note, or the error lists each match's id. Recently Deleted counts only as the folder",
           "type": "string",
         },
       },
@@ -2029,11 +1973,10 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Delete a folder and all its notes from Apple Notes",
+    "description": "Delete a folder and every note in it.",
     "inputSchema": {
       "properties": {
         "name": {
-          "description": "Folder name",
           "type": "string",
         },
       },
@@ -2052,28 +1995,24 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Search notes by keyword across all folders or within a specific folder. Searches both titles and body content. Results carry each note's id.",
+    "description": "Search note titles and text, in every folder or one; results carry ids.",
     "inputSchema": {
       "properties": {
         "folder": {
-          "description": "Folder name to scope search (optional)",
           "type": "string",
         },
         "limit": {
           "default": 20,
-          "description": "Max results to return",
           "maximum": 200,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching notes before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
         "query": {
-          "description": "Search query",
           "type": "string",
         },
       },
@@ -2122,7 +2061,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Create a memory, task, event, or note entry with optional aliases.",
+    "description": "Create a memory, task, event or note entry, with optional aliases.",
     "inputSchema": {
       "properties": {
         "action": {
@@ -2180,7 +2119,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it is due. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "end_at": {
           "anyOf": [
@@ -2191,7 +2130,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it ends. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "happened_at": {
           "anyOf": [
@@ -2202,10 +2141,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it happened. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "kind": {
-          "description": "Entry kind",
           "enum": [
             "memory",
             "task",
@@ -2243,7 +2181,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it starts. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "status": {
           "anyOf": [
@@ -2291,7 +2229,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Update an existing entry. Only specified fields are changed.",
+    "description": "Update an entry; only the fields given change.",
     "inputSchema": {
       "properties": {
         "action": {
@@ -2349,7 +2287,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it is due. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "end_at": {
           "anyOf": [
@@ -2360,7 +2298,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it ends. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "happened_at": {
           "anyOf": [
@@ -2371,10 +2309,9 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it happened. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "id": {
-          "description": "Entry ID",
           "type": "string",
         },
         "kind": {
@@ -2422,7 +2359,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "When it starts. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "ISO 8601; convert relative dates like 'yesterday' first",
         },
         "status": {
           "anyOf": [
@@ -2470,11 +2407,10 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Fetch a single normalized entry with aliases by ID.",
+    "description": "One entry, with its aliases.",
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Entry ID",
           "type": "string",
         },
       },
@@ -2522,18 +2458,18 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Search entries with deterministic structured filters and keyword fallback.",
+    "description": "Search entries by structured fields, falling back to keywords.",
     "inputSchema": {
       "properties": {
         "action": {
           "type": "string",
         },
         "happened_after": {
-          "description": "Only entries that happened on or after this. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "Inclusive. ISO 8601; convert relative dates like 'yesterday' first",
           "type": "string",
         },
         "happened_before": {
-          "description": "Only entries that happened on or before this. ISO 8601 date or timestamp, e.g. '2026-10-08' or '2026-10-08T14:30:00-07:00'. Convert relative dates such as 'yesterday' to a date first.",
+          "description": "Inclusive. ISO 8601; convert relative dates like 'yesterday' first",
           "type": "string",
         },
         "keywords": {
@@ -2562,7 +2498,6 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching entries before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
@@ -2615,7 +2550,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Return the most recent matching entry using happened_at, start_at, then created_at.",
+    "description": "The latest matching entry, by happened_at, then start_at, then created_at.",
     "inputSchema": {
       "properties": {
         "action": {
@@ -2680,7 +2615,7 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Return the most recent matching entry plus elapsed days and hours.",
+    "description": "The latest matching entry and the days and hours since it.",
     "inputSchema": {
       "properties": {
         "action": {
@@ -2750,19 +2685,17 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List recent iMessage/SMS conversations with last message preview and participant count.",
+    "description": "Recent conversations, with a last-message preview and participant count.",
     "inputSchema": {
       "properties": {
         "limit": {
           "default": 50,
-          "description": "Maximum conversations to return (1–200). Default: 50.",
           "maximum": 200,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching conversations before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
@@ -2804,32 +2737,31 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Get message history for a specific conversation. Use the chat_id list_chats shows (phone number, email, or group chat ID like 'chat123456').",
+    "description": "A conversation's messages, oldest first.",
     "inputSchema": {
       "properties": {
         "chat_id": {
-          "description": "Chat identifier: phone number (e.g. '+15555550123'), email, or group ID (e.g. 'chat123456789012345678').",
+          "description": "Phone, email, or group id like 'chat123456789012345678', as list_chats shows",
           "type": "string",
         },
         "from_date": {
-          "description": "ISO 8601 date. Only return messages on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2026-01-15' or '2026-01-15T09:00:00Z'.",
+          "description": "ISO 8601, inclusive; a bare date is local midnight",
           "type": "string",
         },
         "limit": {
           "default": 50,
-          "description": "Maximum messages to return (1–200). Default: 50.",
           "maximum": 200,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many of the newest matching messages; use with limit to page back in time. Each page is in chronological order.",
+          "description": "Skips the newest messages, to page back in time",
           "minimum": 0,
           "type": "integer",
         },
         "to_date": {
-          "description": "ISO 8601 date. Only return messages before it. A bare date means local midnight. Example: '2026-02-01'.",
+          "description": "ISO 8601, exclusive",
           "type": "string",
         },
       },
@@ -2877,28 +2809,25 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
+    "description": "Case-insensitive search of message text, rich-text bodies included, in every conversation or one.",
     "inputSchema": {
       "properties": {
         "chat_id": {
-          "description": "Limit search to a specific chat identifier.",
+          "description": "Phone, email, or group id like 'chat123456789012345678', as list_chats shows",
           "type": "string",
         },
         "limit": {
           "default": 50,
-          "description": "Maximum results to return (1–200). Default: 50.",
           "maximum": 200,
           "minimum": 1,
           "type": "integer",
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching messages before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
         "query": {
-          "description": "Text to search for in message content.",
           "minLength": 1,
           "type": "string",
         },
@@ -2951,11 +2880,11 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Get participants of a conversation. Useful for identifying group chat members.",
+    "description": "A conversation's participants.",
     "inputSchema": {
       "properties": {
         "chat_id": {
-          "description": "Chat identifier from list_chats.",
+          "description": "Phone, email, or group id like 'chat123456789012345678', as list_chats shows",
           "type": "string",
         },
       },
@@ -3003,16 +2932,15 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
       "openWorldHint": true,
       "readOnlyHint": false,
     },
-    "description": "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat123456789012345678') from list_chats.",
+    "description": "Send an iMessage to a phone number, email or group chat.",
     "inputSchema": {
       "properties": {
         "text": {
-          "description": "Message text to send.",
           "minLength": 1,
           "type": "string",
         },
         "to": {
-          "description": "Recipient: phone number (e.g. '+15555550123'), email, or group chat identifier (e.g. 'chat123456789012345678').",
+          "description": "Phone, email, or group id like 'chat123456789012345678', as list_chats shows",
           "type": "string",
         },
       },
@@ -3068,7 +2996,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching events before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },
@@ -3564,7 +3491,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
         },
         "offset": {
           "default": 0,
-          "description": "Skip this many matching reminders before returning; use with limit to page.",
           "minimum": 0,
           "type": "integer",
         },

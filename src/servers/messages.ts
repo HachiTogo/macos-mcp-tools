@@ -432,6 +432,10 @@ const formatSendResult = (result: SendResult): string =>
 
 const server = new McpServer({ name: "apple-messages", version: PACKAGE_VERSION })
 
+// Descriptions say only what a field's name and type cannot.
+const limit = z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional()
+const CHAT_ID = "Phone, email, or group id like 'chat123456789012345678', as list_chats shows"
+
 // The structuredContent each read tool declares. Objects are loose, so a field added later never
 // fails a call that worked; nested items detail only the ids agents pass back.
 export const chatsOutput = z.looseObject({ source: z.string(), chats: z.array(z.looseObject({ chatId: z.string() })) })
@@ -454,17 +458,10 @@ export const participantsOutput = z.looseObject({
 server.registerTool(
   "list_chats",
   {
-    description: "List recent iMessage/SMS conversations with last message preview and participant count.",
+    description: "Recent conversations, with a last-message preview and participant count.",
     inputSchema: {
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_LIMIT)
-        .default(DEFAULT_LIMIT)
-        .optional()
-        .describe("Maximum conversations to return (1–200). Default: 50."),
-      offset: offsetArg("conversations"),
+      limit,
+      offset: offsetArg,
     },
     outputSchema: chatsOutput,
     annotations: READ,
@@ -479,35 +476,13 @@ server.registerTool(
 server.registerTool(
   "get_messages",
   {
-    description:
-      "Get message history for a specific conversation. Use the chat_id list_chats shows (phone number, email, or group chat ID like 'chat123456').",
+    description: "A conversation's messages, oldest first.",
     inputSchema: {
-      chat_id: z
-        .string()
-        .describe(
-          "Chat identifier: phone number (e.g. '+15555550123'), email, or group ID (e.g. 'chat123456789012345678').",
-        ),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_LIMIT)
-        .default(DEFAULT_LIMIT)
-        .optional()
-        .describe("Maximum messages to return (1–200). Default: 50."),
-      offset: offsetArg("messages").describe(
-        "Skip this many of the newest matching messages; use with limit to page back in time. Each page is in chronological order.",
-      ),
-      from_date: isoDateString("from_date")
-        .optional()
-        .describe(
-          "ISO 8601 date. Only return messages on or after it. A bare date means local midnight; add a time or zone to be explicit. Example: '2026-01-15' or '2026-01-15T09:00:00Z'.",
-        ),
-      to_date: isoDateString("to_date")
-        .optional()
-        .describe(
-          "ISO 8601 date. Only return messages before it. A bare date means local midnight. Example: '2026-02-01'.",
-        ),
+      chat_id: z.string().describe(CHAT_ID),
+      limit,
+      offset: offsetArg.describe("Skips the newest messages, to page back in time"),
+      from_date: isoDateString("from_date").optional().describe("ISO 8601, inclusive; a bare date is local midnight"),
+      to_date: isoDateString("to_date").optional().describe("ISO 8601, exclusive"),
     },
     outputSchema: messagesOutput,
     annotations: READ,
@@ -527,20 +502,12 @@ server.registerTool(
 server.registerTool(
   "search_messages",
   {
-    description:
-      "Search messages by text content across all conversations, or within a specific conversation. Matches case-insensitively, including rich-text message bodies.",
+    description: "Case-insensitive search of message text, rich-text bodies included, in every conversation or one.",
     inputSchema: {
-      query: z.string().min(1).describe("Text to search for in message content."),
-      chat_id: z.string().optional().describe("Limit search to a specific chat identifier."),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_LIMIT)
-        .default(DEFAULT_LIMIT)
-        .optional()
-        .describe("Maximum results to return (1–200). Default: 50."),
-      offset: offsetArg("messages"),
+      query: z.string().min(1),
+      chat_id: z.string().optional().describe(CHAT_ID),
+      limit,
+      offset: offsetArg,
     },
     outputSchema: searchOutput,
     annotations: READ,
@@ -555,9 +522,9 @@ server.registerTool(
 server.registerTool(
   "get_participants",
   {
-    description: "Get participants of a conversation. Useful for identifying group chat members.",
+    description: "A conversation's participants.",
     inputSchema: {
-      chat_id: z.string().describe("Chat identifier from list_chats."),
+      chat_id: z.string().describe(CHAT_ID),
     },
     outputSchema: participantsOutput,
     annotations: READ,
@@ -576,15 +543,10 @@ server.registerTool(
 server.registerTool(
   "send_message",
   {
-    description:
-      "Send an iMessage to a phone number, email address, or group chat. For group chats, use the chat identifier (e.g. 'chat123456789012345678') from list_chats.",
+    description: "Send an iMessage to a phone number, email or group chat.",
     inputSchema: {
-      to: z
-        .string()
-        .describe(
-          "Recipient: phone number (e.g. '+15555550123'), email, or group chat identifier (e.g. 'chat123456789012345678').",
-        ),
-      text: z.string().min(1).describe("Message text to send."),
+      to: z.string().describe(CHAT_ID),
+      text: z.string().min(1),
     },
     annotations: SEND,
   },

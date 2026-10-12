@@ -310,30 +310,26 @@ export const contactGroupOutput = z.looseObject({ id: z.string(), name: z.string
 const runScript = (operation: string, script: string, args: Record<string, unknown>) =>
   runTool(operation, () => jsonResult(JSON.parse(runJxa(script, args))))
 
-const contactId = z.string().min(1).describe("Contact id, as returned by list_contacts or search_contacts")
-const groupRef = z.string().min(1).describe("Group id or name, as returned by list_contact_groups")
-const limit = z.number().int().min(1).max(500).default(100).optional().describe("Max contacts to return")
-const offset = offsetArg("contacts")
+// Descriptions say only what a field's name and type cannot.
+const contactId = z.string().min(1).describe("From list_contacts or search_contacts")
+const groupRef = z.string().min(1).describe("Id or name from list_contact_groups")
+const limit = z.number().int().min(1).max(500).default(100).optional()
+const offset = offsetArg
+const labelled = z.array(z.object({ label: z.string(), value: z.string() })).optional()
 const contactFields = {
-  first_name: z.string().optional().describe("First name"),
-  last_name: z.string().optional().describe("Last name"),
-  organization: z.string().optional().describe("Organization"),
-  job_title: z.string().optional().describe("Job title"),
-  emails: z
-    .array(z.object({ label: z.string(), value: z.string() }))
-    .optional()
-    .describe("Email addresses to add (existing ones are kept)"),
-  phones: z
-    .array(z.object({ label: z.string(), value: z.string() }))
-    .optional()
-    .describe("Phone numbers to add (existing ones are kept)"),
-  note: z.string().optional().describe("Note text"),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  organization: z.string().optional(),
+  job_title: z.string().optional(),
+  emails: labelled,
+  phones: labelled,
+  note: z.string().optional(),
 }
 
 server.registerTool(
   "list_contacts",
   {
-    description: "List Apple Contacts people, sorted by last name.",
+    description: "Contacts, sorted by last name.",
     inputSchema: { limit, offset },
     outputSchema: contactsPageOutput,
     annotations: READ,
@@ -344,8 +340,8 @@ server.registerTool(
 server.registerTool(
   "search_contacts",
   {
-    description: "Search Apple Contacts people by name or organization.",
-    inputSchema: { query: z.string().min(1).describe("Text to match in names or organization"), limit, offset },
+    description: "Search contacts by name or organization.",
+    inputSchema: { query: z.string().min(1), limit, offset },
     outputSchema: contactsPageOutput,
     annotations: READ,
   },
@@ -355,7 +351,7 @@ server.registerTool(
 server.registerTool(
   "get_contact",
   {
-    description: "Get one contact's full details: emails, phones, addresses, note.",
+    description: "A contact's details: emails, phones, addresses and note.",
     inputSchema: { id: contactId },
     outputSchema: contactOutput,
     annotations: READ,
@@ -388,7 +384,7 @@ server.registerTool(
 server.registerTool(
   "list_contact_groups",
   {
-    description: "List Apple Contacts groups with their member counts.",
+    description: "Contact groups, with ids and member counts.",
     inputSchema: {},
     outputSchema: contactGroupsOutput,
     annotations: READ,
@@ -399,7 +395,7 @@ server.registerTool(
 server.registerTool(
   "get_contact_group",
   {
-    description: "List the members of a contact group.",
+    description: "A contact group's members.",
     inputSchema: { group: groupRef },
     outputSchema: contactGroupOutput,
     annotations: READ,
@@ -411,7 +407,7 @@ server.registerTool(
   "create_contact_group",
   {
     description: "Create a contact group.",
-    inputSchema: { name: z.string().min(1).describe("Group name") },
+    inputSchema: { name: z.string().min(1) },
     annotations: CREATE,
   },
   async ({ name }) => runScript("create_contact_group", JXA_GROUPS_CREATE, { name }),

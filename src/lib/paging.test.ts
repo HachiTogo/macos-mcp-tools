@@ -23,7 +23,7 @@ describe("paginate", () => {
 
 describe("offsetArg", () => {
   test("defaults to 0 and rejects negatives", () => {
-    expect(offsetArg("notes").parse(undefined)).toBe(0)
-    expect(() => offsetArg("notes").parse(-1)).toThrow()
+    expect(offsetArg.parse(undefined)).toBe(0)
+    expect(() => offsetArg.parse(-1)).toThrow()
   })
 })

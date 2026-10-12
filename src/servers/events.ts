@@ -157,7 +157,7 @@ server.registerTool(
       search: z.string().optional().describe("Matches title, notes or location"),
       availability: availability.optional(),
       limit: z.number().int().min(1).optional().describe("Default: all"),
-      offset: offsetArg("events"),
+      offset: offsetArg,
     },
     annotations: READ,
   },
