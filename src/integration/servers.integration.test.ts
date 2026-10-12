@@ -12,6 +12,13 @@ const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url))
 
 const SERVERS = ["mail", "contacts", "notes", "memory", "messages", "events", "reminders"] as const
 
+// Serialized tools/list bytes across all seven servers: what every host loads into context. A ratchet,
+// not a target: growth past it fails, and so does shrinking more than SCHEMA_BUDGET_SLACK below it,
+// so a saving is locked in by lowering the budget. 0.9.1 was 44,467; the 0.10.0 contract, with
+// per-action tools, hints and output schemas, is larger.
+const SCHEMA_BUDGET_BYTES = 76_458
+const SCHEMA_BUDGET_SLACK = 1024
+
 const HINTS = ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] as const
 // Hosts rely on destructiveHint to ask before these; no tool carries its own confirm flag.
 const MUST_BE_DESTRUCTIVE = /^(send|reply|forward|delete|remove)_|^mark_emails_junk$/
@@ -132,6 +139,24 @@ if (!RUN_INTEGRATION_TESTS) {
         }
       })
     }
+  })
+
+  test("tools/list stays within the schema budget", async () => {
+    let total = 0
+    for (const serverName of SERVERS) {
+      const server = await startServer(serverName)
+      try {
+        total += JSON.stringify((await server.client.listTools()).tools).length
+      } finally {
+        await stopServer(server)
+      }
+    }
+    expect({ total, over: total > SCHEMA_BUDGET_BYTES }).toEqual({ total, over: false })
+    // Smaller is good; record it so it cannot creep back.
+    expect({ total, lowerBudgetTo: total < SCHEMA_BUDGET_BYTES - SCHEMA_BUDGET_SLACK }).toEqual({
+      total,
+      lowerBudgetTo: false,
+    })
   })
 
   describe("memory server integration", () => {
