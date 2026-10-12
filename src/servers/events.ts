@@ -122,7 +122,11 @@ const recurrenceRules = z.array(
 )
 
 const availability = z.enum(["not-supported", "busy", "free", "tentative", "unavailable"])
-const span = z.enum(["this-event", "future-events"]).describe("Recurring events; default this-event")
+// A recurring event's id names its series and resolves to the first occurrence, so this-event acts on
+// that occurrence alone and future-events on every occurrence.
+const span = z
+  .enum(["this-event", "future-events"])
+  .describe("Recurring events: this-event (default) is only the first occurrence; future-events is the whole series")
 const eventId = z.string().min(1).describe("From list_events; a recurring event's id names the series")
 
 const eventFields = {
@@ -213,7 +217,7 @@ server.registerTool(
   "get_event",
   {
     description:
-      "Get an event by id, at any date; a recurring event gives its first occurrence. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
+      "Get an event by id, at any date. A recurring event's id gives the series as first defined, not an occurrence edited on its own. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
     inputSchema: { id: eventId },
     outputSchema: eventOutput,
     annotations: READ,
@@ -261,7 +265,7 @@ server.registerTool(
 server.registerTool(
   "update_event",
   {
-    description: `Update an event; only the fields given change. ${DATES}`,
+    description: `Update an event; only the fields given change. For a whole recurring series, pass span future-events. ${DATES}`,
     inputSchema: {
       id: eventId,
       title: z.string().optional(),
@@ -301,7 +305,7 @@ server.registerTool(
 server.registerTool(
   "delete_event",
   {
-    description: "Delete an event; for a recurring one, span picks this occurrence or this and later ones.",
+    description: "Delete an event. For a whole recurring series, pass span future-events.",
     inputSchema: { id: eventId, span: span.optional() },
     annotations: DESTRUCTIVE,
   },
