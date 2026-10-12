@@ -280,14 +280,6 @@ function run(argv) {
 }
 `
 
-// ── Arguments ──────────────────────────────────────────────────────────
-
-/** A contact lookup needs its id; a missing one would otherwise fail in JXA as "Can't convert types". */
-export const requireArg = (value: string | undefined, name: string, action: string): string => {
-  if (!value) throw new Error(`'${name}' is required for ${action}.`)
-  return value
-}
-
 // ── MCP Server ─────────────────────────────────────────────────────────
 
 const server = new McpServer({
@@ -295,126 +287,110 @@ const server = new McpServer({
   version: PACKAGE_VERSION,
 })
 
+/** Every contacts tool runs one JXA script and returns its JSON. */
+const runScript = (operation: string, script: string, args: Record<string, unknown>) =>
+  runTool(operation, () => jsonResult(JSON.parse(runJxa(script, args))))
+
+const contactId = z.string().min(1).describe("Contact id, as returned by list_contacts or search_contacts")
+const groupName = z.string().min(1).describe("Group name, as returned by list_contact_groups")
+const limit = z.number().int().min(1).max(500).default(100).optional().describe("Max contacts to return")
+const offset = z.number().int().min(0).default(0).optional().describe("Pagination offset")
+const contactFields = {
+  first_name: z.string().optional().describe("First name"),
+  last_name: z.string().optional().describe("Last name"),
+  organization: z.string().optional().describe("Organization"),
+  job_title: z.string().optional().describe("Job title"),
+  emails: z
+    .array(z.object({ label: z.string(), value: z.string() }))
+    .optional()
+    .describe("Email addresses to add (existing ones are kept)"),
+  phones: z
+    .array(z.object({ label: z.string(), value: z.string() }))
+    .optional()
+    .describe("Phone numbers to add (existing ones are kept)"),
+  note: z.string().optional().describe("Note text"),
+}
+const confirm = z.boolean().optional().describe("Must be true to confirm delete")
+
 server.registerTool(
-  "contacts_people",
-  {
-    description:
-      "Manage Apple Contacts people. Actions: read (list), search, get (full detail), create, update, delete.",
-    inputSchema: {
-      action: z.enum(["read", "search", "get", "create", "update", "delete"]).describe("Operation to perform"),
-      limit: z.number().int().min(1).max(500).default(100).optional().describe("Max contacts to return (read/search)"),
-      offset: z.number().int().min(0).default(0).optional().describe("Pagination offset (read/search)"),
-      query: z.string().optional().describe("Search query (search action)"),
-      id: z.string().optional().describe("Contact ID (get/update/delete)"),
-      first_name: z.string().optional().describe("First name (create/update)"),
-      last_name: z.string().optional().describe("Last name (create/update)"),
-      organization: z.string().optional().describe("Organization (create/update)"),
-      job_title: z.string().optional().describe("Job title (create/update)"),
-      emails: z
-        .array(z.object({ label: z.string(), value: z.string() }))
-        .optional()
-        .describe("Email addresses (create/update — adds, does not remove)"),
-      phones: z
-        .array(z.object({ label: z.string(), value: z.string() }))
-        .optional()
-        .describe("Phone numbers (create/update — adds, does not remove)"),
-      note: z.string().optional().describe("Note text (create/update)"),
-      confirm: z.boolean().optional().describe("Must be true to confirm delete"),
-    },
-  },
-  async (args) =>
-    runTool("contacts_people", () => {
-      let raw: string
-      switch (args.action) {
-        case "read":
-          raw = runJxa(JXA_CONTACTS_READ, { limit: args.limit, offset: args.offset })
-          break
-        case "search":
-          raw = runJxa(JXA_CONTACTS_SEARCH, { query: args.query, limit: args.limit, offset: args.offset })
-          break
-        case "get":
-          raw = runJxa(JXA_CONTACTS_GET, { id: requireArg(args.id, "id", args.action) })
-          break
-        case "create":
-          raw = runJxa(JXA_CONTACTS_CREATE, {
-            first_name: args.first_name,
-            last_name: args.last_name,
-            organization: args.organization,
-            job_title: args.job_title,
-            emails: args.emails,
-            phones: args.phones,
-            note: args.note,
-          })
-          break
-        case "update":
-          raw = runJxa(JXA_CONTACTS_UPDATE, {
-            id: requireArg(args.id, "id", args.action),
-            first_name: args.first_name,
-            last_name: args.last_name,
-            organization: args.organization,
-            job_title: args.job_title,
-            emails: args.emails,
-            phones: args.phones,
-            note: args.note,
-          })
-          break
-        case "delete":
-          raw = runJxa(JXA_CONTACTS_DELETE, { id: requireArg(args.id, "id", args.action), confirm: args.confirm })
-          break
-        default:
-          throw new Error(`Unknown action: ${String(args.action)}`)
-      }
-      return jsonResult(JSON.parse(raw))
-    }),
+  "list_contacts",
+  { description: "List Apple Contacts people, sorted by last name.", inputSchema: { limit, offset } },
+  async (args) => runScript("list_contacts", JXA_CONTACTS_READ, args),
 )
 
 server.registerTool(
-  "contacts_groups",
+  "search_contacts",
   {
-    description:
-      "Manage Apple Contacts groups. Actions: read (list all), get (members of a group), create, delete, add_member, remove_member.",
-    inputSchema: {
-      action: z
-        .enum(["read", "get", "create", "delete", "add_member", "remove_member"])
-        .describe("Operation to perform"),
-      name: z.string().optional().describe("Group name (get/create/delete/add_member/remove_member)"),
-      person_id: z.string().optional().describe("Contact ID for add_member/remove_member"),
-      confirm: z.boolean().optional().describe("Must be true to confirm delete"),
-    },
+    description: "Search Apple Contacts people by name or organization.",
+    inputSchema: { query: z.string().min(1).describe("Text to match in names or organization"), limit, offset },
   },
-  async (args) =>
-    runTool("contacts_groups", () => {
-      let raw: string
-      switch (args.action) {
-        case "read":
-          raw = runJxa(JXA_GROUPS_READ, {})
-          break
-        case "get":
-          raw = runJxa(JXA_GROUPS_GET, { name: args.name })
-          break
-        case "create":
-          raw = runJxa(JXA_GROUPS_CREATE, { name: args.name })
-          break
-        case "delete":
-          raw = runJxa(JXA_GROUPS_DELETE, { name: args.name, confirm: args.confirm })
-          break
-        case "add_member":
-          raw = runJxa(JXA_GROUPS_ADD_MEMBER, {
-            name: args.name,
-            person_id: requireArg(args.person_id, "person_id", args.action),
-          })
-          break
-        case "remove_member":
-          raw = runJxa(JXA_GROUPS_REMOVE_MEMBER, {
-            name: args.name,
-            person_id: requireArg(args.person_id, "person_id", args.action),
-          })
-          break
-        default:
-          throw new Error(`Unknown action: ${String(args.action)}`)
-      }
-      return jsonResult(JSON.parse(raw))
-    }),
+  async (args) => runScript("search_contacts", JXA_CONTACTS_SEARCH, args),
+)
+
+server.registerTool(
+  "get_contact",
+  { description: "Get one contact's full details: emails, phones, addresses, note.", inputSchema: { id: contactId } },
+  async ({ id }) => runScript("get_contact", JXA_CONTACTS_GET, { id }),
+)
+
+server.registerTool("create_contact", { description: "Create a contact.", inputSchema: contactFields }, async (args) =>
+  runScript("create_contact", JXA_CONTACTS_CREATE, args),
+)
+
+server.registerTool(
+  "update_contact",
+  {
+    description: "Update a contact. Only the fields given change; emails and phones are added, never removed.",
+    inputSchema: { id: contactId, ...contactFields },
+  },
+  async (args) => runScript("update_contact", JXA_CONTACTS_UPDATE, args),
+)
+
+server.registerTool(
+  "delete_contact",
+  { description: "Delete a contact.", inputSchema: { id: contactId, confirm } },
+  async ({ id, confirm }) => runScript("delete_contact", JXA_CONTACTS_DELETE, { id, confirm }),
+)
+
+server.registerTool(
+  "list_contact_groups",
+  { description: "List Apple Contacts groups with their member counts.", inputSchema: {} },
+  async () => runScript("list_contact_groups", JXA_GROUPS_READ, {}),
+)
+
+server.registerTool(
+  "get_contact_group",
+  { description: "List the members of a contact group.", inputSchema: { group: groupName } },
+  async ({ group }) => runScript("get_contact_group", JXA_GROUPS_GET, { name: group }),
+)
+
+server.registerTool(
+  "create_contact_group",
+  { description: "Create a contact group.", inputSchema: { name: z.string().min(1).describe("Group name") } },
+  async ({ name }) => runScript("create_contact_group", JXA_GROUPS_CREATE, { name }),
+)
+
+server.registerTool(
+  "delete_contact_group",
+  { description: "Delete a contact group. Its members are not deleted.", inputSchema: { group: groupName, confirm } },
+  async ({ group, confirm }) => runScript("delete_contact_group", JXA_GROUPS_DELETE, { name: group, confirm }),
+)
+
+server.registerTool(
+  "add_contact_to_group",
+  { description: "Add a contact to a group.", inputSchema: { group: groupName, contact_id: contactId } },
+  async ({ group, contact_id }) =>
+    runScript("add_contact_to_group", JXA_GROUPS_ADD_MEMBER, { name: group, person_id: contact_id }),
+)
+
+server.registerTool(
+  "remove_contact_from_group",
+  {
+    description: "Remove a contact from a group. The contact itself is kept.",
+    inputSchema: { group: groupName, contact_id: contactId },
+  },
+  async ({ group, contact_id }) =>
+    runScript("remove_contact_from_group", JXA_GROUPS_REMOVE_MEMBER, { name: group, person_id: contact_id }),
 )
 
 // ── Entry point ────────────────────────────────────────────────────────

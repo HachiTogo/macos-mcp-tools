@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking: one tool per action
+
+Agents and skills that call the old names need updating. Tools that did several things through an `action` argument are split into one tool per action, so each can carry accurate safety hints and only its own arguments.
+
+| Old call | New tool |
+|---|---|
+| `contacts_people` `read` / `search` / `get` | `list_contacts` / `search_contacts` / `get_contact` |
+| `contacts_people` `create` / `update` / `delete` | `create_contact` / `update_contact` / `delete_contact` |
+| `contacts_groups` `read` / `get` | `list_contact_groups` / `get_contact_group` (`group`) |
+| `contacts_groups` `create` / `delete` | `create_contact_group` / `delete_contact_group` (`group`) |
+| `contacts_groups` `add_member` / `remove_member` (`name`, `person_id`) | `add_contact_to_group` / `remove_contact_from_group` (`group`, `contact_id`) |
+
 ### Changed
 - **Notes title lookups skip Recently Deleted.** A trashed note counted as a title match, so deleting "X" and creating a new "X" made the title ambiguous until the trash emptied. A title lookup across folders now ignores Recently Deleted; naming that folder, or passing the note's `id`, still reaches a trashed note. The folder is matched by its English name.
 - **Memory timestamps must be ISO 8601.** `happened_at`, `start_at`, `end_at` and `due_at`, and the `happened_after`/`happened_before` filters, accepted any text: "yesterday" was stored as written and its durations came back `null`. Each field now describes the format and asks the agent to convert relative dates first, and a value that is not an ISO 8601 date or timestamp (or names an impossible day) is refused with an error naming the field. Existing entries are unaffected.

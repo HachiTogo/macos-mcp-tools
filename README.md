@@ -195,7 +195,7 @@ Tools: `list_mail_accounts`, `unread_emails`, `mark_emails_read`, `fetch_email_b
 
 CRUD for Apple Contacts people and groups via JXA.
 
-Tools: `contacts_people`, `contacts_groups`
+Tools: `list_contacts`, `search_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact`, `list_contact_groups`, `get_contact_group`, `create_contact_group`, `delete_contact_group`, `add_contact_to_group`, `remove_contact_from_group`
 
 ### Notes
 

@@ -7,7 +7,6 @@ import {
   JXA_CONTACTS_UPDATE,
   JXA_GROUPS_ADD_MEMBER,
   JXA_GROUPS_REMOVE_MEMBER,
-  requireArg,
 } from "./contacts"
 
 type FakeApp = { people: { whose: (query: { id: string }) => () => unknown[] } }
@@ -59,14 +58,6 @@ describe("readList", () => {
       }),
     ).toEqual([])
     expect(warnings).toEqual(["Could not read phones: Can't get object."])
-  })
-})
-
-describe("requireArg", () => {
-  test("passes a value through and names a missing one", () => {
-    expect(requireArg("id-1", "id", "get")).toBe("id-1")
-    expect(() => requireArg(undefined, "id", "get")).toThrow("'id' is required for get.")
-    expect(() => requireArg("", "person_id", "add_member")).toThrow("'person_id' is required for add_member.")
   })
 })
 
