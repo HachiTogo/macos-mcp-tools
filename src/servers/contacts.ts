@@ -198,6 +198,16 @@ function run(argv) {
 }
 `
 
+// A group is named by the id list_contact_groups returns, or by its name.
+export const GROUP_LOOKUP = String.raw`
+function findGroup(app, ref) {
+  const byId = app.groups.whose({ id: ref });
+  const found = byId.length > 0 ? byId : app.groups.whose({ name: ref });
+  if (found.length === 0) throw new Error("Group not found: " + ref);
+  return found[0];
+}
+`
+
 const JXA_GROUPS_READ = String.raw`
 function run(argv) {
   const app = Application("Contacts");
@@ -211,13 +221,11 @@ function run(argv) {
 }
 `
 
-const JXA_GROUPS_GET = String.raw`
+const JXA_GROUPS_GET = String.raw`${GROUP_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
-  const found = app.groups.whose({ name: args.name });
-  if (!found || found.length === 0) throw new Error("Group not found: " + args.name);
-  const g = found[0];
+  const g = findGroup(app, args.group);
   const people = g.people();
   const members = people.map(p => ({
     id: p.id(),
@@ -240,44 +248,40 @@ function run(argv) {
 }
 `
 
-const JXA_GROUPS_DELETE = String.raw`
+const JXA_GROUPS_DELETE = String.raw`${GROUP_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   if (!args.confirm) throw new Error("Set confirm: true to delete");
   const app = Application("Contacts");
-  const found = app.groups.whose({ name: args.name });
-  if (!found || found.length === 0) throw new Error("Group not found: " + args.name);
-  app.delete(found[0]);
+  const g = findGroup(app, args.group);
+  const name = g.name();
+  app.delete(g);
   app.save();
-  return JSON.stringify({ success: true, name: args.name });
+  return JSON.stringify({ success: true, name });
 }
 `
 
-export const JXA_GROUPS_ADD_MEMBER = String.raw`${CONTACT_HELPERS}
+export const JXA_GROUPS_ADD_MEMBER = String.raw`${CONTACT_HELPERS}${GROUP_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
   const p = findPerson(app, args.person_id);
-  const gFound = app.groups.whose({ name: args.name });
-  if (!gFound || gFound.length === 0) throw new Error("Group not found: " + args.name);
-  const g = gFound[0];
+  const g = findGroup(app, args.group);
   app.add(p, { to: g });
   app.save();
-  return JSON.stringify({ success: true, group: args.name, person_id: args.person_id });
+  return JSON.stringify({ success: true, group: g.name(), person_id: args.person_id });
 }
 `
 
-export const JXA_GROUPS_REMOVE_MEMBER = String.raw`${CONTACT_HELPERS}
+export const JXA_GROUPS_REMOVE_MEMBER = String.raw`${CONTACT_HELPERS}${GROUP_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
   const p = findPerson(app, args.person_id);
-  const gFound = app.groups.whose({ name: args.name });
-  if (!gFound || gFound.length === 0) throw new Error("Group not found: " + args.name);
-  const g = gFound[0];
+  const g = findGroup(app, args.group);
   app.remove(p, { from: g });
   app.save();
-  return JSON.stringify({ success: true, group: args.name, person_id: args.person_id });
+  return JSON.stringify({ success: true, group: g.name(), person_id: args.person_id });
 }
 `
 
@@ -293,7 +297,7 @@ const runScript = (operation: string, script: string, args: Record<string, unkno
   runTool(operation, () => jsonResult(JSON.parse(runJxa(script, args))))
 
 const contactId = z.string().min(1).describe("Contact id, as returned by list_contacts or search_contacts")
-const groupName = z.string().min(1).describe("Group name, as returned by list_contact_groups")
+const groupRef = z.string().min(1).describe("Group id or name, as returned by list_contact_groups")
 const limit = z.number().int().min(1).max(500).default(100).optional().describe("Max contacts to return")
 const offset = offsetArg("contacts")
 const contactFields = {
@@ -361,8 +365,8 @@ server.registerTool(
 
 server.registerTool(
   "get_contact_group",
-  { description: "List the members of a contact group.", inputSchema: { group: groupName } },
-  async ({ group }) => runScript("get_contact_group", JXA_GROUPS_GET, { name: group }),
+  { description: "List the members of a contact group.", inputSchema: { group: groupRef } },
+  async ({ group }) => runScript("get_contact_group", JXA_GROUPS_GET, { group }),
 )
 
 server.registerTool(
@@ -373,25 +377,25 @@ server.registerTool(
 
 server.registerTool(
   "delete_contact_group",
-  { description: "Delete a contact group. Its members are not deleted.", inputSchema: { group: groupName, confirm } },
-  async ({ group, confirm }) => runScript("delete_contact_group", JXA_GROUPS_DELETE, { name: group, confirm }),
+  { description: "Delete a contact group. Its members are not deleted.", inputSchema: { group: groupRef, confirm } },
+  async ({ group, confirm }) => runScript("delete_contact_group", JXA_GROUPS_DELETE, { group, confirm }),
 )
 
 server.registerTool(
   "add_contact_to_group",
-  { description: "Add a contact to a group.", inputSchema: { group: groupName, contact_id: contactId } },
+  { description: "Add a contact to a group.", inputSchema: { group: groupRef, contact_id: contactId } },
   async ({ group, contact_id }) =>
-    runScript("add_contact_to_group", JXA_GROUPS_ADD_MEMBER, { name: group, person_id: contact_id }),
+    runScript("add_contact_to_group", JXA_GROUPS_ADD_MEMBER, { group, person_id: contact_id }),
 )
 
 server.registerTool(
   "remove_contact_from_group",
   {
     description: "Remove a contact from a group. The contact itself is kept.",
-    inputSchema: { group: groupName, contact_id: contactId },
+    inputSchema: { group: groupRef, contact_id: contactId },
   },
   async ({ group, contact_id }) =>
-    runScript("remove_contact_from_group", JXA_GROUPS_REMOVE_MEMBER, { name: group, person_id: contact_id }),
+    runScript("remove_contact_from_group", JXA_GROUPS_REMOVE_MEMBER, { group, person_id: contact_id }),
 )
 
 // ── Entry point ────────────────────────────────────────────────────────

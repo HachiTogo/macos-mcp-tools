@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 
 import {
   CONTACT_HELPERS,
+  GROUP_LOOKUP,
   JXA_CONTACTS_DELETE,
   JXA_CONTACTS_GET,
   JXA_CONTACTS_UPDATE,
@@ -58,6 +59,33 @@ describe("readList", () => {
       }),
     ).toEqual([])
     expect(warnings).toEqual(["Could not read phones: Can't get object."])
+  })
+})
+
+type Group = { id: string; name: string }
+const groupsApp = (groups: Group[]) => ({
+  groups: {
+    whose: (query: Partial<Group>) =>
+      groups.filter((g) => (query.id !== undefined ? g.id === query.id : g.name === query.name)),
+  },
+})
+const { findGroup } = new Function(`${GROUP_LOOKUP}; return { findGroup }`)() as {
+  findGroup: (app: ReturnType<typeof groupsApp>, ref: string) => Group
+}
+
+describe("findGroup", () => {
+  const app = groupsApp([
+    { id: "A1:ABGroup", name: "Family" },
+    { id: "B2:ABGroup", name: "Work" },
+  ])
+
+  test("accepts the id list_contact_groups returns, or the name", () => {
+    expect(findGroup(app, "B2:ABGroup").name).toBe("Work")
+    expect(findGroup(app, "Family").id).toBe("A1:ABGroup")
+  })
+
+  test("an unknown group is not found", () => {
+    expect(() => findGroup(app, "Friends")).toThrow("Group not found: Friends")
   })
 })
 

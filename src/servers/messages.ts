@@ -389,12 +389,13 @@ const sendMessage = (to: string, text: string): SendResult => {
 
 // ── Formatting helpers ────────────────────────────────────────────────
 
-const formatChatList = (chats: NormalizedChat[]): string => {
+export const formatChatList = (chats: NormalizedChat[]): string => {
   if (chats.length === 0) return "No recent conversations found."
   const lines = chats.map((c, i) => {
     const type = c.isGroup ? `group, ${c.participantCount} participants` : "1:1"
     const preview = c.lastMessage ? `: ${c.lastMessage}` : ""
-    return `${i + 1}. ${c.displayName} (${type})${preview}`
+    // The chat_id is what get_messages takes; a named group shows only its name otherwise.
+    return `${i + 1}. ${c.displayName} (${type}; chat_id: ${c.chatId})${preview}`
   })
   return `Found ${chats.length} conversation(s):\n\n${lines.join("\n")}`
 }
@@ -458,7 +459,7 @@ server.registerTool(
   "get_messages",
   {
     description:
-      "Get message history for a specific conversation. Use chat_identifier values from list_chats (phone number, email, or group chat ID like 'chat123456').",
+      "Get message history for a specific conversation. Use the chat_id list_chats shows (phone number, email, or group chat ID like 'chat123456').",
     inputSchema: {
       chat_id: z
         .string()

@@ -968,7 +968,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "group": {
-          "description": "Group name, as returned by list_contact_groups",
+          "description": "Group id or name, as returned by list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1012,7 +1012,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           "type": "boolean",
         },
         "group": {
-          "description": "Group name, as returned by list_contact_groups",
+          "description": "Group id or name, as returned by list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1037,7 +1037,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           "type": "string",
         },
         "group": {
-          "description": "Group name, as returned by list_contact_groups",
+          "description": "Group id or name, as returned by list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1063,7 +1063,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
           "type": "string",
         },
         "group": {
-          "description": "Group name, as returned by list_contact_groups",
+          "description": "Group id or name, as returned by list_contact_groups",
           "minLength": 1,
           "type": "string",
         },
@@ -1902,7 +1902,7 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
     "annotations": {
       "readOnlyHint": true,
     },
-    "description": "Get message history for a specific conversation. Use chat_identifier values from list_chats (phone number, email, or group chat ID like 'chat123456').",
+    "description": "Get message history for a specific conversation. Use the chat_id list_chats shows (phone number, email, or group chat ID like 'chat123456').",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -2054,7 +2054,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "calendar": {
-          "description": "Only events in this calendar",
+          "description": "Only events in this calendar (title or id from list_calendars)",
           "type": "string",
         },
         "end_date": {
@@ -2183,7 +2183,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "calendar": {
-          "description": "Calendar to create it in (default calendar if omitted)",
+          "description": "Calendar to create it in, by title or id (default calendar if omitted)",
           "type": "string",
         },
         "end_date": {
@@ -2387,7 +2387,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "calendar": {
-          "description": "Move the event to this calendar",
+          "description": "Move the event to this calendar, by title or id",
           "type": "string",
         },
         "clear_alarms": {
@@ -2611,7 +2611,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "integer",
         },
         "list": {
-          "description": "Only reminders in this list",
+          "description": "Only reminders in this list (name or id from list_reminder_lists)",
           "type": "string",
         },
         "location_based": {
@@ -2756,7 +2756,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "string",
         },
         "list": {
-          "description": "List to create it in (default list if omitted)",
+          "description": "List to create it in, by name or id (default list if omitted)",
           "type": "string",
         },
         "location": {
@@ -3012,7 +3012,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "string",
         },
         "list": {
-          "description": "Move it to this list",
+          "description": "Move it to this list, by name or id",
           "type": "string",
         },
         "location": {
@@ -3230,7 +3230,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "string",
         },
         "name": {
-          "description": "Reminder list name, as returned by list_reminder_lists",
+          "description": "Reminder list name or id, as returned by list_reminder_lists",
           "minLength": 1,
           "type": "string",
         },
@@ -3254,7 +3254,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "name": {
-          "description": "Reminder list name, as returned by list_reminder_lists",
+          "description": "Reminder list name or id, as returned by list_reminder_lists",
           "minLength": 1,
           "type": "string",
         },

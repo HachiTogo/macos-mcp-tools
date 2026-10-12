@@ -624,7 +624,7 @@ class RemindersManager {
 
     private func findList(named name: String?) throws -> EKCalendar {
         guard let listName = name, !listName.isEmpty else { return eventStore.defaultCalendarForNewReminders()! }
-        guard let list = eventStore.calendars(for: .reminder).first(where: { $0.title == listName }) else {
+        guard let list = calendar(in: eventStore.calendars(for: .reminder), matching: listName) else {
             throw NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "List '\(listName)' not found."])
         }
         return list
@@ -646,7 +646,9 @@ class RemindersManager {
         
         var filtered = reminders
         if !showCompleted { filtered = filtered.filter { !$0.isCompleted } }
-        if let listName = filterList { filtered = filtered.filter { $0.calendar.title == listName } }
+        if let listName = filterList {
+            filtered = filtered.filter { $0.calendar.calendarIdentifier == listName || $0.calendar.title == listName }
+        }
         if let searchTerm = search?.lowercased() { 
             filtered = filtered.filter { 
                 $0.title.lowercased().contains(searchTerm) || ($0.notes?.lowercased().contains(searchTerm) ?? false)
@@ -1053,10 +1055,15 @@ class RemindersManager {
             }
             return defaultCal
         }
-        guard let calendar = eventStore.calendars(for: .event).first(where: { $0.title == calName }) else {
+        guard let calendar = calendar(in: eventStore.calendars(for: .event), matching: calName) else {
             throw NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Calendar '\(calName)' not found."])
         }
         return calendar
+    }
+
+    /// A calendar or reminder list named by the id the list tools return, or by its title.
+    private func calendar(in calendars: [EKCalendar], matching ref: String) -> EKCalendar? {
+        return calendars.first(where: { $0.calendarIdentifier == ref }) ?? calendars.first(where: { $0.title == ref })
     }
     
     func getCalendars() -> [CalendarJSON] {
