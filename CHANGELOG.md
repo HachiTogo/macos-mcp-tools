@@ -33,8 +33,10 @@ Arguments are snake_case throughout, nested ones included: calendar `startDate`,
 | Mail handles `{ accountId, mailboxUrl, mailId }` | `{ account_id, mailbox_url, mail_id }`, both returned and accepted |
 | `fetch_email_attachment` `attachmentName`; `search_emails` `unreadOnly`; `reply_email` `replyAll` | `attachment_name`; `unread_only`; `reply_all` |
 | `flag_emails` items `flagIndex`, `flaggedStatus`, `backgroundColor` | `flag_index`, `flagged_status`, `background_color` |
+| `delete_contact` / `delete_contact_group` `confirm: true` | Removed, as no other delete had it; a stale `confirm` is ignored. Hosts ask before destructive tools instead |
 
 ### Added
+- **Every tool declares all four MCP hints.** Only 12 of the tools marked themselves read-only and none set the others, so a host could not tell a read from a send. Each tool now sets `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Sends, deletes, junking and updates that overwrite are destructive; sends are also open-world. With `confirm` gone, a host's prompt before destructive tools is the guard, so a host set to auto-approve every tool will delete or send without asking. The integration test fails if any tool leaves a hint unset.
 - **One pagination shape.** Every tool that lists or searches your content takes `limit` and `offset`, as mail, contacts and `list_notes` already did. `list_chats`, `get_messages`, `search_messages`, `search_notes`, `search_entries`, `list_events` and `list_reminders` gain `offset`, and `list_events` gains `limit`. Defaults and maximums are unchanged, and `list_events` and `list_reminders` still return everything when `limit` is left out. `get_messages` pages back in time: `offset` skips the newest messages, and each page reads oldest first. A calendar or reminders page that holds only part of the result says so in its heading ("10 of 57, from offset 20"). Mail results echo `offset` in `structuredContent.query`. Tools that list small catalogs (accounts, folders, groups, calendars, reminder lists, subtasks) return everything and take no paging arguments.
 
 ### Changed

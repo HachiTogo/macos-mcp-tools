@@ -1,10 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
+import { CREATE, DESTRUCTIVE, READ, SET } from "../lib/annotations"
 import { runJxa } from "../lib/jxa.js"
 import { jsonResult, runTool } from "../lib/mcp-result.js"
 import { offsetArg } from "../lib/paging"
-
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── JXA scripts ────────────────────────────────────────────────────────
@@ -189,7 +189,6 @@ function run(argv) {
 export const JXA_CONTACTS_DELETE = String.raw`${CONTACT_HELPERS}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
-  if (!args.confirm) throw new Error("Set confirm: true to delete");
   const app = Application("Contacts");
   const p = findPerson(app, args.id);
   app.delete(p);
@@ -251,7 +250,6 @@ function run(argv) {
 const JXA_GROUPS_DELETE = String.raw`${GROUP_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
-  if (!args.confirm) throw new Error("Set confirm: true to delete");
   const app = Application("Contacts");
   const g = findGroup(app, args.group);
   const name = g.name();
@@ -315,11 +313,14 @@ const contactFields = {
     .describe("Phone numbers to add (existing ones are kept)"),
   note: z.string().optional().describe("Note text"),
 }
-const confirm = z.boolean().optional().describe("Must be true to confirm delete")
 
 server.registerTool(
   "list_contacts",
-  { description: "List Apple Contacts people, sorted by last name.", inputSchema: { limit, offset } },
+  {
+    description: "List Apple Contacts people, sorted by last name.",
+    inputSchema: { limit, offset },
+    annotations: READ,
+  },
   async (args) => runScript("list_contacts", JXA_CONTACTS_READ, args),
 )
 
@@ -328,18 +329,25 @@ server.registerTool(
   {
     description: "Search Apple Contacts people by name or organization.",
     inputSchema: { query: z.string().min(1).describe("Text to match in names or organization"), limit, offset },
+    annotations: READ,
   },
   async (args) => runScript("search_contacts", JXA_CONTACTS_SEARCH, args),
 )
 
 server.registerTool(
   "get_contact",
-  { description: "Get one contact's full details: emails, phones, addresses, note.", inputSchema: { id: contactId } },
+  {
+    description: "Get one contact's full details: emails, phones, addresses, note.",
+    inputSchema: { id: contactId },
+    annotations: READ,
+  },
   async ({ id }) => runScript("get_contact", JXA_CONTACTS_GET, { id }),
 )
 
-server.registerTool("create_contact", { description: "Create a contact.", inputSchema: contactFields }, async (args) =>
-  runScript("create_contact", JXA_CONTACTS_CREATE, args),
+server.registerTool(
+  "create_contact",
+  { description: "Create a contact.", inputSchema: contactFields, annotations: CREATE },
+  async (args) => runScript("create_contact", JXA_CONTACTS_CREATE, args),
 )
 
 server.registerTool(
@@ -347,43 +355,56 @@ server.registerTool(
   {
     description: "Update a contact. Only the fields given change; emails and phones are added, never removed.",
     inputSchema: { id: contactId, ...contactFields },
+    annotations: DESTRUCTIVE,
   },
   async (args) => runScript("update_contact", JXA_CONTACTS_UPDATE, args),
 )
 
 server.registerTool(
   "delete_contact",
-  { description: "Delete a contact.", inputSchema: { id: contactId, confirm } },
-  async ({ id, confirm }) => runScript("delete_contact", JXA_CONTACTS_DELETE, { id, confirm }),
+  { description: "Delete a contact.", inputSchema: { id: contactId }, annotations: DESTRUCTIVE },
+  async ({ id }) => runScript("delete_contact", JXA_CONTACTS_DELETE, { id }),
 )
 
 server.registerTool(
   "list_contact_groups",
-  { description: "List Apple Contacts groups with their member counts.", inputSchema: {} },
+  { description: "List Apple Contacts groups with their member counts.", inputSchema: {}, annotations: READ },
   async () => runScript("list_contact_groups", JXA_GROUPS_READ, {}),
 )
 
 server.registerTool(
   "get_contact_group",
-  { description: "List the members of a contact group.", inputSchema: { group: groupRef } },
+  { description: "List the members of a contact group.", inputSchema: { group: groupRef }, annotations: READ },
   async ({ group }) => runScript("get_contact_group", JXA_GROUPS_GET, { group }),
 )
 
 server.registerTool(
   "create_contact_group",
-  { description: "Create a contact group.", inputSchema: { name: z.string().min(1).describe("Group name") } },
+  {
+    description: "Create a contact group.",
+    inputSchema: { name: z.string().min(1).describe("Group name") },
+    annotations: CREATE,
+  },
   async ({ name }) => runScript("create_contact_group", JXA_GROUPS_CREATE, { name }),
 )
 
 server.registerTool(
   "delete_contact_group",
-  { description: "Delete a contact group. Its members are not deleted.", inputSchema: { group: groupRef, confirm } },
-  async ({ group, confirm }) => runScript("delete_contact_group", JXA_GROUPS_DELETE, { group, confirm }),
+  {
+    description: "Delete a contact group. Its members are not deleted.",
+    inputSchema: { group: groupRef },
+    annotations: DESTRUCTIVE,
+  },
+  async ({ group }) => runScript("delete_contact_group", JXA_GROUPS_DELETE, { group }),
 )
 
 server.registerTool(
   "add_contact_to_group",
-  { description: "Add a contact to a group.", inputSchema: { group: groupRef, contact_id: contactId } },
+  {
+    description: "Add a contact to a group.",
+    inputSchema: { group: groupRef, contact_id: contactId },
+    annotations: SET,
+  },
   async ({ group, contact_id }) =>
     runScript("add_contact_to_group", JXA_GROUPS_ADD_MEMBER, { group, person_id: contact_id }),
 )
@@ -393,6 +414,7 @@ server.registerTool(
   {
     description: "Remove a contact from a group. The contact itself is kept.",
     inputSchema: { group: groupRef, contact_id: contactId },
+    annotations: DESTRUCTIVE,
   },
   async ({ group, contact_id }) =>
     runScript("remove_contact_from_group", JXA_GROUPS_REMOVE_MEMBER, { group, person_id: contact_id }),

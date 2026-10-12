@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
-
+import { DESTRUCTIVE, READ, SEND, SET } from "../lib/annotations"
 import { runTool } from "../lib/mcp-result"
 import { PACKAGE_VERSION } from "../lib/version"
 import { MAX_EMAIL_BODY_LENGTH } from "./mail/constants"
@@ -40,6 +40,7 @@ server.registerTool(
     description:
       "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
     inputSchema: {},
+    annotations: READ,
   },
   async () => runTool("list_mail_accounts", () => createListMailAccountsResult()),
 )
@@ -55,6 +56,7 @@ server.registerTool(
       provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
     },
+    annotations: READ,
   },
   async (args) => runTool("list_unread_emails", () => createUnreadEmailsResult(args)),
 )
@@ -67,6 +69,7 @@ server.registerTool(
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as read."),
     },
+    annotations: SET,
   },
   async (args) => runTool("mark_emails_read", () => createMarkEmailsReadResult(args)),
 )
@@ -78,6 +81,7 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
+    annotations: READ,
   },
   async (args) => runTool("fetch_email_body", () => createFetchEmailBodyResult(args)),
 )
@@ -90,6 +94,7 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
+    annotations: READ,
   },
   async (args) => runTool("extract_email_links", () => createExtractEmailLinksResult(args)),
 )
@@ -102,6 +107,7 @@ server.registerTool(
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as junk."),
     },
+    annotations: DESTRUCTIVE,
   },
   async (args) => runTool("mark_emails_junk", () => createMarkEmailsJunkResult(args)),
 )
@@ -114,6 +120,7 @@ server.registerTool(
     inputSchema: {
       emails: emailsArraySchema.describe("Array of email objects to mark as not junk."),
     },
+    annotations: SET,
   },
   async (args) => runTool("mark_emails_not_junk", () => createMarkEmailsNotJunkResult(args)),
 )
@@ -150,6 +157,7 @@ server.registerTool(
         .min(1)
         .describe("Array of email objects to flag."),
     },
+    annotations: SET,
   },
   async ({ emails }) =>
     runTool("flag_emails", () =>
@@ -171,6 +179,7 @@ server.registerTool(
     inputSchema: {
       handle: handleSchema.describe("Email handle identifying the message."),
     },
+    annotations: READ,
   },
   async (args) => runTool("list_email_attachments", () => createListEmailAttachmentsResult(args)),
 )
@@ -190,6 +199,7 @@ server.registerTool(
         .default("text")
         .describe("Return format: 'text' for plain text / PDF extraction, 'base64' for binary. Defaults to 'text'."),
     },
+    annotations: READ,
   },
   async ({ attachment_name, ...args }) =>
     runTool("fetch_email_attachment", () =>
@@ -221,6 +231,7 @@ server.registerTool(
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
       unread_only: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
     },
+    annotations: READ,
   },
   async ({ unread_only, ...args }) =>
     runTool("search_emails", () => {
@@ -246,6 +257,7 @@ server.registerTool(
       body: z.string().min(1).max(MAX_EMAIL_BODY_LENGTH).describe("Plain text email body."),
       from: z.string().email().optional().describe("Optional sender email address. Must match an enabled account."),
     },
+    annotations: SEND,
   },
   async (args) => runTool("send_email", () => createSendEmailResult(args)),
 )
@@ -264,6 +276,7 @@ server.registerTool(
       reply_all: z.boolean().optional().describe("If true, reply to all recipients of the original message."),
       from: z.string().email().optional().describe("Optional sender email address override."),
     },
+    annotations: SEND,
   },
   async ({ reply_all, ...args }) =>
     runTool("reply_email", () => createReplyEmailResult({ ...args, replyAll: reply_all })),
@@ -285,6 +298,7 @@ server.registerTool(
         .describe("Optional message to prepend above the forwarded content."),
       from: z.string().email().optional().describe("Optional sender email address override."),
     },
+    annotations: SEND,
   },
   async (args) => runTool("forward_email", () => createForwardEmailResult(args)),
 )

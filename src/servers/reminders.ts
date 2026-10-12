@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
+import { CREATE, DESTRUCTIVE, READ, SET } from "../lib/annotations"
 import {
   addSubtask,
   CreateReminderListSchema,
@@ -140,6 +141,7 @@ server.registerTool(
       limit: z.number().int().min(1).optional().describe("Return at most this many reminders"),
       offset: offsetArg("reminders"),
     },
+    annotations: READ,
   },
   async ({ limit, offset, ...filters }) =>
     handleAsyncOperation(async () => {
@@ -175,7 +177,7 @@ server.registerTool(
 
 server.registerTool(
   "get_reminder",
-  { description: "Get one reminder by id.", inputSchema: { id: reminderId } },
+  { description: "Get one reminder by id.", inputSchema: { id: reminderId }, annotations: READ },
   async ({ id }) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs({ id }, ReadRemindersSchema)
@@ -196,6 +198,7 @@ server.registerTool(
       tags: z.array(z.string()).optional().describe("Tags to set"),
       subtasks: z.array(z.string()).optional().describe("Titles of initial subtasks"),
     },
+    annotations: CREATE,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -240,6 +243,7 @@ server.registerTool(
       add_tags: z.array(z.string()).optional().describe("Tags to add"),
       remove_tags: z.array(z.string()).optional().describe("Tags to remove"),
     },
+    annotations: DESTRUCTIVE,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -280,7 +284,7 @@ server.registerTool(
 
 server.registerTool(
   "delete_reminder",
-  { description: "Delete a reminder.", inputSchema: { id: reminderId } },
+  { description: "Delete a reminder.", inputSchema: { id: reminderId }, annotations: DESTRUCTIVE },
   async ({ id }) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs({ id }, DeleteReminderSchema)
@@ -293,11 +297,14 @@ server.registerTool(
 
 const color = z.string().describe("Hex color, e.g. '#FF5733'")
 
-server.registerTool("list_reminder_lists", { description: "List the reminder lists.", inputSchema: {} }, async () =>
-  handleAsyncOperation(async () => {
-    const lists = await reminderRepository.findAllLists()
-    return formatListMarkdown("Reminder Lists", lists, formatReminderList, "No reminder lists found.")
-  }, "read reminder lists"),
+server.registerTool(
+  "list_reminder_lists",
+  { description: "List the reminder lists.", inputSchema: {}, annotations: READ },
+  async () =>
+    handleAsyncOperation(async () => {
+      const lists = await reminderRepository.findAllLists()
+      return formatListMarkdown("Reminder Lists", lists, formatReminderList, "No reminder lists found.")
+    }, "read reminder lists"),
 )
 
 server.registerTool(
@@ -305,6 +312,7 @@ server.registerTool(
   {
     description: "Create a reminder list.",
     inputSchema: { name: z.string().min(1).describe("List name"), color: color.optional() },
+    annotations: CREATE,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -319,6 +327,7 @@ server.registerTool(
   {
     description: "Rename a reminder list or change its color.",
     inputSchema: { name: listName, new_name: z.string().optional().describe("New name"), color: color.optional() },
+    annotations: DESTRUCTIVE,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -330,7 +339,11 @@ server.registerTool(
 
 server.registerTool(
   "delete_reminder_list",
-  { description: "Delete a reminder list and its reminders.", inputSchema: { name: listName } },
+  {
+    description: "Delete a reminder list and its reminders.",
+    inputSchema: { name: listName },
+    annotations: DESTRUCTIVE,
+  },
   async (args) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs(args, DeleteReminderListSchema)
@@ -347,7 +360,11 @@ const saveSubtasks = (reminder_id: string, notes: string) =>
 
 server.registerTool(
   "list_subtasks",
-  { description: "List a reminder's subtasks with their progress.", inputSchema: { reminder_id: reminderId } },
+  {
+    description: "List a reminder's subtasks with their progress.",
+    inputSchema: { reminder_id: reminderId },
+    annotations: READ,
+  },
   async (args) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs(camel(args), ReadSubtasksSchema)
@@ -361,6 +378,7 @@ server.registerTool(
   {
     description: "Add a subtask to a reminder.",
     inputSchema: { reminder_id: reminderId, title: z.string().describe("Subtask title") },
+    annotations: CREATE,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -382,6 +400,7 @@ server.registerTool(
       title: z.string().optional().describe("New title"),
       completed: z.boolean().optional().describe("Completed or not"),
     },
+    annotations: DESTRUCTIVE,
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -402,6 +421,7 @@ server.registerTool(
   {
     description: "Flip a subtask between completed and not completed.",
     inputSchema: { reminder_id: reminderId, subtask_id: subtaskId },
+    annotations: { ...SET, idempotentHint: false },
   },
   async (args) =>
     handleAsyncOperation(async () => {
@@ -416,7 +436,11 @@ server.registerTool(
 
 server.registerTool(
   "delete_subtask",
-  { description: "Delete a subtask.", inputSchema: { reminder_id: reminderId, subtask_id: subtaskId } },
+  {
+    description: "Delete a subtask.",
+    inputSchema: { reminder_id: reminderId, subtask_id: subtaskId },
+    annotations: DESTRUCTIVE,
+  },
   async (args) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs(camel(args), DeleteSubtaskSchema)
@@ -434,6 +458,7 @@ server.registerTool(
       reminder_id: reminderId,
       order: z.array(z.string()).describe("Every subtask id, in the new order"),
     },
+    annotations: SET,
   },
   async (args) =>
     handleAsyncOperation(async () => {

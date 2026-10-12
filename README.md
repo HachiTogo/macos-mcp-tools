@@ -181,6 +181,8 @@ If the prompt does not appear at all, `doctor` reports the Calendar and Reminder
 
 Every tool that lists or searches your content (mail, contacts, notes, memory entries, chats and messages, events, reminders) pages the same way: `limit` caps the page and `offset` skips that many matches. Tools that list small catalogs, such as accounts, folders, groups, calendars, reminder lists and subtasks, return everything.
 
+Every tool declares the four MCP hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). Sending, deleting, junking and updates that overwrite are marked destructive, and no tool takes a `confirm` flag: your host asking before a destructive tool is the guard, so don't auto-approve those.
+
 An id a list tool returns is accepted wherever that kind of item is named: a calendar, reminder list or contact group can be passed by id or by name, and `list_chats` shows the `chat_id` that `get_messages` takes.
 
 ### Mail

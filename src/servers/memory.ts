@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
-
+import { CREATE, DESTRUCTIVE, READ } from "../lib/annotations"
 import { isoTimestampString } from "../lib/dates"
 import { jsonResult, runTool, textResult } from "../lib/mcp-result"
 import { offsetArg } from "../lib/paging"
@@ -62,6 +62,7 @@ server.registerTool(
       cost_currency: nullableString,
       aliases: z.array(z.string()).optional(),
     },
+    annotations: CREATE,
   },
   async (args) =>
     runTool("create_entry", () => {
@@ -92,6 +93,7 @@ server.registerTool(
       cost_currency: nullableString,
       aliases: z.array(z.string()).optional(),
     },
+    annotations: DESTRUCTIVE,
   },
   async (args) =>
     runTool("update_entry", () => {
@@ -115,7 +117,7 @@ server.registerTool(
     inputSchema: {
       id: z.string().describe("Entry ID"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async (args) =>
     runTool("get_entry", () => {
@@ -152,7 +154,7 @@ server.registerTool(
       limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional(),
       offset: offsetArg("entries"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async (args) =>
     runTool("search_entries", () => {
@@ -174,7 +176,7 @@ server.registerTool(
       object: z.string().optional(),
       keywords: z.array(z.string()).optional(),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async (args) =>
     runTool("query_last_occurrence", () => {
@@ -199,7 +201,7 @@ server.registerTool(
       object: z.string().optional(),
       keywords: z.array(z.string()).optional(),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async (args) =>
     runTool("query_duration_since", () => {

@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
+import { CREATE, DESTRUCTIVE, READ, SET } from "../lib/annotations"
 import { runJxa } from "../lib/jxa.js"
 import { jsonResult, runTool } from "../lib/mcp-result.js"
 import { offsetArg } from "../lib/paging"
@@ -311,7 +312,7 @@ server.registerTool(
   {
     description: "List all folders in Apple Notes",
     inputSchema: {},
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async () => runTool("list_folders", () => jsonResult(JSON.parse(runJxa(JXA_LIST_FOLDERS)))),
 )
@@ -323,6 +324,7 @@ server.registerTool(
     inputSchema: {
       name: z.string().describe("Folder name"),
     },
+    annotations: CREATE,
   },
   async ({ name }) => runTool("create_folder", () => jsonResult(JSON.parse(runJxa(JXA_CREATE_FOLDER, { name })))),
 )
@@ -336,7 +338,7 @@ server.registerTool(
       limit: z.number().int().min(1).max(500).default(50).describe("Max notes to return"),
       offset: offsetArg("notes"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ folder, limit, offset }) =>
     runTool("list_notes", () => jsonResult(JSON.parse(runJxa(JXA_LIST_NOTES, { folder, limit, offset })))),
@@ -352,7 +354,7 @@ server.registerTool(
       title: noteTitle,
       folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ id, title, folder }) =>
     runTool("get_note", () => {
@@ -370,6 +372,7 @@ server.registerTool(
       body: z.string().describe("HTML body content"),
       folder: z.string().describe("Folder name"),
     },
+    annotations: CREATE,
   },
   async ({ title, body, folder }) =>
     runTool("create_note", () => jsonResult(JSON.parse(runJxa(JXA_CREATE_NOTE, { title, body, folder })))),
@@ -386,6 +389,7 @@ server.registerTool(
       body: z.string().describe("New HTML body content"),
       folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
+    annotations: DESTRUCTIVE,
   },
   async ({ id, title, body, folder }) =>
     runTool("update_note", () => {
@@ -405,6 +409,7 @@ server.registerTool(
       from_folder: z.string().optional().describe("Source folder name (optional); narrows a title lookup"),
       to_folder: z.string().describe("Target folder name"),
     },
+    annotations: SET,
   },
   async ({ id, title, from_folder, to_folder }) =>
     runTool("move_note", () => {
@@ -424,6 +429,7 @@ server.registerTool(
       content: z.string().describe("HTML content to append"),
       folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
+    annotations: CREATE,
   },
   async ({ id, title, content, folder }) =>
     runTool("append_to_note", () => {
@@ -441,6 +447,7 @@ server.registerTool(
       title: noteTitle,
       folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
+    annotations: DESTRUCTIVE,
   },
   async ({ id, title, folder }) =>
     runTool("delete_note", () => {
@@ -456,6 +463,7 @@ server.registerTool(
     inputSchema: {
       name: z.string().describe("Folder name"),
     },
+    annotations: DESTRUCTIVE,
   },
   async ({ name }) => runTool("delete_folder", () => jsonResult(JSON.parse(runJxa(JXA_DELETE_FOLDER, { name })))),
 )
@@ -471,7 +479,7 @@ server.registerTool(
       limit: z.number().int().min(1).max(200).default(20).describe("Max results to return"),
       offset: offsetArg("notes"),
     },
-    annotations: { readOnlyHint: true },
+    annotations: READ,
   },
   async ({ query, folder, limit, offset }) =>
     runTool("search_notes", () => jsonResult(JSON.parse(runJxa(JXA_SEARCH_NOTES, { query, limit, offset, folder })))),

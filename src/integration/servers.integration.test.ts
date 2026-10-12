@@ -12,6 +12,10 @@ const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url))
 
 const SERVERS = ["mail", "contacts", "notes", "memory", "messages", "events", "reminders"] as const
 
+const HINTS = ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] as const
+// Hosts rely on destructiveHint to ask before these; no tool carries its own confirm flag.
+const MUST_BE_DESTRUCTIVE = /^(send|reply|forward|delete|remove)_|^mark_emails_junk$/
+
 type ServerName = (typeof SERVERS)[number]
 
 type TestServer = {
@@ -115,6 +119,14 @@ if (!RUN_INTEGRATION_TESTS) {
             annotations,
           }))
           expect(contract).toMatchSnapshot()
+          for (const { name, annotations, inputSchema } of tools) {
+            const unset = HINTS.filter((hint) => typeof annotations?.[hint] !== "boolean")
+            expect({ name, unset }).toEqual({ name, unset: [] })
+            if (MUST_BE_DESTRUCTIVE.test(name)) {
+              expect({ name, destructiveHint: annotations?.destructiveHint }).toEqual({ name, destructiveHint: true })
+            }
+            expect({ name, confirm: "confirm" in (inputSchema.properties ?? {}) }).toEqual({ name, confirm: false })
+          }
         } finally {
           await stopServer(server)
         }
