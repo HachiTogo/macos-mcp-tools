@@ -14,7 +14,7 @@ import {
   formatReminderMarkdown,
   formatSubtasksListMarkdown,
   rebuildNotesForUpdate,
-} from "./reminders"
+} from "./reminders/format"
 
 // Subtask ids are hex, as generateSubtaskId makes them; the notes parser ignores any other id.
 const subtasks = [
