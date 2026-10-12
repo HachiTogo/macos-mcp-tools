@@ -1,16 +1,19 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js"
+import { z } from "zod"
 
 // Every host loads tools/list into the model's context. The SDK's JSON Schema carries boilerplate
 // no client needs: `$schema` on every schema, `additionalProperties: false` on inputs (the server
 // strips unknown keys anyway) or `{}` on loose outputs, the ±2^53 bounds zod adds to every integer,
-// `anyOf` spelled out where a list of types says the same, and `execution: { taskSupport:
-// "forbidden" }`, which is what a tool without `execution` means. Dropping it changes nothing a tool
-// accepts or returns.
+// `anyOf` spelled out where a list of types says the same, zod's email regex beside the
+// `format: "email"` that already names it, and `execution: { taskSupport: "forbidden" }`, which is
+// what a tool without `execution` means. Dropping it changes nothing a tool accepts or returns: the
+// server still validates every argument against its zod schema.
 
-const isBoilerplate = (key: string, value: unknown) =>
+const isBoilerplate = (key: string, value: unknown, schema: object) =>
   key === "$schema" ||
+  (key === "pattern" && value === z.regexes.email.source && "format" in schema && schema.format === "email") ||
   (key === "additionalProperties" &&
     (value === false || (typeof value === "object" && value !== null && Object.keys(value).length === 0))) ||
   ((key === "maximum" || key === "minimum") && Math.abs(value as number) === Number.MAX_SAFE_INTEGER)
@@ -30,7 +33,7 @@ export const leanSchema = (schema: unknown): unknown => {
   if (typeof schema !== "object" || schema === null) return schema
   const lean: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(schema)) {
-    if (isBoilerplate(key, value)) continue
+    if (isBoilerplate(key, value, schema)) continue
     const types = key === "anyOf" && !("type" in schema) ? typeList(value) : undefined
     if (types) {
       lean.type = types

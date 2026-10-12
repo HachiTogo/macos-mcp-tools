@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js"
+import { z } from "zod"
 
 import { leanSchema, leanToolList } from "./serve"
 
@@ -36,6 +37,21 @@ describe("leanSchema", () => {
       additionalProperties: { type: "string" },
     }
     expect(leanSchema(schema)).toEqual(schema)
+  })
+
+  test("drops zod's email regex beside format email, and keeps any other pattern", () => {
+    const email = z.toJSONSchema(z.string().email())
+    expect(leanSchema(email)).toEqual({ type: "string", format: "email" })
+    const custom = { type: "string", format: "email", pattern: "^[a-z]+@example\\.com$" }
+    expect(leanSchema(custom)).toEqual(custom)
+    const unformatted = { type: "string", pattern: z.regexes.email.source }
+    expect(leanSchema(unformatted)).toEqual(unformatted)
+  })
+
+  test("an address the published schema no longer spells out is still rejected by zod", () => {
+    const to = z.array(z.string().email()).min(1)
+    expect(to.safeParse(["not-an-address"]).success).toBe(false)
+    expect(to.safeParse(["name@example.com"]).success).toBe(true)
   })
 })
 

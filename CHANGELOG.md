@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Email fields no longer repeat zod's address regex.** `send_email`, `reply_email` and `forward_email` listed a 116-byte pattern beside `format: "email"` on every address field, nine times in all. `tools/list` now gives the format alone, about 1 KB less of what the model reads. The servers still validate every address with the same rule, so what the tools accept is unchanged.
+
 ## [0.10.0] - 2026-10-12
 
 ### Breaking: one tool per action
