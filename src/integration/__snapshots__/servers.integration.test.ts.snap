@@ -1199,7 +1199,43 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_contacts",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "contacts": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "limit": {
+          "type": "number",
+        },
+        "offset": {
+          "type": "number",
+        },
+        "total": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "contacts",
+        "total",
+        "offset",
+        "limit",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1238,7 +1274,43 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "search_contacts",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "contacts": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "limit": {
+          "type": "number",
+        },
+        "offset": {
+          "type": "number",
+        },
+        "total": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "contacts",
+        "total",
+        "offset",
+        "limit",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1263,7 +1335,19 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_contact",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "id": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1462,7 +1546,35 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_contact_groups",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+              "name": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "name",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "result",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1487,7 +1599,39 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_contact_group",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "id": {
+          "type": "string",
+        },
+        "members": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "name": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "members",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1620,7 +1764,31 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_folders",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "name": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "name",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "result",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1682,7 +1850,43 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "list_notes",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "limit": {
+          "type": "number",
+        },
+        "notes": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "offset": {
+          "type": "number",
+        },
+        "total": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "notes",
+        "total",
+        "offset",
+        "limit",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1711,7 +1915,31 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_note",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "body": {
+          "type": "string",
+        },
+        "folder": {
+          "type": "string",
+        },
+        "id": {
+          "type": "string",
+        },
+        "name": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "folder",
+        "body",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -1948,7 +2176,35 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "search_notes",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "result": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "folder": {
+                "type": "string",
+              },
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "folder",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "result",
+      ],
+      "type": "object",
+    },
   },
 ]
 `;
@@ -2327,7 +2583,39 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "get_entry",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "entry": {
+          "anyOf": [
+            {
+              "additionalProperties": {},
+              "properties": {
+                "id": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "id",
+              ],
+              "type": "object",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "entry",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2392,7 +2680,41 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "search_entries",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "entries": {
+          "items": {
+            "additionalProperties": {},
+            "properties": {
+              "id": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "query": {
+          "additionalProperties": {},
+          "properties": {},
+          "type": "object",
+        },
+        "source": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "query",
+        "entries",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2424,7 +2746,45 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "query_last_occurrence",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "entry": {
+          "additionalProperties": {},
+          "properties": {
+            "id": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+          ],
+          "type": "object",
+        },
+        "query": {
+          "additionalProperties": {},
+          "properties": {},
+          "type": "object",
+        },
+        "source": {
+          "type": "string",
+        },
+        "status": {
+          "enum": [
+            "matched",
+            "no_match",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "query",
+        "status",
+      ],
+      "type": "object",
+    },
   },
   {
     "annotations": {
@@ -2456,7 +2816,45 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
       "type": "object",
     },
     "name": "query_duration_since",
-    "outputSchema": undefined,
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {},
+      "properties": {
+        "entry": {
+          "additionalProperties": {},
+          "properties": {
+            "id": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+          ],
+          "type": "object",
+        },
+        "query": {
+          "additionalProperties": {},
+          "properties": {},
+          "type": "object",
+        },
+        "source": {
+          "type": "string",
+        },
+        "status": {
+          "enum": [
+            "matched",
+            "no_match",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "source",
+        "query",
+        "status",
+      ],
+      "type": "object",
+    },
   },
 ]
 `;

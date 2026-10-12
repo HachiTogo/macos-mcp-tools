@@ -34,7 +34,7 @@ function readList(warnings, field, read) {
 }
 `
 
-const JXA_CONTACTS_READ = String.raw`
+export const JXA_CONTACTS_READ = String.raw`
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
@@ -64,7 +64,7 @@ function run(argv) {
 }
 `
 
-const JXA_CONTACTS_SEARCH = String.raw`
+export const JXA_CONTACTS_SEARCH = String.raw`
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
@@ -207,7 +207,7 @@ function findGroup(app, ref) {
 }
 `
 
-const JXA_GROUPS_READ = String.raw`
+export const JXA_GROUPS_READ = String.raw`
 function run(argv) {
   const app = Application("Contacts");
   const groups = app.groups();
@@ -220,7 +220,7 @@ function run(argv) {
 }
 `
 
-const JXA_GROUPS_GET = String.raw`${GROUP_LOOKUP}
+export const JXA_GROUPS_GET = String.raw`${GROUP_LOOKUP}
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Contacts");
@@ -290,6 +290,22 @@ const server = new McpServer({
   version: PACKAGE_VERSION,
 })
 
+// The structuredContent each read tool declares. Objects are loose, so a field present only
+// sometimes, or added later, never fails a call that worked; nested items detail only what agents
+// pass back. Lists come back wrapped as { result }, as jsonResult wraps every array.
+const withId = z.looseObject({ id: z.string() })
+export const contactsPageOutput = z.looseObject({
+  contacts: z.array(withId),
+  total: z.number(),
+  offset: z.number(),
+  limit: z.number(),
+})
+export const contactOutput = withId
+export const contactGroupsOutput = z.looseObject({
+  result: z.array(z.looseObject({ id: z.string(), name: z.string() })),
+})
+export const contactGroupOutput = z.looseObject({ id: z.string(), name: z.string(), members: z.array(withId) })
+
 /** Every contacts tool runs one JXA script and returns its JSON. */
 const runScript = (operation: string, script: string, args: Record<string, unknown>) =>
   runTool(operation, () => jsonResult(JSON.parse(runJxa(script, args))))
@@ -319,6 +335,7 @@ server.registerTool(
   {
     description: "List Apple Contacts people, sorted by last name.",
     inputSchema: { limit, offset },
+    outputSchema: contactsPageOutput,
     annotations: READ,
   },
   async (args) => runScript("list_contacts", JXA_CONTACTS_READ, args),
@@ -329,6 +346,7 @@ server.registerTool(
   {
     description: "Search Apple Contacts people by name or organization.",
     inputSchema: { query: z.string().min(1).describe("Text to match in names or organization"), limit, offset },
+    outputSchema: contactsPageOutput,
     annotations: READ,
   },
   async (args) => runScript("search_contacts", JXA_CONTACTS_SEARCH, args),
@@ -339,6 +357,7 @@ server.registerTool(
   {
     description: "Get one contact's full details: emails, phones, addresses, note.",
     inputSchema: { id: contactId },
+    outputSchema: contactOutput,
     annotations: READ,
   },
   async ({ id }) => runScript("get_contact", JXA_CONTACTS_GET, { id }),
@@ -368,13 +387,23 @@ server.registerTool(
 
 server.registerTool(
   "list_contact_groups",
-  { description: "List Apple Contacts groups with their member counts.", inputSchema: {}, annotations: READ },
+  {
+    description: "List Apple Contacts groups with their member counts.",
+    inputSchema: {},
+    outputSchema: contactGroupsOutput,
+    annotations: READ,
+  },
   async () => runScript("list_contact_groups", JXA_GROUPS_READ, {}),
 )
 
 server.registerTool(
   "get_contact_group",
-  { description: "List the members of a contact group.", inputSchema: { group: groupRef }, annotations: READ },
+  {
+    description: "List the members of a contact group.",
+    inputSchema: { group: groupRef },
+    outputSchema: contactGroupOutput,
+    annotations: READ,
+  },
   async ({ group }) => runScript("get_contact_group", JXA_GROUPS_GET, { group }),
 )
 

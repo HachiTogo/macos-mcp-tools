@@ -1,16 +1,22 @@
 import { describe, expect, test } from "bun:test"
 
+import { jsonResult } from "../lib/mcp-result"
 import {
+  foldersOutput,
   JXA_APPEND_TO_NOTE,
   JXA_CREATE_NOTE,
   JXA_DELETE_NOTE,
   JXA_GET_NOTE,
+  JXA_LIST_FOLDERS,
   JXA_LIST_NOTES,
   JXA_MOVE_NOTE,
   JXA_SEARCH_NOTES,
   JXA_UPDATE_NOTE,
   NOTE_LOOKUP,
   NOTE_TEXT,
+  noteOutput,
+  noteSearchOutput,
+  notesPageOutput,
   requireNoteRef,
 } from "./notes"
 
@@ -121,5 +127,45 @@ describe("JXA scripts", () => {
       expect({ name, usesLookup: script.includes("findNote(app,") }).toEqual({ name, usesLookup: true })
       expect({ name, firstMatch: /notes\.find\(/.test(script) }).toEqual({ name, firstMatch: false })
     }
+  })
+})
+
+/** Runs a script's run() against a fake app, as osascript runs it against Notes. */
+const runAgainst = (script: string, app: unknown, args: object = {}) =>
+  JSON.parse(new Function("Application", `${script}; return run`)(() => app)([JSON.stringify(args)]))
+
+describe("read tools' declared output schemas", () => {
+  const at = new Date("2026-10-01T12:00:00Z")
+  const note = (id: string, name: string, text: string) => ({
+    id: () => id,
+    name: () => name,
+    body: () => `<div>${text}</div>`,
+    plaintext: () => text,
+    creationDate: () => at,
+    modificationDate: () => at,
+    container: () => ({ name: () => "Work" }),
+  })
+  const notes = [note("n1", "Plan", "Groceries and errands"), note("n2", "Trip", "Packing list")]
+  const work = {
+    name: () => "Work",
+    notes: {
+      length: notes.length,
+      id: () => notes.map((n) => n.id()),
+      name: () => notes.map((n) => n.name()),
+      plaintext: () => notes.map((n) => n.plaintext()),
+      creationDate: () => notes.map(() => at),
+      modificationDate: () => notes.map(() => at),
+    },
+  }
+  const app = { folders: () => [work], notes: { byId: (id: string) => notes.find((n) => n.id() === id) } }
+  // Each handler returns jsonResult of the script's output; the SDK checks that against the schema.
+  const structured = (script: string, args?: object) => jsonResult(runAgainst(script, app, args)).structuredContent
+
+  test("every read script's result matches its tool's schema", () => {
+    expect(foldersOutput.parse(structured(JXA_LIST_FOLDERS))).toBeTruthy()
+    expect(notesPageOutput.parse(structured(JXA_LIST_NOTES, { folder: "Work", limit: 10 }))).toBeTruthy()
+    expect(noteOutput.parse(structured(JXA_GET_NOTE, { id: "n1" }))).toBeTruthy()
+    expect(noteSearchOutput.parse(structured(JXA_SEARCH_NOTES, { query: "list", limit: 10 }))).toBeTruthy()
+    expect(noteSearchOutput.parse(structured(JXA_SEARCH_NOTES, { query: "zz-nothing", limit: 10 }))).toBeTruthy()
   })
 })

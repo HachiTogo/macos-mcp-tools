@@ -55,7 +55,7 @@ function findNote(app, args) {
 }
 `
 
-const JXA_LIST_FOLDERS = String.raw`
+export const JXA_LIST_FOLDERS = String.raw`
 function run(argv) {
   const args = JSON.parse(argv[0] || "{}");
   const app = Application("Notes");
@@ -300,6 +300,21 @@ const noteTitle = z
     "Note title. Must match exactly one note (in folder, if given); otherwise the error lists each match's id. Recently Deleted is skipped unless named as the folder.",
   )
 
+// The structuredContent each read tool declares. Objects are loose, so a field present only
+// sometimes, or added later, never fails a call that worked; nested items detail only what agents
+// pass back. Lists come back wrapped as { result }, as jsonResult wraps every array.
+export const foldersOutput = z.looseObject({ result: z.array(z.looseObject({ name: z.string() })) })
+export const notesPageOutput = z.looseObject({
+  notes: z.array(z.looseObject({ id: z.string() })),
+  total: z.number(),
+  offset: z.number(),
+  limit: z.number(),
+})
+export const noteOutput = z.looseObject({ id: z.string(), name: z.string(), folder: z.string(), body: z.string() })
+export const noteSearchOutput = z.looseObject({
+  result: z.array(z.looseObject({ id: z.string(), folder: z.string() })),
+})
+
 // ── MCP Server ─────────────────────────────────────────────────────────
 
 const server = new McpServer({
@@ -312,6 +327,7 @@ server.registerTool(
   {
     description: "List all folders in Apple Notes",
     inputSchema: {},
+    outputSchema: foldersOutput,
     annotations: READ,
   },
   async () => runTool("list_folders", () => jsonResult(JSON.parse(runJxa(JXA_LIST_FOLDERS)))),
@@ -338,6 +354,7 @@ server.registerTool(
       limit: z.number().int().min(1).max(500).default(50).describe("Max notes to return"),
       offset: offsetArg("notes"),
     },
+    outputSchema: notesPageOutput,
     annotations: READ,
   },
   async ({ folder, limit, offset }) =>
@@ -354,6 +371,7 @@ server.registerTool(
       title: noteTitle,
       folder: z.string().optional().describe("Folder name (optional); narrows a title lookup"),
     },
+    outputSchema: noteOutput,
     annotations: READ,
   },
   async ({ id, title, folder }) =>
@@ -479,6 +497,7 @@ server.registerTool(
       limit: z.number().int().min(1).max(200).default(20).describe("Max results to return"),
       offset: offsetArg("notes"),
     },
+    outputSchema: noteSearchOutput,
     annotations: READ,
   },
   async ({ query, folder, limit, offset }) =>
