@@ -9,9 +9,9 @@
 
 ## Structure
 - Single package. `src/cli.ts` is the only entrypoint and dynamically imports one stdio MCP server per subcommand.
-- Servers: `src/servers/{mail,contacts,notes,memory,messages,events,reminders}.ts`. Mail is a module tree under `src/servers/mail/`; `mail.ts` only registers tools.
+- Servers: `src/servers/<name>.ts` registers tools; mail, memory and reminders keep their logic in `src/servers/<name>/`.
 - Shared JXA helper: `src/lib/jxa.ts`. EventKit bridge: `src/lib/eventkit/`, which shells out to `bin/EventKitCLI`.
-- `package.json` `files` globs `src/**/*.ts`, so new files ship automatically; `src/package-manifest.test.ts` fails if one does not.
+- `package.json` `files` globs `src/**/*.ts`; `src/package-manifest.test.ts` checks that new files ship.
 
 ## Development Guidance
 - Every change lands through a pull request against `main`. Never push directly to `main`.
@@ -19,23 +19,23 @@
 - Do not bump `package.json`; add CHANGELOG entries under `## [Unreleased]`. `make release VERSION=x.y.z` opens a PR that promotes them and bumps once, sized to everything in it: patch for fixes, minor for features or pre-1.0 breaks, major past 1.0. `main`'s version always equals what npm serves.
 - Keep each PR near 300 lines of code, excluding comments and tests. One reviewable concern per PR.
 - Larger work splits into stacked PRs with `gh stack` (see `gh stack --help`): `gh stack init`, commit a slice, `gh stack add <branch>`, `gh stack submit`, `gh stack sync` after merges. Each slice must pass CI and stand alone.
-- Style: TypeScript strict, ESM, no semicolons, enforced by Biome (`biome.jsonc`). Run `bun run format` before committing.
+- Style: TypeScript strict, ESM, no semicolons, enforced by Biome. Run `bun run format` before committing.
 - Add or update unit tests for helper logic you touch. Update `README.md` when tool names or arguments change.
 - Commit messages use conventional prefixes (`feat:`, `fix:`, `docs:`).
 
 ## Stateful Side Effects
-- `mail.ts` reads `~/Library/Mail/V10/MailData/Envelope Index` but mutates through JXA/`osascript`.
+- `mail.ts` reads `~/Library/Mail/V10/MailData/Envelope Index`; it mutates through JXA.
 - Mail auto-writes `email.json` in the data dir (`MACOS_TOOLS_DATA_DIR`, else `~/.local/share/macos-tools/`) when missing or empty. A file that does not parse is reported, never overwritten.
-- `messages.ts` reads `~/Library/Messages/chat.db` (readonly SQLite) and sends through JXA/`osascript`.
-- `memory.ts` stores SQLite in `MACOS_TOOLS_DATA_DIR` if set, else `~/.local/share/macos-tools/`. Use a temp dir when testing.
+- `messages.ts` reads `~/Library/Messages/chat.db` read-only and sends through JXA.
+- `memory.ts` stores SQLite in the data dir. Use a temp dir when testing.
 - `events.ts` and `reminders.ts` mutate real calendars and reminder lists through EventKit.
 
 ## Testing Reality
-- Unit tests cover pure helpers in `src/lib/` and every server except contacts, events and reminders.
-- `src/integration/servers.integration.test.ts` snapshots every server's `tools/list`; refresh intended changes with `RUN_INTEGRATION_TESTS=1 bun test src/integration -u`. Live-app cases need `RUN_APP_INTEGRATION_TESTS=1`.
-- The same suite caps serialized `tools/list` at `SCHEMA_BUDGET_BYTES`. Growth past it fails, and so does shrinking more than 1 KB below it; change the constant on purpose, never to silence the test.
-- No coverage for live JXA or EventKit behavior (`contacts`, `notes`, `messages`, `events`, `reminders`, mail mutations). Verify manually and say so in the PR.
+- Every server has unit tests; mail and messages SQL runs on fixture databases.
+- `src/integration/servers.integration.test.ts` snapshots every server's `tools/list`, checks its hints and the README's tool lists; refresh intended changes with `RUN_INTEGRATION_TESTS=1 bun test src/integration -u`.
+- It caps serialized `tools/list` size with a ratchet, `SCHEMA_BUDGET_BYTES`; change it on purpose.
+- Nothing covers live JXA or EventKit behavior: verify against the real apps and say so in the PR.
 
 ## External Dependencies
 - `fetch_email_attachment` needs `pdftotext`; `brew install poppler` if PDF extraction fails.
-- `events` and `reminders` need Calendar and Reminders permission for the running process.
+- `events` and `reminders` need Calendar and Reminders access.
