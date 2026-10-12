@@ -83,12 +83,16 @@ export function createErrorMessage(operation: string, error: unknown): string {
   return `${operation} failed: ${errorMessage(error)}`
 }
 
+/** A read tool's result: markdown for people, and the same data as structuredContent. */
+export type StructuredText = { text: string; structured: Record<string, unknown> }
+
 export async function handleAsyncOperation(
-  operation: () => Promise<string>,
+  operation: () => Promise<string | StructuredText>,
   operationName: string,
 ): Promise<CallToolResult> {
   try {
-    return textResult(await operation())
+    const result = await operation()
+    return typeof result === "string" ? textResult(result) : textResult(result.text, result.structured)
   } catch (error) {
     return { ...textResult(createErrorMessage(operationName, error)), isError: true }
   }
@@ -107,6 +111,24 @@ export const camelizeKeys = (value: unknown): unknown => {
       Object.entries(value).map(([key, inner]) => [
         key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()),
         camelizeKeys(inner),
+      ]),
+    )
+  }
+  return value
+}
+
+/**
+ * camelizeKeys in reverse, for structuredContent. Results use the arguments' casing, so a value read
+ * back, such as an event's recurrence_rules, can be passed to an update as it is; zod would drop a
+ * camelCase key without an error.
+ */
+export const snakeKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(snakeKeys)
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, inner]) => [
+        key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`),
+        snakeKeys(inner),
       ]),
     )
   }

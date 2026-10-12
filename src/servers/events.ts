@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { z } from "zod"
 import { CREATE, DESTRUCTIVE, READ } from "../lib/annotations"
 import {
+  type CalendarEvent,
   CreateCalendarEventSchema,
   calendarRepository,
   camelizeKeys,
@@ -12,6 +13,7 @@ import {
   formatSuccessMessage,
   handleAsyncOperation,
   ReadCalendarEventsSchema,
+  snakeKeys,
   UpdateCalendarEventSchema,
   validateToolArgs,
 } from "../lib/eventkit/index.js"
@@ -133,6 +135,19 @@ const eventFields = {
   recurrence_rules: recurrenceRules.optional(),
 }
 
+// The structuredContent each read tool declares. Objects are loose, so a field present only
+// sometimes never fails a call that worked; only ids are pinned.
+const withId = z.looseObject({ id: z.string() })
+export const eventsOutput = z.looseObject({ events: z.array(withId), total: z.number(), offset: z.number() })
+export const eventOutput = z.looseObject({ event: withId })
+export const calendarsOutput = z.looseObject({
+  calendars: z.array(z.looseObject({ id: z.string(), title: z.string() })),
+})
+
+/** An event as structuredContent, in the arguments' casing; `notes` is `note`, as update_event takes it. */
+export const structuredEvent = ({ notes, ...event }: CalendarEvent) =>
+  snakeKeys({ ...event, note: notes }) as Record<string, unknown>
+
 const eventChanges = (
   validated: z.infer<typeof UpdateCalendarEventSchema> | z.infer<typeof CreateCalendarEventSchema>,
 ) => ({
@@ -159,6 +174,7 @@ server.registerTool(
       limit: z.number().int().min(1).optional().describe("Default: all"),
       offset: offsetArg,
     },
+    outputSchema: eventsOutput,
     annotations: READ,
   },
   async (args) =>
@@ -182,13 +198,14 @@ server.registerTool(
         availability: validated.availability,
         accountName: validated.filterAccount,
       })
-      return formatListMarkdown(
-        "Calendar Events",
-        paginate(events, args.offset, args.limit),
-        formatEventMarkdown,
-        "No calendar events found.",
-        { offset: args.offset, total: events.length },
-      )
+      const page = paginate(events, args.offset, args.limit)
+      return {
+        text: formatListMarkdown("Calendar Events", page, formatEventMarkdown, "No calendar events found.", {
+          offset: args.offset,
+          total: events.length,
+        }),
+        structured: { events: page.map(structuredEvent), total: events.length, offset: args.offset },
+      }
     }, "read calendar events"),
 )
 
@@ -198,13 +215,14 @@ server.registerTool(
     description:
       "Get an event by id, at any date; a recurring event gives its first occurrence. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
     inputSchema: { id: eventId },
+    outputSchema: eventOutput,
     annotations: READ,
   },
   async ({ id }) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs({ id }, ReadCalendarEventsSchema)
       const event = await calendarRepository.findEventById(validated.id as string)
-      return formatEventMarkdown(event).join("\n")
+      return { text: formatEventMarkdown(event).join("\n"), structured: { event: structuredEvent(event) } }
     }, "read calendar events"),
 )
 
@@ -305,17 +323,21 @@ server.registerTool(
   {
     description: "List calendars with their ids and accounts.",
     inputSchema: {},
+    outputSchema: calendarsOutput,
     annotations: READ,
   },
   async () =>
     handleAsyncOperation(async () => {
       const calendars = await calendarRepository.findAllCalendars()
-      return formatListMarkdown(
-        "Calendars",
-        calendars,
-        (calendar) => [`- ${calendar.title} (${calendar.account}) (ID: ${calendar.id})`],
-        "No calendars found.",
-      )
+      return {
+        text: formatListMarkdown(
+          "Calendars",
+          calendars,
+          (calendar) => [`- ${calendar.title} (${calendar.account}) (ID: ${calendar.id})`],
+          "No calendars found.",
+        ),
+        structured: { calendars: snakeKeys(calendars) },
+      }
     }, "read calendars"),
 )
 
