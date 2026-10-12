@@ -32,6 +32,12 @@ import {
 
 // ── MCP Server ─────────────────────────────────────────────────────────
 
+const provider = z
+  .string()
+  .min(1)
+  .optional()
+  .describe("Only accounts with this provider, as list_mail_accounts reports it (e.g. 'gmail', 'icloud', 'unknown').")
+
 const server = new McpServer({ name: "apple-mail", version: PACKAGE_VERSION })
 
 server.registerTool(
@@ -53,7 +59,7 @@ server.registerTool(
     inputSchema: {
       limit: limitSchema.describe("Maximum number of messages to return (1–100). Default: 25."),
       offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
-      provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
+      provider,
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
     },
     annotations: READ,
@@ -227,7 +233,7 @@ server.registerTool(
         ),
       limit: limitSchema.describe("Maximum number of results to return (1–100). Default: 25."),
       offset: offsetSchema.describe("Skip this many matching messages before returning; use with limit to page."),
-      provider: z.enum(["gmail", "icloud"]).optional().describe("Filter to a specific email provider."),
+      provider,
       mailbox: z.string().optional().describe("Substring filter on mailbox name or URL (e.g. 'INBOX', 'work')."),
       unread_only: z.boolean().optional().describe("If true, only return unread emails. Defaults to false."),
     },

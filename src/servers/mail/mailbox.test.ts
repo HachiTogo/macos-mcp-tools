@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { spawnSync } from "node:child_process"
 
 import { MAILBOX_NAME_JXA } from "./jxa-scripts"
-import { getMailboxAccountKey, getMailboxName } from "./mailbox"
+import { getMailboxAccountKey, getMailboxName, getProviderByAccount } from "./mailbox"
 
 // A read displays a mailbox by name and a mutation finds it by name, in TypeScript and in JXA
 // respectively. When the two disagree the mailbox lists fine and then fails to mutate with
@@ -67,5 +67,20 @@ function run(argv) {
     expect(result.status, `osascript failed: ${result.stderr}`).toBe(0)
     const fromJxa = JSON.parse(result.stdout.trim()) as string[]
     expect(fromJxa).toEqual(URLS.map(getMailboxName))
+  })
+})
+
+describe("getProviderByAccount", () => {
+  test("keeps every configured provider, not only gmail and icloud", () => {
+    const account = (provider: string) => ({ label: "x", category: "x", provider })
+    const config = {
+      accounts: { a: account("gmail"), b: account("exchange"), c: account("unknown") },
+      displayOrder: [],
+    }
+    expect([...getProviderByAccount(config)]).toEqual([
+      ["a", "gmail"],
+      ["b", "exchange"],
+      ["c", "unknown"],
+    ])
   })
 })
