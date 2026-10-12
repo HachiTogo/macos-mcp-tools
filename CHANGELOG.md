@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-12
+
 ### Breaking: one tool per action
 
 Agents and skills that call the old names need updating. Tools that did several things through an `action` argument are split into one tool per action, so each can carry accurate safety hints and only its own arguments.
