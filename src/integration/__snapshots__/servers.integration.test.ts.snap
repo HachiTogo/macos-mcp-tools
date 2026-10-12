@@ -4,7 +4,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
 [
   {
     "annotations": undefined,
-    "description": "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
+    "description": "List the Apple Mail accounts and mailboxes this server can see, with unread counts. Call this before filtering: 'provider' and 'mailbox' on list_unread_emails and search_emails only accept values that exist here, and a value that matches nothing returns an empty result rather than an error.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {},
@@ -48,12 +48,12 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       },
       "type": "object",
     },
-    "name": "unread_emails",
+    "name": "list_unread_emails",
     "outputSchema": undefined,
   },
   {
     "annotations": undefined,
-    "description": "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    "description": "Mark Apple Mail messages as read. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -63,20 +63,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
             "properties": {
               "handle": {
                 "properties": {
-                  "accountId": {
+                  "account_id": {
                     "type": "string",
                   },
-                  "mailId": {
+                  "mail_id": {
                     "type": "string",
                   },
-                  "mailboxUrl": {
+                  "mailbox_url": {
                     "type": "string",
                   },
                 },
                 "required": [
-                  "accountId",
-                  "mailboxUrl",
-                  "mailId",
+                  "account_id",
+                  "mailbox_url",
+                  "mail_id",
                 ],
                 "type": "object",
               },
@@ -114,20 +114,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "handle": {
           "description": "Email handle identifying the message.",
           "properties": {
-            "accountId": {
+            "account_id": {
               "type": "string",
             },
-            "mailId": {
+            "mail_id": {
               "type": "string",
             },
-            "mailboxUrl": {
+            "mailbox_url": {
               "type": "string",
             },
           },
           "required": [
-            "accountId",
-            "mailboxUrl",
-            "mailId",
+            "account_id",
+            "mailbox_url",
+            "mail_id",
           ],
           "type": "object",
         },
@@ -149,20 +149,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "handle": {
           "description": "Email handle identifying the message.",
           "properties": {
-            "accountId": {
+            "account_id": {
               "type": "string",
             },
-            "mailId": {
+            "mail_id": {
               "type": "string",
             },
-            "mailboxUrl": {
+            "mailbox_url": {
               "type": "string",
             },
           },
           "required": [
-            "accountId",
-            "mailboxUrl",
-            "mailId",
+            "account_id",
+            "mailbox_url",
+            "mail_id",
           ],
           "type": "object",
         },
@@ -177,7 +177,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
   },
   {
     "annotations": undefined,
-    "description": "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    "description": "Mark Apple Mail messages as junk/spam. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -187,20 +187,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
             "properties": {
               "handle": {
                 "properties": {
-                  "accountId": {
+                  "account_id": {
                     "type": "string",
                   },
-                  "mailId": {
+                  "mail_id": {
                     "type": "string",
                   },
-                  "mailboxUrl": {
+                  "mailbox_url": {
                     "type": "string",
                   },
                 },
                 "required": [
-                  "accountId",
-                  "mailboxUrl",
-                  "mailId",
+                  "account_id",
+                  "mailbox_url",
+                  "mail_id",
                 ],
                 "type": "object",
               },
@@ -231,7 +231,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
   },
   {
     "annotations": undefined,
-    "description": "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by unread_emails, not bare handle objects.",
+    "description": "Mark Apple Mail messages as not junk. Each item in 'emails' must be a full email object with 'id', 'subject', and 'handle' fields — pass the objects exactly as returned by list_unread_emails, not bare handle objects.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -241,20 +241,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
             "properties": {
               "handle": {
                 "properties": {
-                  "accountId": {
+                  "account_id": {
                     "type": "string",
                   },
-                  "mailId": {
+                  "mail_id": {
                     "type": "string",
                   },
-                  "mailboxUrl": {
+                  "mailbox_url": {
                     "type": "string",
                   },
                 },
                 "required": [
-                  "accountId",
-                  "mailboxUrl",
-                  "mailId",
+                  "account_id",
+                  "mailbox_url",
+                  "mail_id",
                 ],
                 "type": "object",
               },
@@ -285,7 +285,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
   },
   {
     "annotations": undefined,
-    "description": "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flagIndex', 'flaggedStatus', or 'backgroundColor'.",
+    "description": "Set flag color, flagged status, or background color on Apple Mail messages. Each item in 'emails' must include 'id', 'handle', and at least one of 'flag_index', 'flagged_status', or 'background_color'.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -293,7 +293,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "description": "Array of email objects to flag.",
           "items": {
             "properties": {
-              "backgroundColor": {
+              "background_color": {
                 "description": "Message background color in Mail.app.",
                 "enum": [
                   "blue",
@@ -307,32 +307,32 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
                 ],
                 "type": "string",
               },
-              "flagIndex": {
+              "flag_index": {
                 "description": "Flag color index: -1=unflagged, 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=gray",
                 "maximum": 6,
                 "minimum": -1,
                 "type": "integer",
               },
-              "flaggedStatus": {
+              "flagged_status": {
                 "description": "Set flagged status directly. true=flagged, false=unflagged.",
                 "type": "boolean",
               },
               "handle": {
                 "properties": {
-                  "accountId": {
+                  "account_id": {
                     "type": "string",
                   },
-                  "mailId": {
+                  "mail_id": {
                     "type": "string",
                   },
-                  "mailboxUrl": {
+                  "mailbox_url": {
                     "type": "string",
                   },
                 },
                 "required": [
-                  "accountId",
-                  "mailboxUrl",
-                  "mailId",
+                  "account_id",
+                  "mailbox_url",
+                  "mail_id",
                 ],
                 "type": "object",
               },
@@ -370,20 +370,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "handle": {
           "description": "Email handle identifying the message.",
           "properties": {
-            "accountId": {
+            "account_id": {
               "type": "string",
             },
-            "mailId": {
+            "mail_id": {
               "type": "string",
             },
-            "mailboxUrl": {
+            "mailbox_url": {
               "type": "string",
             },
           },
           "required": [
-            "accountId",
-            "mailboxUrl",
-            "mailId",
+            "account_id",
+            "mailbox_url",
+            "mail_id",
           ],
           "type": "object",
         },
@@ -402,8 +402,8 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "attachmentName": {
-          "description": "Name of the attachment to fetch.",
+        "attachment_name": {
+          "description": "Name of the attachment to fetch, as listed by list_email_attachments.",
           "minLength": 1,
           "type": "string",
         },
@@ -419,27 +419,27 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "handle": {
           "description": "Email handle identifying the message.",
           "properties": {
-            "accountId": {
+            "account_id": {
               "type": "string",
             },
-            "mailId": {
+            "mail_id": {
               "type": "string",
             },
-            "mailboxUrl": {
+            "mailbox_url": {
               "type": "string",
             },
           },
           "required": [
-            "accountId",
-            "mailboxUrl",
-            "mailId",
+            "account_id",
+            "mailbox_url",
+            "mail_id",
           ],
           "type": "object",
         },
       },
       "required": [
         "handle",
-        "attachmentName",
+        "attachment_name",
       ],
       "type": "object",
     },
@@ -494,7 +494,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
           "description": "Substring to match in the email subject line.",
           "type": "string",
         },
-        "unreadOnly": {
+        "unread_only": {
           "description": "If true, only return unread emails. Defaults to false.",
           "type": "boolean",
         },
@@ -568,7 +568,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
   },
   {
     "annotations": undefined,
-    "description": "Reply to an existing Apple Mail message by handle. Set replyAll=true to reply to all recipients.",
+    "description": "Reply to an existing Apple Mail message by handle. Set reply_all=true to reply to all recipients.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -587,24 +587,24 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "handle": {
           "description": "Email handle identifying the message being replied to.",
           "properties": {
-            "accountId": {
+            "account_id": {
               "type": "string",
             },
-            "mailId": {
+            "mail_id": {
               "type": "string",
             },
-            "mailboxUrl": {
+            "mailbox_url": {
               "type": "string",
             },
           },
           "required": [
-            "accountId",
-            "mailboxUrl",
-            "mailId",
+            "account_id",
+            "mailbox_url",
+            "mail_id",
           ],
           "type": "object",
         },
-        "replyAll": {
+        "reply_all": {
           "description": "If true, reply to all recipients of the original message.",
           "type": "boolean",
         },
@@ -656,20 +656,20 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "handle": {
           "description": "Email handle identifying the message being forwarded.",
           "properties": {
-            "accountId": {
+            "account_id": {
               "type": "string",
             },
-            "mailId": {
+            "mail_id": {
               "type": "string",
             },
-            "mailboxUrl": {
+            "mailbox_url": {
               "type": "string",
             },
           },
           "required": [
-            "accountId",
-            "mailboxUrl",
-            "mailId",
+            "account_id",
+            "mailbox_url",
+            "mail_id",
           ],
           "type": "object",
         },

@@ -7,9 +7,9 @@ import { z } from "zod"
 import { DEFAULT_LIMIT, MAX_LIMIT } from "./constants"
 
 export const handleSchema = z.object({
-  accountId: z.string(),
-  mailboxUrl: z.string(),
-  mailId: z.string(),
+  account_id: z.string(),
+  mailbox_url: z.string(),
+  mail_id: z.string(),
 })
 
 export const emailsArraySchema = z

@@ -38,17 +38,17 @@ describe("isoDateString", () => {
 })
 
 describe("handleSchema", () => {
-  const handle = { accountId: "acct", mailboxUrl: "imap://acct/INBOX", mailId: "100" }
+  const handle = { account_id: "acct", mailbox_url: "imap://acct/INBOX", mail_id: "100" }
 
   test("requires all three identifying fields", () => {
     expect(handleSchema.parse(handle)).toEqual(handle)
-    expect(() => handleSchema.parse({ accountId: "acct", mailboxUrl: "imap://acct/INBOX" })).toThrow()
+    expect(() => handleSchema.parse({ account_id: "acct", mailbox_url: "imap://acct/INBOX" })).toThrow()
     expect(() => handleSchema.parse("not an object")).toThrow()
   })
 })
 
 describe("emailsArraySchema", () => {
-  const email = { id: "1", handle: { accountId: "a", mailboxUrl: "u", mailId: "m" } }
+  const email = { id: "1", handle: { account_id: "a", mailbox_url: "u", mail_id: "m" } }
 
   test("requires at least one email, each carrying a handle", () => {
     expect(emailsArraySchema.parse([email])).toHaveLength(1)

@@ -88,7 +88,7 @@ describe("normalizeSender", () => {
   })
 })
 
-/** What unread_emails passes: archived Gmail mail is left out. */
+/** What list_unread_emails passes: archived Gmail mail is left out. */
 const UNREAD = { includeArchivedGmail: false }
 /** What search_emails passes: archived Gmail mail is still searchable. */
 const SEARCH = { includeArchivedGmail: true }
@@ -117,8 +117,8 @@ describe("normalizeEmail", () => {
 
   test("builds a handle the mutation tools can address the message by", () => {
     const email = normalizeEmail(row(), providers, CONFIG, UNREAD)
-    expect(email?.handle.mailboxUrl).toBe(INBOX)
-    expect(email?.handle.mailId).toBe("100")
+    expect(email?.handle.mailbox_url).toBe(INBOX)
+    expect(email?.handle.mail_id).toBe("100")
   })
 
   test("leaves the timestamps empty rather than inventing one", () => {
@@ -202,7 +202,7 @@ describe("Gmail labels", () => {
 
   test("the handle keeps pointing where the message is stored, which is where Mail.app finds it", () => {
     const email = normalizeEmail(gmailRow("Newsletters"), providers, CONFIG, UNREAD)
-    expect(email?.handle.mailboxUrl).toBe(ALL_MAIL)
+    expect(email?.handle.mailbox_url).toBe(ALL_MAIL)
     expect(email?.mailboxUrl).toBe(at("Newsletters"))
   })
 

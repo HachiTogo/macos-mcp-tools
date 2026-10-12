@@ -48,10 +48,11 @@ export type NormalizedEmail = {
   labels?: string[]
 }
 
+// Returned with every email and passed back to act on it, so its keys follow the snake_case arguments.
 export type EmailHandle = {
-  accountId: string
-  mailboxUrl: string
-  mailId: string
+  account_id: string
+  mailbox_url: string
+  mail_id: string
 }
 
 export type AccountClassification = Pick<NormalizedEmail, "accountLabel" | "accountCategory">
