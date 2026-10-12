@@ -2541,37 +2541,106 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
 [
   {
     "annotations": undefined,
-    "description": "Manages reminder tasks. Supports reading, creating, updating, and deleting reminders.",
+    "description": "List reminders, incomplete ones by default, optionally filtered by list, text, due date, priority, recurrence, location or tags.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "action": {
-          "description": "The operation to perform",
+        "due_within": {
+          "description": "Due date range",
           "enum": [
-            "read",
-            "create",
-            "update",
-            "delete",
+            "today",
+            "tomorrow",
+            "this-week",
+            "overdue",
+            "no-date",
           ],
           "type": "string",
         },
-        "addTags": {
-          "description": "Tags to add to the reminder (for update). Merges with existing tags",
+        "limit": {
+          "description": "Return at most this many reminders",
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "list": {
+          "description": "Only reminders in this list",
+          "type": "string",
+        },
+        "location_based": {
+          "description": "Only location-based reminders",
+          "type": "boolean",
+        },
+        "priority": {
+          "description": "Only this priority",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none",
+          ],
+          "type": "string",
+        },
+        "recurring": {
+          "description": "Only recurring reminders",
+          "type": "boolean",
+        },
+        "search": {
+          "description": "Text to match in title or notes",
+          "type": "string",
+        },
+        "show_completed": {
+          "description": "Include completed reminders",
+          "type": "boolean",
+        },
+        "tags": {
+          "description": "Only reminders with all of these tags",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
+      },
+      "type": "object",
+    },
+    "name": "list_reminders",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Get one reminder by id.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "get_reminder",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a reminder, optionally with tags and initial subtasks.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
         "alarms": {
           "description": "Alarms for the reminder",
           "items": {
             "properties": {
-              "absoluteDate": {
-                "description": "Absolute trigger date/time",
+              "absolute_date": {
+                "description": "Absolute trigger date and time",
                 "type": "string",
               },
-              "alarmType": {
-                "description": "READ-ONLY: Alarm presentation type",
+              "alarm_type": {
+                "description": "Read-only presentation type",
                 "enum": [
                   "display",
                   "audio",
@@ -2580,7 +2649,8 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 ],
                 "type": "string",
               },
-              "locationTrigger": {
+              "location_trigger": {
+                "description": "Location trigger for a geofenced reminder",
                 "properties": {
                   "latitude": {
                     "type": "number",
@@ -2589,6 +2659,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                     "type": "number",
                   },
                   "proximity": {
+                    "description": "Trigger on arriving or leaving",
                     "enum": [
                       "enter",
                       "leave",
@@ -2596,9 +2667,11 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                     "type": "string",
                   },
                   "radius": {
+                    "description": "Geofence radius in meters (default 100)",
                     "type": "number",
                   },
                   "title": {
+                    "description": "Location name",
                     "type": "string",
                   },
                 },
@@ -2610,8 +2683,8 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 ],
                 "type": "object",
               },
-              "relativeOffset": {
-                "description": "Seconds offset (negative = before due/start)",
+              "relative_offset": {
+                "description": "Seconds from the due or start date (negative = before)",
                 "type": "number",
               },
             },
@@ -2619,91 +2692,33 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           },
           "type": "array",
         },
-        "clearAlarms": {
-          "description": "Set to true to remove all alarms from the reminder",
-          "type": "boolean",
-        },
-        "clearLocationTrigger": {
-          "description": "Set to true to remove location trigger from an existing reminder (for update)",
-          "type": "boolean",
-        },
-        "clearRecurrence": {
-          "description": "Set to true to remove recurrence from an existing reminder (for update)",
-          "type": "boolean",
-        },
         "completed": {
-          "description": "The completion status of the reminder (for update)",
+          "description": "Create it already completed",
           "type": "boolean",
         },
-        "completionDate": {
-          "description": "Completion date/time (for update)",
+        "due_date": {
+          "description": "Due: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
-        "dueDate": {
-          "description": "Due date. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
-          "type": "string",
-        },
-        "dueWithin": {
-          "description": "Filter reminders by a due date range",
-          "enum": [
-            "today",
-            "tomorrow",
-            "this-week",
-            "overdue",
-            "no-date",
-          ],
-          "type": "string",
-        },
-        "filterList": {
-          "description": "Filter reminders by a specific list name",
-          "type": "string",
-        },
-        "filterLocationBased": {
-          "description": "Filter to only show location-based reminders when true",
-          "type": "boolean",
-        },
-        "filterPriority": {
-          "description": "Filter reminders by priority level",
-          "enum": [
-            "high",
-            "medium",
-            "low",
-            "none",
-          ],
-          "type": "string",
-        },
-        "filterRecurring": {
-          "description": "Filter to only show recurring reminders when true",
-          "type": "boolean",
-        },
-        "filterTags": {
-          "description": "Filter reminders by tags (must have ALL specified tags)",
-          "items": {
-            "type": "string",
-          },
-          "type": "array",
-        },
-        "id": {
-          "description": "The unique identifier of the reminder (REQUIRED for update, delete; optional for read to get single reminder)",
+        "list": {
+          "description": "List to create it in (default list if omitted)",
           "type": "string",
         },
         "location": {
-          "description": "Location text for the reminder (not the same as a location-based trigger)",
+          "description": "Location text (not a location trigger)",
           "type": "string",
         },
-        "locationTrigger": {
-          "description": "Location trigger for geofence-based reminders",
+        "location_trigger": {
+          "description": "Location trigger for a geofenced reminder",
           "properties": {
             "latitude": {
-              "description": "Latitude coordinate",
               "type": "number",
             },
             "longitude": {
-              "description": "Longitude coordinate",
               "type": "number",
             },
             "proximity": {
-              "description": "When to trigger: enter or leave",
+              "description": "Trigger on arriving or leaving",
               "enum": [
                 "enter",
                 "leave",
@@ -2715,7 +2730,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "type": "number",
             },
             "title": {
-              "description": "Location name/title",
+              "description": "Location name",
               "type": "string",
             },
           },
@@ -2728,83 +2743,20 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "object",
         },
         "note": {
-          "description": "Additional notes for the reminder",
+          "description": "Notes",
           "type": "string",
         },
         "priority": {
-          "description": "Priority level: 0=none, 1=high, 5=medium, 9=low",
+          "description": "Priority: 0 none, 1 high, 5 medium, 9 low",
           "maximum": 9007199254740991,
           "minimum": -9007199254740991,
           "type": "integer",
         },
-        "recurrence": {
-          "description": "Single recurrence rule for repeating reminders",
-          "properties": {
-            "daysOfMonth": {
-              "description": "Days of month (1-31)",
-              "items": {
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
-                "type": "integer",
-              },
-              "type": "array",
-            },
-            "daysOfWeek": {
-              "description": "Days of week (1=Sunday, 7=Saturday)",
-              "items": {
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
-                "type": "integer",
-              },
-              "type": "array",
-            },
-            "endDate": {
-              "description": "When the recurrence ends (YYYY-MM-DD)",
-              "type": "string",
-            },
-            "frequency": {
-              "enum": [
-                "minutely",
-                "hourly",
-                "daily",
-                "weekly",
-                "monthly",
-                "yearly",
-              ],
-              "type": "string",
-            },
-            "interval": {
-              "description": "Interval between occurrences (default 1)",
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "type": "integer",
-            },
-            "monthsOfYear": {
-              "description": "Months for yearly recurrence (1-12)",
-              "items": {
-                "maximum": 9007199254740991,
-                "minimum": -9007199254740991,
-                "type": "integer",
-              },
-              "type": "array",
-            },
-            "occurrenceCount": {
-              "description": "Number of times to repeat",
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "type": "integer",
-            },
-          },
-          "required": [
-            "frequency",
-          ],
-          "type": "object",
-        },
-        "recurrenceRules": {
-          "description": "Recurrence rules for repeating reminders",
+        "recurrence_rules": {
+          "description": "Recurrence rules for a repeating reminder",
           "items": {
             "properties": {
-              "daysOfMonth": {
+              "days_of_month": {
                 "description": "Days of month (1-31)",
                 "items": {
                   "maximum": 9007199254740991,
@@ -2813,7 +2765,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 },
                 "type": "array",
               },
-              "daysOfWeek": {
+              "days_of_week": {
                 "description": "Days of week (1=Sunday, 7=Saturday)",
                 "items": {
                   "maximum": 9007199254740991,
@@ -2822,7 +2774,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 },
                 "type": "array",
               },
-              "endDate": {
+              "end_date": {
                 "description": "When the recurrence ends (YYYY-MM-DD)",
                 "type": "string",
               },
@@ -2843,7 +2795,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 "minimum": -9007199254740991,
                 "type": "integer",
               },
-              "monthsOfYear": {
+              "months_of_year": {
                 "description": "Months for yearly recurrence (1-12)",
                 "items": {
                   "maximum": 9007199254740991,
@@ -2852,7 +2804,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 },
                 "type": "array",
               },
-              "occurrenceCount": {
+              "occurrence_count": {
                 "description": "Number of times to repeat",
                 "maximum": 9007199254740991,
                 "minimum": -9007199254740991,
@@ -2866,146 +2818,557 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           },
           "type": "array",
         },
-        "removeTags": {
-          "description": "Tags to remove from the reminder (for update)",
-          "items": {
-            "type": "string",
-          },
-          "type": "array",
-        },
-        "search": {
-          "description": "Search term to filter reminders by title or notes",
-          "type": "string",
-        },
-        "showCompleted": {
-          "description": "Include completed reminders in the results",
-          "type": "boolean",
-        },
-        "startDate": {
-          "description": "Start date. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+        "start_date": {
+          "description": "Start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "subtasks": {
-          "description": "Initial subtasks to create with the reminder (for create action). Array of subtask titles",
+          "description": "Titles of initial subtasks",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
         "tags": {
-          "description": "Tags to set on the reminder (for create). Replaces any existing tags",
+          "description": "Tags to set",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
-        "targetList": {
-          "description": "The name of the list for create or update operations",
-          "type": "string",
-        },
         "title": {
-          "description": "The title of the reminder (REQUIRED for create, optional for update)",
+          "description": "Reminder title",
           "type": "string",
         },
         "url": {
-          "description": "A URL to associate with the reminder",
+          "description": "A URL for the reminder",
           "type": "string",
         },
       },
       "required": [
-        "action",
+        "title",
       ],
       "type": "object",
     },
-    "name": "reminders_tasks",
+    "name": "create_reminder",
     "outputSchema": undefined,
   },
   {
     "annotations": undefined,
-    "description": "Manages reminder lists. Supports reading, creating, updating, and deleting reminder lists.",
+    "description": "Update a reminder. Only the fields given change; tags and subtasks in its notes are kept.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "action": {
-          "description": "The operation to perform on a list",
-          "enum": [
-            "read",
-            "create",
-            "update",
-            "delete",
-          ],
-          "type": "string",
-        },
-        "color": {
-          "description": "The hex color code for the list (e.g., '#FF5733')",
-          "type": "string",
-        },
-        "name": {
-          "description": "The current name of the list (for update, delete) or the name of the new list (for create)",
-          "type": "string",
-        },
-        "newName": {
-          "description": "The new name for the list (for update)",
-          "type": "string",
-        },
-      },
-      "required": [
-        "action",
-      ],
-      "type": "object",
-    },
-    "name": "reminders_lists",
-    "outputSchema": undefined,
-  },
-  {
-    "annotations": undefined,
-    "description": "Manages subtasks/checklists within reminders.",
-    "inputSchema": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "properties": {
-        "action": {
-          "description": "The operation to perform: read, create, update, delete, toggle, reorder",
-          "enum": [
-            "read",
-            "create",
-            "update",
-            "delete",
-            "toggle",
-            "reorder",
-          ],
-          "type": "string",
-        },
-        "completed": {
-          "description": "The completion status of the subtask (for update)",
-          "type": "boolean",
-        },
-        "order": {
-          "description": "Array of subtask IDs in desired order (REQUIRED for reorder). Must include all subtask IDs",
+        "add_tags": {
+          "description": "Tags to add",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
-        "reminderId": {
-          "description": "The unique identifier of the parent reminder (REQUIRED for all operations)",
+        "alarms": {
+          "description": "Alarms for the reminder",
+          "items": {
+            "properties": {
+              "absolute_date": {
+                "description": "Absolute trigger date and time",
+                "type": "string",
+              },
+              "alarm_type": {
+                "description": "Read-only presentation type",
+                "enum": [
+                  "display",
+                  "audio",
+                  "procedure",
+                  "email",
+                ],
+                "type": "string",
+              },
+              "location_trigger": {
+                "description": "Location trigger for a geofenced reminder",
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                  },
+                  "longitude": {
+                    "type": "number",
+                  },
+                  "proximity": {
+                    "description": "Trigger on arriving or leaving",
+                    "enum": [
+                      "enter",
+                      "leave",
+                    ],
+                    "type": "string",
+                  },
+                  "radius": {
+                    "description": "Geofence radius in meters (default 100)",
+                    "type": "number",
+                  },
+                  "title": {
+                    "description": "Location name",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "title",
+                  "latitude",
+                  "longitude",
+                  "proximity",
+                ],
+                "type": "object",
+              },
+              "relative_offset": {
+                "description": "Seconds from the due or start date (negative = before)",
+                "type": "number",
+              },
+            },
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "clear_alarms": {
+          "description": "Remove all alarms",
+          "type": "boolean",
+        },
+        "clear_location_trigger": {
+          "description": "Remove the location trigger",
+          "type": "boolean",
+        },
+        "clear_recurrence": {
+          "description": "Remove the recurrence rules",
+          "type": "boolean",
+        },
+        "completed": {
+          "description": "Mark completed or not",
+          "type": "boolean",
+        },
+        "completion_date": {
+          "description": "Completion: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
-        "subtaskId": {
-          "description": "The unique identifier of the subtask (REQUIRED for update, delete, toggle)",
+        "due_date": {
+          "description": "Due: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
+        },
+        "id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+        "list": {
+          "description": "Move it to this list",
+          "type": "string",
+        },
+        "location": {
+          "description": "Location text (not a location trigger)",
+          "type": "string",
+        },
+        "location_trigger": {
+          "description": "Location trigger for a geofenced reminder",
+          "properties": {
+            "latitude": {
+              "type": "number",
+            },
+            "longitude": {
+              "type": "number",
+            },
+            "proximity": {
+              "description": "Trigger on arriving or leaving",
+              "enum": [
+                "enter",
+                "leave",
+              ],
+              "type": "string",
+            },
+            "radius": {
+              "description": "Geofence radius in meters (default 100)",
+              "type": "number",
+            },
+            "title": {
+              "description": "Location name",
+              "type": "string",
+            },
+          },
+          "required": [
+            "title",
+            "latitude",
+            "longitude",
+            "proximity",
+          ],
+          "type": "object",
+        },
+        "note": {
+          "description": "Notes",
+          "type": "string",
+        },
+        "priority": {
+          "description": "Priority: 0 none, 1 high, 5 medium, 9 low",
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "type": "integer",
+        },
+        "recurrence_rules": {
+          "description": "Recurrence rules for a repeating reminder",
+          "items": {
+            "properties": {
+              "days_of_month": {
+                "description": "Days of month (1-31)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "days_of_week": {
+                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "end_date": {
+                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "type": "string",
+              },
+              "frequency": {
+                "enum": [
+                  "minutely",
+                  "hourly",
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "yearly",
+                ],
+                "type": "string",
+              },
+              "interval": {
+                "description": "Interval between occurrences (default 1)",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "months_of_year": {
+                "description": "Months for yearly recurrence (1-12)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "occurrence_count": {
+                "description": "Number of times to repeat",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "frequency",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "remove_tags": {
+          "description": "Tags to remove",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "start_date": {
+          "description": "Start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
+          "type": "string",
+        },
+        "tags": {
+          "description": "Replace the tags with these",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
         },
         "title": {
-          "description": "The title of the subtask (REQUIRED for create, optional for update)",
+          "description": "New title",
+          "type": "string",
+        },
+        "url": {
+          "description": "A URL for the reminder",
           "type": "string",
         },
       },
       "required": [
-        "action",
-        "reminderId",
+        "id",
       ],
       "type": "object",
     },
-    "name": "reminders_subtasks",
+    "name": "update_reminder",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a reminder.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "delete_reminder",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "List the reminder lists.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_reminder_lists",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a reminder list.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "color": {
+          "description": "Hex color, e.g. '#FF5733'",
+          "type": "string",
+        },
+        "name": {
+          "description": "List name",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "type": "object",
+    },
+    "name": "create_reminder_list",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Rename a reminder list or change its color.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "color": {
+          "description": "Hex color, e.g. '#FF5733'",
+          "type": "string",
+        },
+        "name": {
+          "description": "Reminder list name, as returned by list_reminder_lists",
+          "minLength": 1,
+          "type": "string",
+        },
+        "new_name": {
+          "description": "New name",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "type": "object",
+    },
+    "name": "update_reminder_list",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a reminder list and its reminders.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "name": {
+          "description": "Reminder list name, as returned by list_reminder_lists",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "type": "object",
+    },
+    "name": "delete_reminder_list",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "List a reminder's subtasks with their progress.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "reminder_id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "reminder_id",
+      ],
+      "type": "object",
+    },
+    "name": "list_subtasks",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Add a subtask to a reminder.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "reminder_id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+        "title": {
+          "description": "Subtask title",
+          "type": "string",
+        },
+      },
+      "required": [
+        "reminder_id",
+        "title",
+      ],
+      "type": "object",
+    },
+    "name": "add_subtask",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Rename a subtask or set whether it is completed.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "completed": {
+          "description": "Completed or not",
+          "type": "boolean",
+        },
+        "reminder_id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+        "subtask_id": {
+          "description": "Subtask id, as returned by list_subtasks",
+          "minLength": 1,
+          "type": "string",
+        },
+        "title": {
+          "description": "New title",
+          "type": "string",
+        },
+      },
+      "required": [
+        "reminder_id",
+        "subtask_id",
+      ],
+      "type": "object",
+    },
+    "name": "update_subtask",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Flip a subtask between completed and not completed.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "reminder_id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+        "subtask_id": {
+          "description": "Subtask id, as returned by list_subtasks",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "reminder_id",
+        "subtask_id",
+      ],
+      "type": "object",
+    },
+    "name": "toggle_subtask",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a subtask.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "reminder_id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+        "subtask_id": {
+          "description": "Subtask id, as returned by list_subtasks",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "reminder_id",
+        "subtask_id",
+      ],
+      "type": "object",
+    },
+    "name": "delete_subtask",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Reorder a reminder's subtasks.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "order": {
+          "description": "Every subtask id, in the new order",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "reminder_id": {
+          "description": "Reminder id, as returned by list_reminders",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "reminder_id",
+        "order",
+      ],
+      "type": "object",
+    },
+    "name": "reorder_subtasks",
     "outputSchema": undefined,
   },
 ]

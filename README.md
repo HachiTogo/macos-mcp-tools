@@ -229,7 +229,7 @@ Tools: `list_events`, `get_event`, `create_event`, `update_event`, `delete_event
 
 Manages Apple Reminders via EventKit. Supports full CRUD with subtasks (stored as checklists in notes), tags (native #tag format), priority levels, location triggers, alarms, and recurrence rules.
 
-Tools: `reminders_tasks`, `reminders_lists`, `reminders_subtasks`
+Tools: `list_reminders`, `get_reminder`, `create_reminder`, `update_reminder`, `delete_reminder`, `list_reminder_lists`, `create_reminder_list`, `update_reminder_list`, `delete_reminder_list`, `list_subtasks`, `add_subtask`, `update_subtask`, `toggle_subtask`, `delete_subtask`, `reorder_subtasks`
 
 ## Examples
 
@@ -259,7 +259,7 @@ Follow-ups that work: *"Read me Sam's email"* (`fetch_email_body`), *"Mark the G
 
 ### "What reminders are due or overdue as of today, ranked by priority?"
 
-Claude calls `reminders_tasks` on `apple_reminders` twice, `{ "action": "read", "dueWithin": "overdue" }` and `{ "action": "read", "dueWithin": "today" }`, then sorts. Each call returns markdown:
+Claude calls `list_reminders` on `apple_reminders` twice, `{ "due_within": "overdue" }` and `{ "due_within": "today" }`, then sorts. Each call returns markdown:
 
 ```text
 ### Reminders (Total: 3)
@@ -284,7 +284,7 @@ Claude's reply, roughly:
 
 > **Overdue, highest priority first:** 1) Renew car registration (high, due Sep 15, 3 days late). 2) Reply to school volunteer form (medium, due Sep 17). 3) Order printer toner (no priority, due Sep 16). **Due today:** Submit expense report (high), Call the vet (medium). Want me to mark any complete or push the toner one to Friday?
 
-Follow-ups: *"Mark the toner one done"* (`reminders_tasks` with `action: "update"`, `id`, `completed: true`), *"Add 'pick up dry cleaning' to Errands for tomorrow, high priority"* (`action: "create"`).
+Follow-ups: *"Mark the toner one done"* (`update_reminder` with `id`, `completed: true`), *"Add 'pick up dry cleaning' to Errands for tomorrow, high priority"* (`create_reminder`).
 
 ### "What's on my calendar tomorrow?"
 
