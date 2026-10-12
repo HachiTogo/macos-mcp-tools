@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite"
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 
 import {
+  chatsOutput,
   escapeLikePattern,
   extractTextFromBody,
   formatChatList,
@@ -9,8 +10,11 @@ import {
   getParticipants,
   isoToAppleNanos,
   listChats,
+  messagesOutput,
+  participantsOutput,
   resolveText,
   searchMessages,
+  searchOutput,
 } from "./messages"
 
 // Build a minimal attributedBody-style blob: opaque header, "NSString", "+", length prefix, UTF-8 text.
@@ -212,6 +216,20 @@ describe("chat.db queries", () => {
     // rows, offset 1 would skip the rich-text row and return the match; counting matches skips the match.
     expect(searchMessages("you", { limit: 50, offset: 0 }, db).map((m) => m.text)).toEqual(["See you at 6"])
     expect(searchMessages("you", { limit: 50, offset: 1 }, db)).toEqual([])
+  })
+
+  test("each read tool's structuredContent matches its declared output schema", () => {
+    // Built exactly as the handlers build them; the SDK refuses a result that does not match.
+    const source = "messages"
+    expect(chatsOutput.parse({ source, chats: listChats({ limit: 10, offset: 0 }, db) })).toBeTruthy()
+    const messages = getMessages("chat100", { limit: 50, offset: 0 }, db)
+    expect(messagesOutput.parse({ source, chatId: "chat100", messages })).toBeTruthy()
+    const results = searchMessages("e", { limit: 50, offset: 0 }, db)
+    expect(searchOutput.parse({ source, query: "e", results })).toBeTruthy()
+    expect(
+      participantsOutput.parse({ source, chatId: "chat100", participants: getParticipants("chat100", db) }),
+    ).toBeTruthy()
+    expect(searchOutput.parse({ source, query: "zz", results: [] })).toBeTruthy()
   })
 
   test("get_participants lists a chat's handles", () => {
