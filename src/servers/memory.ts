@@ -1,10 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { CREATE, DESTRUCTIVE, READ } from "../lib/annotations"
 import { isoTimestampString } from "../lib/dates"
 import { jsonResult, runTool, textResult } from "../lib/mcp-result"
 import { offsetArg } from "../lib/paging"
+import { serve } from "../lib/serve"
 import { PACKAGE_VERSION } from "../lib/version"
 import {
   type CreateEntryArguments,
@@ -242,10 +242,7 @@ server.registerTool(
 
 // ── Entry point ────────────────────────────────────────────────────────
 
-export const main = async () => {
-  const transport = new StdioServerTransport()
-  await server.connect(transport)
-}
+export const main = () => serve(server)
 
 // Boot only when executed directly; cli.ts and tests import this module without starting a server.
 if (import.meta.main) {
