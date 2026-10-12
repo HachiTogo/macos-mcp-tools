@@ -31,7 +31,6 @@ export {
   bufferToString,
   CliUserError,
   camelizeKeys,
-  extractAndValidateArgs,
   formatDeleteMessage,
   formatListMarkdown,
   formatMultilineNotes,

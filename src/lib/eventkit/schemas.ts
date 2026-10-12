@@ -352,8 +352,6 @@ export const DeleteCalendarEventSchema = z.object({
   span: SpanSchema,
 })
 
-export const ReadCalendarsSchema = z.object({})
-
 export const CreateReminderListSchema = z.object({
   name: RequiredListNameSchema,
   color: z
