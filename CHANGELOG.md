@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Agents and skills that call the old names need updating. Tools that did several things through an `action` argument are split into one tool per action, so each can carry accurate safety hints and only its own arguments.
 
+Arguments are snake_case throughout, nested ones included: calendar `startDate`, `targetCalendar` / `filterCalendar`, `isAllDay`, `recurrenceRules`, `relativeOffset`, `daysOfWeek` and so on become `start_date`, `calendar`, `is_all_day`, `recurrence_rules`, `relative_offset`, `days_of_week`.
+
 | Old call | New tool |
 |---|---|
 | `contacts_people` `read` / `search` / `get` | `list_contacts` / `search_contacts` / `get_contact` |
@@ -18,6 +20,10 @@ Agents and skills that call the old names need updating. Tools that did several 
 | `contacts_groups` `read` / `get` | `list_contact_groups` / `get_contact_group` (`group`) |
 | `contacts_groups` `create` / `delete` | `create_contact_group` / `delete_contact_group` (`group`) |
 | `contacts_groups` `add_member` / `remove_member` (`name`, `person_id`) | `add_contact_to_group` / `remove_contact_from_group` (`group`, `contact_id`) |
+| `calendar_events` `read` (no `id`) | `list_events` (`start_date`, `end_date`, `calendar`, `account`, `search`, `availability`) |
+| `calendar_events` `read` with `id` | `get_event` |
+| `calendar_events` `create` / `update` / `delete` | `create_event` / `update_event` / `delete_event` |
+| `calendar_calendars` `read` | `list_calendars` |
 
 ### Changed
 - **Notes title lookups skip Recently Deleted.** A trashed note counted as a title match, so deleting "X" and creating a new "X" made the title ambiguous until the trash emptied. A title lookup across folders now ignores Recently Deleted; naming that folder, or passing the note's `id`, still reaches a trashed note. The folder is matched by its English name.

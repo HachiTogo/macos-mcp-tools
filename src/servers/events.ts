@@ -1,23 +1,20 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
-import type { CalendarsToolArgs, CalendarToolArgs } from "../lib/eventkit/index.js"
 import {
   CreateCalendarEventSchema,
   calendarRepository,
+  camelizeKeys,
   DeleteCalendarEventSchema,
-  extractAndValidateArgs,
   formatDeleteMessage,
   formatListMarkdown,
   formatMultilineNotes,
   formatSuccessMessage,
   handleAsyncOperation,
   ReadCalendarEventsSchema,
-  ReadCalendarsSchema,
   UpdateCalendarEventSchema,
+  validateToolArgs,
 } from "../lib/eventkit/index.js"
-
-import { errorResult } from "../lib/mcp-result.js"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Formatters ────────────────────────────────────────────────────────
@@ -78,188 +75,237 @@ const server = new McpServer({
   version: PACKAGE_VERSION,
 })
 
-server.registerTool(
-  "calendar_events",
-  {
-    description:
-      "Manages calendar events (time blocks). Supports reading, creating, updating, and deleting calendar events.",
-    inputSchema: {
-      action: z.enum(["read", "create", "update", "delete"]).describe("The operation to perform"),
-      id: z
-        .string()
-        .optional()
-        .describe(
-          "The unique identifier of the event (REQUIRED for update, delete; optional for read to get that one event, at any date). A recurring event's id names the series; read returns its first occurrence.",
-        ),
-      title: z.string().optional().describe("The title of the event (REQUIRED for create, optional for update)"),
-      startDate: z
-        .string()
-        .optional()
-        .describe(
-          "Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
-        ),
-      endDate: z
-        .string()
-        .optional()
-        .describe("End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601"),
-      note: z.string().optional().describe("Additional notes for the event"),
-      location: z.string().optional().describe("Location text for the event"),
-      structuredLocation: z
+// ── Argument schemas (snake_case; camelized for the EventKit validators) ──
+
+const dateTime = (what: string) =>
+  z.string().describe(`${what}: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601`)
+
+const structuredLocation = z
+  .object({
+    title: z.string(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    radius: z.number().optional(),
+  })
+  .describe("Structured location with optional coordinates")
+
+const alarms = z
+  .array(
+    z.object({
+      relative_offset: z.number().optional().describe("Seconds from the start (negative = before)"),
+      absolute_date: z.string().optional().describe("Absolute trigger date and time"),
+      location_trigger: z
         .object({
           title: z.string(),
-          latitude: z.number().optional(),
-          longitude: z.number().optional(),
+          latitude: z.number(),
+          longitude: z.number(),
           radius: z.number().optional(),
+          proximity: z.enum(["enter", "leave"]),
         })
-        .optional()
-        .describe("Structured location with optional coordinates"),
-      url: z.string().optional().describe("A URL to associate with the event"),
-      isAllDay: z.boolean().optional().describe("Whether the event is an all-day event"),
-      availability: z
-        .enum(["not-supported", "busy", "free", "tentative", "unavailable"])
-        .optional()
-        .describe("Event availability"),
-      alarms: z
-        .array(
-          z.object({
-            relativeOffset: z.number().optional().describe("Seconds offset (negative = before start)"),
-            absoluteDate: z.string().optional().describe("Absolute trigger date/time"),
-            locationTrigger: z
-              .object({
-                title: z.string(),
-                latitude: z.number(),
-                longitude: z.number(),
-                radius: z.number().optional(),
-                proximity: z.enum(["enter", "leave"]),
-              })
-              .optional(),
-            alarmType: z
-              .enum(["display", "audio", "procedure", "email"])
-              .optional()
-              .describe("READ-ONLY: Alarm presentation type"),
-          }),
-        )
-        .optional()
-        .describe("Alarms for the event"),
-      clearAlarms: z.boolean().optional().describe("Set to true to remove all alarms from the event"),
-      recurrenceRules: z
-        .array(
-          z.object({
-            frequency: z.enum(["minutely", "hourly", "daily", "weekly", "monthly", "yearly"]),
-            interval: z.number().int().optional().describe("Interval between occurrences (default 1)"),
-            endDate: z.string().optional().describe("When the recurrence ends (YYYY-MM-DD)"),
-            occurrenceCount: z.number().int().optional().describe("Number of times to repeat"),
-            daysOfWeek: z.array(z.number().int()).optional().describe("Days of week (1=Sunday, 7=Saturday)"),
-            daysOfMonth: z.array(z.number().int()).optional().describe("Days of month (1-31)"),
-            monthsOfYear: z.array(z.number().int()).optional().describe("Months for yearly recurrence (1-12)"),
-          }),
-        )
-        .optional()
-        .describe("Recurrence rules for repeating events"),
-      clearRecurrence: z.boolean().optional().describe("Set to true to remove recurrence rules from the event"),
-      span: z.enum(["this-event", "future-events"]).optional().describe("Scope for changes to recurring events"),
-      targetCalendar: z.string().optional().describe("The name of the calendar for create or update operations"),
-      filterCalendar: z.string().optional().describe("Filter events by a specific calendar name"),
-      filterAccount: z.string().optional().describe("Filter events by account name"),
-      search: z.string().optional().describe("Search term to filter events by title, notes, or location"),
+        .optional(),
+      alarm_type: z.enum(["display", "audio", "procedure", "email"]).optional().describe("Read-only presentation type"),
+    }),
+  )
+  .describe("Alarms for the event")
+
+const recurrenceRules = z
+  .array(
+    z.object({
+      frequency: z.enum(["minutely", "hourly", "daily", "weekly", "monthly", "yearly"]),
+      interval: z.number().int().optional().describe("Interval between occurrences (default 1)"),
+      end_date: z.string().optional().describe("When the recurrence ends (YYYY-MM-DD)"),
+      occurrence_count: z.number().int().optional().describe("Number of times to repeat"),
+      days_of_week: z.array(z.number().int()).optional().describe("Days of week (1=Sunday, 7=Saturday)"),
+      days_of_month: z.array(z.number().int()).optional().describe("Days of month (1-31)"),
+      months_of_year: z.array(z.number().int()).optional().describe("Months for yearly recurrence (1-12)"),
+    }),
+  )
+  .describe("Recurrence rules for a repeating event")
+
+const availability = z
+  .enum(["not-supported", "busy", "free", "tentative", "unavailable"])
+  .describe("Event availability")
+const span = z
+  .enum(["this-event", "future-events"])
+  .describe("For a recurring event: this occurrence or this and later ones")
+const eventId = z
+  .string()
+  .min(1)
+  .describe("Event id, as returned by list_events. A recurring event's id names the series.")
+
+const eventFields = {
+  note: z.string().optional().describe("Notes for the event"),
+  location: z.string().optional().describe("Location text"),
+  url: z.string().optional().describe("A URL for the event"),
+  is_all_day: z.boolean().optional().describe("Whether it is an all-day event"),
+  availability: availability.optional(),
+  alarms: alarms.optional(),
+  recurrence_rules: recurrenceRules.optional(),
+}
+
+const eventChanges = (
+  validated: z.infer<typeof UpdateCalendarEventSchema> | z.infer<typeof CreateCalendarEventSchema>,
+) => ({
+  notes: validated.note,
+  location: validated.location,
+  url: validated.url,
+  isAllDay: validated.isAllDay,
+  availability: validated.availability,
+  alarms: validated.alarms,
+  recurrenceRules: validated.recurrenceRules,
+})
+
+server.registerTool(
+  "list_events",
+  {
+    description:
+      "List calendar events in a date range (the next 14 days by default), optionally filtered by calendar, account, text or availability.",
+    inputSchema: {
+      start_date: dateTime("Range start").optional(),
+      end_date: dateTime("Range end").optional(),
+      calendar: z.string().optional().describe("Only events in this calendar"),
+      account: z.string().optional().describe("Only events in this account"),
+      search: z.string().optional().describe("Text to match in title, notes or location"),
+      availability: availability.optional(),
     },
   },
-  async (args) => {
-    switch (args.action) {
-      case "read":
-        return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, ReadCalendarEventsSchema)
-
-          if (validatedArgs.id) {
-            const event = await calendarRepository.findEventById(validatedArgs.id)
-            return formatEventMarkdown(event).join("\n")
-          }
-
-          const events = await calendarRepository.findEvents({
-            startDate: validatedArgs.startDate,
-            endDate: validatedArgs.endDate,
-            calendarName: validatedArgs.filterCalendar,
-            search: validatedArgs.search,
-            availability: validatedArgs.availability,
-            accountName: validatedArgs.filterAccount,
-          })
-
-          return formatListMarkdown("Calendar Events", events, formatEventMarkdown, "No calendar events found.")
-        }, "read calendar events")
-
-      case "create":
-        return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, CreateCalendarEventSchema)
-          const event = await calendarRepository.createEvent({
-            title: validatedArgs.title,
-            startDate: validatedArgs.startDate,
-            endDate: validatedArgs.endDate,
-            calendar: validatedArgs.targetCalendar,
-            notes: validatedArgs.note,
-            location: validatedArgs.location,
-            structuredLocation: validatedArgs.structuredLocation,
-            url: validatedArgs.url,
-            isAllDay: validatedArgs.isAllDay,
-            availability: validatedArgs.availability,
-            alarms: validatedArgs.alarms,
-            recurrenceRules: validatedArgs.recurrenceRules,
-          })
-          return formatSuccessMessage("created", "event", event.title, event.id)
-        }, "create calendar event")
-
-      case "update":
-        return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, UpdateCalendarEventSchema)
-          const event = await calendarRepository.updateEvent({
-            id: validatedArgs.id,
-            title: validatedArgs.title,
-            startDate: validatedArgs.startDate,
-            endDate: validatedArgs.endDate,
-            calendar: validatedArgs.targetCalendar,
-            notes: validatedArgs.note,
-            location: validatedArgs.location,
-            structuredLocation: validatedArgs.structuredLocation,
-            url: validatedArgs.url,
-            isAllDay: validatedArgs.isAllDay,
-            availability: validatedArgs.availability,
-            alarms: validatedArgs.alarms,
-            clearAlarms: validatedArgs.clearAlarms,
-            recurrenceRules: validatedArgs.recurrenceRules,
-            clearRecurrence: validatedArgs.clearRecurrence,
-            span: validatedArgs.span,
-          })
-          return formatSuccessMessage("updated", "event", event.title, event.id)
-        }, "update calendar event")
-
-      case "delete":
-        return handleAsyncOperation(async () => {
-          const validatedArgs = extractAndValidateArgs(args as CalendarToolArgs, DeleteCalendarEventSchema)
-          await calendarRepository.deleteEvent(validatedArgs.id, validatedArgs.span)
-          return formatDeleteMessage("event", validatedArgs.id, {
-            useQuotes: true,
-            useIdPrefix: true,
-            usePeriod: true,
-            useColon: false,
-          })
-        }, "delete calendar event")
-
-      default:
-        return errorResult("calendar_events", new Error(`Unknown action: ${String(args.action)}`))
-    }
-  },
+  async (args) =>
+    handleAsyncOperation(async () => {
+      const validated = validateToolArgs(
+        {
+          startDate: args.start_date,
+          endDate: args.end_date,
+          filterCalendar: args.calendar,
+          filterAccount: args.account,
+          search: args.search,
+          availability: args.availability,
+        },
+        ReadCalendarEventsSchema,
+      )
+      const events = await calendarRepository.findEvents({
+        startDate: validated.startDate,
+        endDate: validated.endDate,
+        calendarName: validated.filterCalendar,
+        search: validated.search,
+        availability: validated.availability,
+        accountName: validated.filterAccount,
+      })
+      return formatListMarkdown("Calendar Events", events, formatEventMarkdown, "No calendar events found.")
+    }, "read calendar events"),
 )
 
 server.registerTool(
-  "calendar_calendars",
+  "get_event",
   {
-    description: "Reads calendar collections. Use to inspect available calendars before creating or updating events.",
+    description:
+      "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
+    inputSchema: { id: eventId },
+  },
+  async ({ id }) =>
+    handleAsyncOperation(async () => {
+      const validated = validateToolArgs({ id }, ReadCalendarEventsSchema)
+      const event = await calendarRepository.findEventById(validated.id as string)
+      return formatEventMarkdown(event).join("\n")
+    }, "read calendar events"),
+)
+
+server.registerTool(
+  "create_event",
+  {
+    description: "Create a calendar event.",
     inputSchema: {
-      action: z.enum(["read"]).describe("The operation to perform on calendars"),
+      title: z.string().describe("Event title"),
+      start_date: dateTime("Start"),
+      end_date: dateTime("End"),
+      calendar: z.string().optional().describe("Calendar to create it in (default calendar if omitted)"),
+      structured_location: structuredLocation.optional(),
+      ...eventFields,
     },
   },
-  async (args) => {
-    return handleAsyncOperation(async () => {
-      extractAndValidateArgs(args as CalendarsToolArgs, ReadCalendarsSchema)
+  async ({ calendar, ...rest }) =>
+    handleAsyncOperation(async () => {
+      const validated = validateToolArgs(
+        { ...(camelizeKeys(rest) as object), targetCalendar: calendar },
+        CreateCalendarEventSchema,
+      )
+      const event = await calendarRepository.createEvent({
+        title: validated.title,
+        startDate: validated.startDate,
+        endDate: validated.endDate,
+        calendar: validated.targetCalendar,
+        structuredLocation: validated.structuredLocation,
+        ...eventChanges(validated),
+      })
+      return formatSuccessMessage("created", "event", event.title, event.id)
+    }, "create calendar event"),
+)
+
+server.registerTool(
+  "update_event",
+  {
+    description: "Update a calendar event. Only the fields given change.",
+    inputSchema: {
+      id: eventId,
+      title: z.string().optional().describe("New title"),
+      start_date: dateTime("New start").optional(),
+      end_date: dateTime("New end").optional(),
+      calendar: z.string().optional().describe("Move the event to this calendar"),
+      structured_location: structuredLocation.nullable().optional().describe("Structured location; null removes it"),
+      ...eventFields,
+      clear_alarms: z.boolean().optional().describe("Remove all alarms"),
+      clear_recurrence: z.boolean().optional().describe("Remove the recurrence rules"),
+      span: span.optional(),
+    },
+  },
+  async ({ calendar, ...rest }) =>
+    handleAsyncOperation(async () => {
+      const validated = validateToolArgs(
+        { ...(camelizeKeys(rest) as object), targetCalendar: calendar },
+        UpdateCalendarEventSchema,
+      )
+      const event = await calendarRepository.updateEvent({
+        id: validated.id,
+        title: validated.title,
+        startDate: validated.startDate,
+        endDate: validated.endDate,
+        calendar: validated.targetCalendar,
+        structuredLocation: validated.structuredLocation,
+        ...eventChanges(validated),
+        clearAlarms: validated.clearAlarms,
+        clearRecurrence: validated.clearRecurrence,
+        span: validated.span,
+      })
+      return formatSuccessMessage("updated", "event", event.title, event.id)
+    }, "update calendar event"),
+)
+
+server.registerTool(
+  "delete_event",
+  {
+    description: "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
+    inputSchema: { id: eventId, span: span.optional() },
+  },
+  async ({ id, span }) =>
+    handleAsyncOperation(async () => {
+      const validated = validateToolArgs({ id, span }, DeleteCalendarEventSchema)
+      await calendarRepository.deleteEvent(validated.id, validated.span)
+      return formatDeleteMessage("event", validated.id, {
+        useQuotes: true,
+        useIdPrefix: true,
+        usePeriod: true,
+        useColon: false,
+      })
+    }, "delete calendar event"),
+)
+
+server.registerTool(
+  "list_calendars",
+  {
+    description: "List calendars, to choose one before creating or filtering events.",
+    inputSchema: {},
+  },
+  async () =>
+    handleAsyncOperation(async () => {
       const calendars = await calendarRepository.findAllCalendars()
       return formatListMarkdown(
         "Calendars",
@@ -267,8 +313,7 @@ server.registerTool(
         (calendar) => [`- ${calendar.title} (${calendar.account}) (ID: ${calendar.id})`],
         "No calendars found.",
       )
-    }, "read calendars")
-  },
+    }, "read calendars"),
 )
 
 // ── Entry point ───────────────────────────────────────────────────────

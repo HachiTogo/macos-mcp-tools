@@ -1999,30 +1999,83 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
 [
   {
     "annotations": undefined,
-    "description": "Manages calendar events (time blocks). Supports reading, creating, updating, and deleting calendar events.",
+    "description": "List calendar events in a date range (the next 14 days by default), optionally filtered by calendar, account, text or availability.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "action": {
-          "description": "The operation to perform",
+        "account": {
+          "description": "Only events in this account",
+          "type": "string",
+        },
+        "availability": {
+          "description": "Event availability",
           "enum": [
-            "read",
-            "create",
-            "update",
-            "delete",
+            "not-supported",
+            "busy",
+            "free",
+            "tentative",
+            "unavailable",
           ],
           "type": "string",
         },
+        "calendar": {
+          "description": "Only events in this calendar",
+          "type": "string",
+        },
+        "end_date": {
+          "description": "Range end: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
+          "type": "string",
+        },
+        "search": {
+          "description": "Text to match in title, notes or location",
+          "type": "string",
+        },
+        "start_date": {
+          "description": "Range start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_events",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "id": {
+          "description": "Event id, as returned by list_events. A recurring event's id names the series.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "get_event",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Create a calendar event.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
         "alarms": {
           "description": "Alarms for the event",
           "items": {
             "properties": {
-              "absoluteDate": {
-                "description": "Absolute trigger date/time",
+              "absolute_date": {
+                "description": "Absolute trigger date and time",
                 "type": "string",
               },
-              "alarmType": {
-                "description": "READ-ONLY: Alarm presentation type",
+              "alarm_type": {
+                "description": "Read-only presentation type",
                 "enum": [
                   "display",
                   "audio",
@@ -2031,7 +2084,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 ],
                 "type": "string",
               },
-              "locationTrigger": {
+              "location_trigger": {
                 "properties": {
                   "latitude": {
                     "type": "number",
@@ -2061,8 +2114,8 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 ],
                 "type": "object",
               },
-              "relativeOffset": {
-                "description": "Seconds offset (negative = before start)",
+              "relative_offset": {
+                "description": "Seconds from the start (negative = before)",
                 "type": "number",
               },
             },
@@ -2081,47 +2134,31 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           ],
           "type": "string",
         },
-        "clearAlarms": {
-          "description": "Set to true to remove all alarms from the event",
-          "type": "boolean",
-        },
-        "clearRecurrence": {
-          "description": "Set to true to remove recurrence rules from the event",
-          "type": "boolean",
-        },
-        "endDate": {
-          "description": "End date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
+        "calendar": {
+          "description": "Calendar to create it in (default calendar if omitted)",
           "type": "string",
         },
-        "filterAccount": {
-          "description": "Filter events by account name",
+        "end_date": {
+          "description": "End: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
-        "filterCalendar": {
-          "description": "Filter events by a specific calendar name",
-          "type": "string",
-        },
-        "id": {
-          "description": "The unique identifier of the event (REQUIRED for update, delete; optional for read to get that one event, at any date). A recurring event's id names the series; read returns its first occurrence.",
-          "type": "string",
-        },
-        "isAllDay": {
-          "description": "Whether the event is an all-day event",
+        "is_all_day": {
+          "description": "Whether it is an all-day event",
           "type": "boolean",
         },
         "location": {
-          "description": "Location text for the event",
+          "description": "Location text",
           "type": "string",
         },
         "note": {
-          "description": "Additional notes for the event",
+          "description": "Notes for the event",
           "type": "string",
         },
-        "recurrenceRules": {
-          "description": "Recurrence rules for repeating events",
+        "recurrence_rules": {
+          "description": "Recurrence rules for a repeating event",
           "items": {
             "properties": {
-              "daysOfMonth": {
+              "days_of_month": {
                 "description": "Days of month (1-31)",
                 "items": {
                   "maximum": 9007199254740991,
@@ -2130,7 +2167,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 },
                 "type": "array",
               },
-              "daysOfWeek": {
+              "days_of_week": {
                 "description": "Days of week (1=Sunday, 7=Saturday)",
                 "items": {
                   "maximum": 9007199254740991,
@@ -2139,7 +2176,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 },
                 "type": "array",
               },
-              "endDate": {
+              "end_date": {
                 "description": "When the recurrence ends (YYYY-MM-DD)",
                 "type": "string",
               },
@@ -2160,7 +2197,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 "minimum": -9007199254740991,
                 "type": "integer",
               },
-              "monthsOfYear": {
+              "months_of_year": {
                 "description": "Months for yearly recurrence (1-12)",
                 "items": {
                   "maximum": 9007199254740991,
@@ -2169,7 +2206,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 },
                 "type": "array",
               },
-              "occurrenceCount": {
+              "occurrence_count": {
                 "description": "Number of times to repeat",
                 "maximum": 9007199254740991,
                 "minimum": -9007199254740991,
@@ -2183,23 +2220,11 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           },
           "type": "array",
         },
-        "search": {
-          "description": "Search term to filter events by title, notes, or location",
+        "start_date": {
+          "description": "Start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
-        "span": {
-          "description": "Scope for changes to recurring events",
-          "enum": [
-            "this-event",
-            "future-events",
-          ],
-          "type": "string",
-        },
-        "startDate": {
-          "description": "Start date and time. RECOMMENDED format: 'YYYY-MM-DD HH:mm:ss' (local time). Also supports ISO 8601",
-          "type": "string",
-        },
-        "structuredLocation": {
+        "structured_location": {
           "description": "Structured location with optional coordinates",
           "properties": {
             "latitude": {
@@ -2220,47 +2245,293 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           ],
           "type": "object",
         },
-        "targetCalendar": {
-          "description": "The name of the calendar for create or update operations",
-          "type": "string",
-        },
         "title": {
-          "description": "The title of the event (REQUIRED for create, optional for update)",
+          "description": "Event title",
           "type": "string",
         },
         "url": {
-          "description": "A URL to associate with the event",
+          "description": "A URL for the event",
           "type": "string",
         },
       },
       "required": [
-        "action",
+        "title",
+        "start_date",
+        "end_date",
       ],
       "type": "object",
     },
-    "name": "calendar_events",
+    "name": "create_event",
     "outputSchema": undefined,
   },
   {
     "annotations": undefined,
-    "description": "Reads calendar collections. Use to inspect available calendars before creating or updating events.",
+    "description": "Update a calendar event. Only the fields given change.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
-        "action": {
-          "description": "The operation to perform on calendars",
+        "alarms": {
+          "description": "Alarms for the event",
+          "items": {
+            "properties": {
+              "absolute_date": {
+                "description": "Absolute trigger date and time",
+                "type": "string",
+              },
+              "alarm_type": {
+                "description": "Read-only presentation type",
+                "enum": [
+                  "display",
+                  "audio",
+                  "procedure",
+                  "email",
+                ],
+                "type": "string",
+              },
+              "location_trigger": {
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                  },
+                  "longitude": {
+                    "type": "number",
+                  },
+                  "proximity": {
+                    "enum": [
+                      "enter",
+                      "leave",
+                    ],
+                    "type": "string",
+                  },
+                  "radius": {
+                    "type": "number",
+                  },
+                  "title": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "title",
+                  "latitude",
+                  "longitude",
+                  "proximity",
+                ],
+                "type": "object",
+              },
+              "relative_offset": {
+                "description": "Seconds from the start (negative = before)",
+                "type": "number",
+              },
+            },
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "availability": {
+          "description": "Event availability",
           "enum": [
-            "read",
+            "not-supported",
+            "busy",
+            "free",
+            "tentative",
+            "unavailable",
+          ],
+          "type": "string",
+        },
+        "calendar": {
+          "description": "Move the event to this calendar",
+          "type": "string",
+        },
+        "clear_alarms": {
+          "description": "Remove all alarms",
+          "type": "boolean",
+        },
+        "clear_recurrence": {
+          "description": "Remove the recurrence rules",
+          "type": "boolean",
+        },
+        "end_date": {
+          "description": "New end: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
+          "type": "string",
+        },
+        "id": {
+          "description": "Event id, as returned by list_events. A recurring event's id names the series.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "is_all_day": {
+          "description": "Whether it is an all-day event",
+          "type": "boolean",
+        },
+        "location": {
+          "description": "Location text",
+          "type": "string",
+        },
+        "note": {
+          "description": "Notes for the event",
+          "type": "string",
+        },
+        "recurrence_rules": {
+          "description": "Recurrence rules for a repeating event",
+          "items": {
+            "properties": {
+              "days_of_month": {
+                "description": "Days of month (1-31)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "days_of_week": {
+                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "end_date": {
+                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "type": "string",
+              },
+              "frequency": {
+                "enum": [
+                  "minutely",
+                  "hourly",
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "yearly",
+                ],
+                "type": "string",
+              },
+              "interval": {
+                "description": "Interval between occurrences (default 1)",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+              "months_of_year": {
+                "description": "Months for yearly recurrence (1-12)",
+                "items": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer",
+                },
+                "type": "array",
+              },
+              "occurrence_count": {
+                "description": "Number of times to repeat",
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "frequency",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "span": {
+          "description": "For a recurring event: this occurrence or this and later ones",
+          "enum": [
+            "this-event",
+            "future-events",
+          ],
+          "type": "string",
+        },
+        "start_date": {
+          "description": "New start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
+          "type": "string",
+        },
+        "structured_location": {
+          "anyOf": [
+            {
+              "description": "Structured location with optional coordinates",
+              "properties": {
+                "latitude": {
+                  "type": "number",
+                },
+                "longitude": {
+                  "type": "number",
+                },
+                "radius": {
+                  "type": "number",
+                },
+                "title": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "title",
+              ],
+              "type": "object",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Structured location; null removes it",
+        },
+        "title": {
+          "description": "New title",
+          "type": "string",
+        },
+        "url": {
+          "description": "A URL for the event",
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+      ],
+      "type": "object",
+    },
+    "name": "update_event",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "id": {
+          "description": "Event id, as returned by list_events. A recurring event's id names the series.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "span": {
+          "description": "For a recurring event: this occurrence or this and later ones",
+          "enum": [
+            "this-event",
+            "future-events",
           ],
           "type": "string",
         },
       },
       "required": [
-        "action",
+        "id",
       ],
       "type": "object",
     },
-    "name": "calendar_calendars",
+    "name": "delete_event",
+    "outputSchema": undefined,
+  },
+  {
+    "annotations": undefined,
+    "description": "List calendars, to choose one before creating or filtering events.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_calendars",
     "outputSchema": undefined,
   },
 ]
