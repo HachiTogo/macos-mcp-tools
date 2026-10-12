@@ -3037,15 +3037,14 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List calendar events in a date range (the next 14 days by default), optionally filtered by calendar, account, text or availability.",
+    "description": "List events from start_date to end_date (default: the next 14 days). Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
     "inputSchema": {
       "properties": {
         "account": {
-          "description": "Only events in this account",
+          "description": "As list_calendars shows it",
           "type": "string",
         },
         "availability": {
-          "description": "Event availability",
           "enum": [
             "not-supported",
             "busy",
@@ -3056,15 +3055,14 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "calendar": {
-          "description": "Only events in this calendar (title or id from list_calendars)",
+          "description": "Title or id from list_calendars",
           "type": "string",
         },
         "end_date": {
-          "description": "Range end: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "limit": {
-          "description": "Return at most this many events (all by default)",
+          "description": "Default: all",
           "minimum": 1,
           "type": "integer",
         },
@@ -3075,11 +3073,10 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "integer",
         },
         "search": {
-          "description": "Text to match in title, notes or location",
+          "description": "Matches title, notes or location",
           "type": "string",
         },
         "start_date": {
-          "description": "Range start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
       },
@@ -3095,11 +3092,11 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Get one calendar event by id, at any date. For a recurring event, returns its first occurrence. An event shared into two calendars has one id; the Calendar shown is the copy update_event and delete_event act on.",
+    "description": "Get an event by id, at any date; a recurring event gives its first occurrence. An event shared into two calendars has one id, and the calendar shown is the copy update_event and delete_event change.",
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Event id, as returned by list_events. A recurring event's id names the series.",
+          "description": "From list_events; a recurring event's id names the series",
           "minLength": 1,
           "type": "string",
         },
@@ -3119,25 +3116,13 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Create a calendar event.",
+    "description": "Create an event. Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
     "inputSchema": {
       "properties": {
         "alarms": {
-          "description": "Alarms for the event",
           "items": {
             "properties": {
               "absolute_date": {
-                "description": "Absolute trigger date and time",
-                "type": "string",
-              },
-              "alarm_type": {
-                "description": "Read-only presentation type",
-                "enum": [
-                  "display",
-                  "audio",
-                  "procedure",
-                  "email",
-                ],
                 "type": "string",
               },
               "location_trigger": {
@@ -3171,7 +3156,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 "type": "object",
               },
               "relative_offset": {
-                "description": "Seconds from the start (negative = before)",
+                "description": "Seconds from the start; negative is before",
                 "type": "number",
               },
             },
@@ -3180,7 +3165,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "array",
         },
         "availability": {
-          "description": "Event availability",
           "enum": [
             "not-supported",
             "busy",
@@ -3191,45 +3175,39 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "calendar": {
-          "description": "Calendar to create it in, by title or id (default calendar if omitted)",
+          "description": "Title or id; default calendar if omitted",
           "type": "string",
         },
         "end_date": {
-          "description": "End: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "is_all_day": {
-          "description": "Whether it is an all-day event",
           "type": "boolean",
         },
         "location": {
-          "description": "Location text",
           "type": "string",
         },
         "note": {
-          "description": "Notes for the event",
           "type": "string",
         },
         "recurrence_rules": {
-          "description": "Recurrence rules for a repeating event",
           "items": {
             "properties": {
               "days_of_month": {
-                "description": "Days of month (1-31)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "days_of_week": {
-                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "description": "1 is Sunday, 7 Saturday",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "end_date": {
-                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "description": "YYYY-MM-DD",
                 "type": "string",
               },
               "frequency": {
@@ -3244,18 +3222,15 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 "type": "string",
               },
               "interval": {
-                "description": "Interval between occurrences (default 1)",
                 "type": "integer",
               },
               "months_of_year": {
-                "description": "Months for yearly recurrence (1-12)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
-                "description": "Number of times to repeat",
                 "type": "integer",
               },
             },
@@ -3267,11 +3242,9 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "array",
         },
         "start_date": {
-          "description": "Start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "structured_location": {
-          "description": "Structured location with optional coordinates",
           "properties": {
             "latitude": {
               "type": "number",
@@ -3292,11 +3265,9 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "object",
         },
         "title": {
-          "description": "Event title",
           "type": "string",
         },
         "url": {
-          "description": "A URL for the event",
           "type": "string",
         },
       },
@@ -3317,25 +3288,13 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Update a calendar event. Only the fields given change.",
+    "description": "Update an event; only the fields given change. Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
     "inputSchema": {
       "properties": {
         "alarms": {
-          "description": "Alarms for the event",
           "items": {
             "properties": {
               "absolute_date": {
-                "description": "Absolute trigger date and time",
-                "type": "string",
-              },
-              "alarm_type": {
-                "description": "Read-only presentation type",
-                "enum": [
-                  "display",
-                  "audio",
-                  "procedure",
-                  "email",
-                ],
                 "type": "string",
               },
               "location_trigger": {
@@ -3369,7 +3328,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 "type": "object",
               },
               "relative_offset": {
-                "description": "Seconds from the start (negative = before)",
+                "description": "Seconds from the start; negative is before",
                 "type": "number",
               },
             },
@@ -3378,7 +3337,6 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "array",
         },
         "availability": {
-          "description": "Event availability",
           "enum": [
             "not-supported",
             "busy",
@@ -3389,58 +3347,50 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "calendar": {
-          "description": "Move the event to this calendar, by title or id",
+          "description": "Move to this calendar (title or id)",
           "type": "string",
         },
         "clear_alarms": {
-          "description": "Remove all alarms",
           "type": "boolean",
         },
         "clear_recurrence": {
-          "description": "Remove the recurrence rules",
           "type": "boolean",
         },
         "end_date": {
-          "description": "New end: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "id": {
-          "description": "Event id, as returned by list_events. A recurring event's id names the series.",
+          "description": "From list_events; a recurring event's id names the series",
           "minLength": 1,
           "type": "string",
         },
         "is_all_day": {
-          "description": "Whether it is an all-day event",
           "type": "boolean",
         },
         "location": {
-          "description": "Location text",
           "type": "string",
         },
         "note": {
-          "description": "Notes for the event",
           "type": "string",
         },
         "recurrence_rules": {
-          "description": "Recurrence rules for a repeating event",
           "items": {
             "properties": {
               "days_of_month": {
-                "description": "Days of month (1-31)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "days_of_week": {
-                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "description": "1 is Sunday, 7 Saturday",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "end_date": {
-                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "description": "YYYY-MM-DD",
                 "type": "string",
               },
               "frequency": {
@@ -3455,18 +3405,15 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
                 "type": "string",
               },
               "interval": {
-                "description": "Interval between occurrences (default 1)",
                 "type": "integer",
               },
               "months_of_year": {
-                "description": "Months for yearly recurrence (1-12)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
-                "description": "Number of times to repeat",
                 "type": "integer",
               },
             },
@@ -3478,7 +3425,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "array",
         },
         "span": {
-          "description": "For a recurring event: this occurrence or this and later ones",
+          "description": "Recurring events; default this-event",
           "enum": [
             "this-event",
             "future-events",
@@ -3486,13 +3433,11 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
           "type": "string",
         },
         "start_date": {
-          "description": "New start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "structured_location": {
           "anyOf": [
             {
-              "description": "Structured location with optional coordinates",
               "properties": {
                 "latitude": {
                   "type": "number",
@@ -3516,14 +3461,12 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
               "type": "null",
             },
           ],
-          "description": "Structured location; null removes it",
+          "description": "null removes it",
         },
         "title": {
-          "description": "New title",
           "type": "string",
         },
         "url": {
-          "description": "A URL for the event",
           "type": "string",
         },
       },
@@ -3542,16 +3485,16 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Delete a calendar event, or for a recurring event one occurrence or this and later ones.",
+    "description": "Delete an event; for a recurring one, span picks this occurrence or this and later ones.",
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Event id, as returned by list_events. A recurring event's id names the series.",
+          "description": "From list_events; a recurring event's id names the series",
           "minLength": 1,
           "type": "string",
         },
         "span": {
-          "description": "For a recurring event: this occurrence or this and later ones",
+          "description": "Recurring events; default this-event",
           "enum": [
             "this-event",
             "future-events",
@@ -3574,7 +3517,7 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List calendars, to choose one before creating or filtering events.",
+    "description": "List calendars with their ids and accounts.",
     "inputSchema": {
       "properties": {},
       "type": "object",
@@ -3594,11 +3537,10 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "List reminders, incomplete ones by default, optionally filtered by list, text, due date, priority, recurrence, location or tags.",
+    "description": "List reminders, incomplete ones unless show_completed. Every filter given must match.",
     "inputSchema": {
       "properties": {
         "due_within": {
-          "description": "Due date range",
           "enum": [
             "today",
             "tomorrow",
@@ -3609,16 +3551,15 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "string",
         },
         "limit": {
-          "description": "Return at most this many reminders",
+          "description": "Default: all",
           "minimum": 1,
           "type": "integer",
         },
         "list": {
-          "description": "Only reminders in this list (name or id from list_reminder_lists)",
+          "description": "Name or id from list_reminder_lists",
           "type": "string",
         },
         "location_based": {
-          "description": "Only location-based reminders",
           "type": "boolean",
         },
         "offset": {
@@ -3628,7 +3569,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "integer",
         },
         "priority": {
-          "description": "Only this priority",
           "enum": [
             "high",
             "medium",
@@ -3638,19 +3578,17 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "string",
         },
         "recurring": {
-          "description": "Only recurring reminders",
           "type": "boolean",
         },
         "search": {
-          "description": "Text to match in title or notes",
+          "description": "Matches title or notes",
           "type": "string",
         },
         "show_completed": {
-          "description": "Include completed reminders",
           "type": "boolean",
         },
         "tags": {
-          "description": "Only reminders with all of these tags",
+          "description": "All must match",
           "items": {
             "type": "string",
           },
@@ -3673,7 +3611,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
@@ -3693,29 +3631,16 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Create a reminder, optionally with tags and initial subtasks.",
+    "description": "Create a reminder, optionally with tags and subtasks. Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
     "inputSchema": {
       "properties": {
         "alarms": {
-          "description": "Alarms for the reminder",
           "items": {
             "properties": {
               "absolute_date": {
-                "description": "Absolute trigger date and time",
-                "type": "string",
-              },
-              "alarm_type": {
-                "description": "Read-only presentation type",
-                "enum": [
-                  "display",
-                  "audio",
-                  "procedure",
-                  "email",
-                ],
                 "type": "string",
               },
               "location_trigger": {
-                "description": "Location trigger for a geofenced reminder",
                 "properties": {
                   "latitude": {
                     "type": "number",
@@ -3724,7 +3649,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                     "type": "number",
                   },
                   "proximity": {
-                    "description": "Trigger on arriving or leaving",
                     "enum": [
                       "enter",
                       "leave",
@@ -3732,11 +3656,10 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                     "type": "string",
                   },
                   "radius": {
-                    "description": "Geofence radius in meters (default 100)",
+                    "description": "Meters; default 100",
                     "type": "number",
                   },
                   "title": {
-                    "description": "Location name",
                     "type": "string",
                   },
                 },
@@ -3749,7 +3672,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 "type": "object",
               },
               "relative_offset": {
-                "description": "Seconds from the due or start date (negative = before)",
+                "description": "Seconds from the due or start date; negative is before",
                 "type": "number",
               },
             },
@@ -3758,23 +3681,20 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "array",
         },
         "completed": {
-          "description": "Create it already completed",
           "type": "boolean",
         },
         "due_date": {
-          "description": "Due: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "list": {
-          "description": "List to create it in, by name or id (default list if omitted)",
+          "description": "Name or id; default list if omitted",
           "type": "string",
         },
         "location": {
-          "description": "Location text (not a location trigger)",
+          "description": "Text only; location_trigger sets a geofence",
           "type": "string",
         },
         "location_trigger": {
-          "description": "Location trigger for a geofenced reminder",
           "properties": {
             "latitude": {
               "type": "number",
@@ -3783,7 +3703,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "type": "number",
             },
             "proximity": {
-              "description": "Trigger on arriving or leaving",
               "enum": [
                 "enter",
                 "leave",
@@ -3791,11 +3710,10 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "type": "string",
             },
             "radius": {
-              "description": "Geofence radius in meters (default 100)",
+              "description": "Meters; default 100",
               "type": "number",
             },
             "title": {
-              "description": "Location name",
               "type": "string",
             },
           },
@@ -3808,33 +3726,30 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "object",
         },
         "note": {
-          "description": "Notes",
           "type": "string",
         },
         "priority": {
-          "description": "Priority: 0 none, 1 high, 5 medium, 9 low",
+          "description": "0 none, 1 high, 5 medium, 9 low",
           "type": "integer",
         },
         "recurrence_rules": {
-          "description": "Recurrence rules for a repeating reminder",
           "items": {
             "properties": {
               "days_of_month": {
-                "description": "Days of month (1-31)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "days_of_week": {
-                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "description": "1 is Sunday, 7 Saturday",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "end_date": {
-                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "description": "YYYY-MM-DD",
                 "type": "string",
               },
               "frequency": {
@@ -3849,18 +3764,15 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 "type": "string",
               },
               "interval": {
-                "description": "Interval between occurrences (default 1)",
                 "type": "integer",
               },
               "months_of_year": {
-                "description": "Months for yearly recurrence (1-12)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
-                "description": "Number of times to repeat",
                 "type": "integer",
               },
             },
@@ -3872,29 +3784,25 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "array",
         },
         "start_date": {
-          "description": "Start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "subtasks": {
-          "description": "Titles of initial subtasks",
+          "description": "Subtask titles",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
         "tags": {
-          "description": "Tags to set",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
         "title": {
-          "description": "Reminder title",
           "type": "string",
         },
         "url": {
-          "description": "A URL for the reminder",
           "type": "string",
         },
       },
@@ -3913,36 +3821,22 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": false,
     },
-    "description": "Update a reminder. Only the fields given change; tags and subtasks in its notes are kept.",
+    "description": "Update a reminder; only the fields given change, and tags and subtasks in its notes are kept. Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601.",
     "inputSchema": {
       "properties": {
         "add_tags": {
-          "description": "Tags to add",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
         "alarms": {
-          "description": "Alarms for the reminder",
           "items": {
             "properties": {
               "absolute_date": {
-                "description": "Absolute trigger date and time",
-                "type": "string",
-              },
-              "alarm_type": {
-                "description": "Read-only presentation type",
-                "enum": [
-                  "display",
-                  "audio",
-                  "procedure",
-                  "email",
-                ],
                 "type": "string",
               },
               "location_trigger": {
-                "description": "Location trigger for a geofenced reminder",
                 "properties": {
                   "latitude": {
                     "type": "number",
@@ -3951,7 +3845,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                     "type": "number",
                   },
                   "proximity": {
-                    "description": "Trigger on arriving or leaving",
                     "enum": [
                       "enter",
                       "leave",
@@ -3959,11 +3852,10 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                     "type": "string",
                   },
                   "radius": {
-                    "description": "Geofence radius in meters (default 100)",
+                    "description": "Meters; default 100",
                     "type": "number",
                   },
                   "title": {
-                    "description": "Location name",
                     "type": "string",
                   },
                 },
@@ -3976,7 +3868,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 "type": "object",
               },
               "relative_offset": {
-                "description": "Seconds from the due or start date (negative = before)",
+                "description": "Seconds from the due or start date; negative is before",
                 "type": "number",
               },
             },
@@ -3985,44 +3877,37 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "array",
         },
         "clear_alarms": {
-          "description": "Remove all alarms",
           "type": "boolean",
         },
         "clear_location_trigger": {
-          "description": "Remove the location trigger",
           "type": "boolean",
         },
         "clear_recurrence": {
-          "description": "Remove the recurrence rules",
           "type": "boolean",
         },
         "completed": {
-          "description": "Mark completed or not",
           "type": "boolean",
         },
         "completion_date": {
-          "description": "Completion: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "due_date": {
-          "description": "Due: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
         "list": {
-          "description": "Move it to this list, by name or id",
+          "description": "Move to this list (name or id)",
           "type": "string",
         },
         "location": {
-          "description": "Location text (not a location trigger)",
+          "description": "Text only; location_trigger sets a geofence",
           "type": "string",
         },
         "location_trigger": {
-          "description": "Location trigger for a geofenced reminder",
           "properties": {
             "latitude": {
               "type": "number",
@@ -4031,7 +3916,6 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "type": "number",
             },
             "proximity": {
-              "description": "Trigger on arriving or leaving",
               "enum": [
                 "enter",
                 "leave",
@@ -4039,11 +3923,10 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
               "type": "string",
             },
             "radius": {
-              "description": "Geofence radius in meters (default 100)",
+              "description": "Meters; default 100",
               "type": "number",
             },
             "title": {
-              "description": "Location name",
               "type": "string",
             },
           },
@@ -4056,33 +3939,30 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "object",
         },
         "note": {
-          "description": "Notes",
           "type": "string",
         },
         "priority": {
-          "description": "Priority: 0 none, 1 high, 5 medium, 9 low",
+          "description": "0 none, 1 high, 5 medium, 9 low",
           "type": "integer",
         },
         "recurrence_rules": {
-          "description": "Recurrence rules for a repeating reminder",
           "items": {
             "properties": {
               "days_of_month": {
-                "description": "Days of month (1-31)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "days_of_week": {
-                "description": "Days of week (1=Sunday, 7=Saturday)",
+                "description": "1 is Sunday, 7 Saturday",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "end_date": {
-                "description": "When the recurrence ends (YYYY-MM-DD)",
+                "description": "YYYY-MM-DD",
                 "type": "string",
               },
               "frequency": {
@@ -4097,18 +3977,15 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
                 "type": "string",
               },
               "interval": {
-                "description": "Interval between occurrences (default 1)",
                 "type": "integer",
               },
               "months_of_year": {
-                "description": "Months for yearly recurrence (1-12)",
                 "items": {
                   "type": "integer",
                 },
                 "type": "array",
               },
               "occurrence_count": {
-                "description": "Number of times to repeat",
                 "type": "integer",
               },
             },
@@ -4120,29 +3997,25 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "array",
         },
         "remove_tags": {
-          "description": "Tags to remove",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
         "start_date": {
-          "description": "Start: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
         },
         "tags": {
-          "description": "Replace the tags with these",
+          "description": "Replaces all tags",
           "items": {
             "type": "string",
           },
           "type": "array",
         },
         "title": {
-          "description": "New title",
           "type": "string",
         },
         "url": {
-          "description": "A URL for the reminder",
           "type": "string",
         },
       },
@@ -4165,7 +4038,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
@@ -4204,11 +4077,10 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "color": {
-          "description": "Hex color, e.g. '#FF5733'",
+          "description": "Hex, e.g. '#FF5733'",
           "type": "string",
         },
         "name": {
-          "description": "List name",
           "minLength": 1,
           "type": "string",
         },
@@ -4232,16 +4104,15 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "color": {
-          "description": "Hex color, e.g. '#FF5733'",
+          "description": "Hex, e.g. '#FF5733'",
           "type": "string",
         },
         "name": {
-          "description": "Reminder list name or id, as returned by list_reminder_lists",
+          "description": "Name or id from list_reminder_lists",
           "minLength": 1,
           "type": "string",
         },
         "new_name": {
-          "description": "New name",
           "type": "string",
         },
       },
@@ -4264,7 +4135,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "name": {
-          "description": "Reminder list name or id, as returned by list_reminder_lists",
+          "description": "Name or id from list_reminder_lists",
           "minLength": 1,
           "type": "string",
         },
@@ -4288,7 +4159,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "reminder_id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
@@ -4312,12 +4183,11 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "reminder_id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
         "title": {
-          "description": "Subtask title",
           "type": "string",
         },
       },
@@ -4341,21 +4211,19 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "completed": {
-          "description": "Completed or not",
           "type": "boolean",
         },
         "reminder_id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
         "subtask_id": {
-          "description": "Subtask id, as returned by list_subtasks",
+          "description": "From list_subtasks",
           "minLength": 1,
           "type": "string",
         },
         "title": {
-          "description": "New title",
           "type": "string",
         },
       },
@@ -4379,12 +4247,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "reminder_id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
         "subtask_id": {
-          "description": "Subtask id, as returned by list_subtasks",
+          "description": "From list_subtasks",
           "minLength": 1,
           "type": "string",
         },
@@ -4409,12 +4277,12 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
     "inputSchema": {
       "properties": {
         "reminder_id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },
         "subtask_id": {
-          "description": "Subtask id, as returned by list_subtasks",
+          "description": "From list_subtasks",
           "minLength": 1,
           "type": "string",
         },
@@ -4446,7 +4314,7 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
           "type": "array",
         },
         "reminder_id": {
-          "description": "Reminder id, as returned by list_reminders",
+          "description": "From list_reminders",
           "minLength": 1,
           "type": "string",
         },

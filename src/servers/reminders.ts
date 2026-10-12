@@ -52,55 +52,50 @@ const server = new McpServer({
 
 // ── Argument schemas (snake_case; camelized for the EventKit validators) ──
 
-const dateTime = (what: string) =>
-  z.string().describe(`${what}: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601`)
+// Field descriptions are kept for what a name and type cannot say. The date format is stated once,
+// in each tool's description.
+const DATES = "Dates are local 'YYYY-MM-DD HH:mm:ss' or ISO 8601."
+const date = z.string()
 
-const locationTrigger = z
-  .object({
-    title: z.string().describe("Location name"),
-    latitude: z.number(),
-    longitude: z.number(),
-    radius: z.number().optional().describe("Geofence radius in meters (default 100)"),
-    proximity: z.enum(["enter", "leave"]).describe("Trigger on arriving or leaving"),
-  })
-  .describe("Location trigger for a geofenced reminder")
+const locationTrigger = z.object({
+  title: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  radius: z.number().optional().describe("Meters; default 100"),
+  proximity: z.enum(["enter", "leave"]),
+})
 
-const alarms = z
-  .array(
-    z.object({
-      relative_offset: z.number().optional().describe("Seconds from the due or start date (negative = before)"),
-      absolute_date: z.string().optional().describe("Absolute trigger date and time"),
-      location_trigger: locationTrigger.optional(),
-      alarm_type: z.enum(["display", "audio", "procedure", "email"]).optional().describe("Read-only presentation type"),
-    }),
-  )
-  .describe("Alarms for the reminder")
+const alarms = z.array(
+  z.object({
+    relative_offset: z.number().optional().describe("Seconds from the due or start date; negative is before"),
+    absolute_date: date.optional(),
+    location_trigger: locationTrigger.optional(),
+  }),
+)
 
-const recurrenceRules = z
-  .array(
-    z.object({
-      frequency: z.enum(["minutely", "hourly", "daily", "weekly", "monthly", "yearly"]),
-      interval: z.number().int().optional().describe("Interval between occurrences (default 1)"),
-      end_date: z.string().optional().describe("When the recurrence ends (YYYY-MM-DD)"),
-      occurrence_count: z.number().int().optional().describe("Number of times to repeat"),
-      days_of_week: z.array(z.number().int()).optional().describe("Days of week (1=Sunday, 7=Saturday)"),
-      days_of_month: z.array(z.number().int()).optional().describe("Days of month (1-31)"),
-      months_of_year: z.array(z.number().int()).optional().describe("Months for yearly recurrence (1-12)"),
-    }),
-  )
-  .describe("Recurrence rules for a repeating reminder")
+const recurrenceRules = z.array(
+  z.object({
+    frequency: z.enum(["minutely", "hourly", "daily", "weekly", "monthly", "yearly"]),
+    interval: z.number().int().optional(),
+    end_date: z.string().optional().describe("YYYY-MM-DD"),
+    occurrence_count: z.number().int().optional(),
+    days_of_week: z.array(z.number().int()).optional().describe("1 is Sunday, 7 Saturday"),
+    days_of_month: z.array(z.number().int()).optional(),
+    months_of_year: z.array(z.number().int()).optional(),
+  }),
+)
 
-const reminderId = z.string().min(1).describe("Reminder id, as returned by list_reminders")
-const subtaskId = z.string().min(1).describe("Subtask id, as returned by list_subtasks")
-const listName = z.string().min(1).describe("Reminder list name or id, as returned by list_reminder_lists")
-const priority = z.number().int().describe("Priority: 0 none, 1 high, 5 medium, 9 low")
+const reminderId = z.string().min(1).describe("From list_reminders")
+const subtaskId = z.string().min(1).describe("From list_subtasks")
+const listName = z.string().min(1).describe("Name or id from list_reminder_lists")
+const priority = z.number().int().describe("0 none, 1 high, 5 medium, 9 low")
 
 const reminderFields = {
-  start_date: dateTime("Start").optional(),
-  due_date: dateTime("Due").optional(),
-  note: z.string().optional().describe("Notes"),
-  location: z.string().optional().describe("Location text (not a location trigger)"),
-  url: z.string().optional().describe("A URL for the reminder"),
+  start_date: date.optional(),
+  due_date: date.optional(),
+  note: z.string().optional(),
+  location: z.string().optional().describe("Text only; location_trigger sets a geofence"),
+  url: z.string().optional(),
   priority: priority.optional(),
   alarms: alarms.optional(),
   recurrence_rules: recurrenceRules.optional(),
@@ -124,21 +119,17 @@ const camel = (args: object, renames: Record<string, string> = {}) => {
 server.registerTool(
   "list_reminders",
   {
-    description:
-      "List reminders, incomplete ones by default, optionally filtered by list, text, due date, priority, recurrence, location or tags.",
+    description: "List reminders, incomplete ones unless show_completed. Every filter given must match.",
     inputSchema: {
-      list: z.string().optional().describe("Only reminders in this list (name or id from list_reminder_lists)"),
-      show_completed: z.boolean().optional().describe("Include completed reminders"),
-      search: z.string().optional().describe("Text to match in title or notes"),
-      due_within: z
-        .enum(["today", "tomorrow", "this-week", "overdue", "no-date"])
-        .optional()
-        .describe("Due date range"),
-      priority: z.enum(["high", "medium", "low", "none"]).optional().describe("Only this priority"),
-      recurring: z.boolean().optional().describe("Only recurring reminders"),
-      location_based: z.boolean().optional().describe("Only location-based reminders"),
-      tags: z.array(z.string()).optional().describe("Only reminders with all of these tags"),
-      limit: z.number().int().min(1).optional().describe("Return at most this many reminders"),
+      list: z.string().optional().describe("Name or id from list_reminder_lists"),
+      show_completed: z.boolean().optional(),
+      search: z.string().optional().describe("Matches title or notes"),
+      due_within: z.enum(["today", "tomorrow", "this-week", "overdue", "no-date"]).optional(),
+      priority: z.enum(["high", "medium", "low", "none"]).optional(),
+      recurring: z.boolean().optional(),
+      location_based: z.boolean().optional(),
+      tags: z.array(z.string()).optional().describe("All must match"),
+      limit: z.number().int().min(1).optional().describe("Default: all"),
       offset: offsetArg("reminders"),
     },
     annotations: READ,
@@ -189,14 +180,14 @@ server.registerTool(
 server.registerTool(
   "create_reminder",
   {
-    description: "Create a reminder, optionally with tags and initial subtasks.",
+    description: `Create a reminder, optionally with tags and subtasks. ${DATES}`,
     inputSchema: {
-      title: z.string().describe("Reminder title"),
-      list: z.string().optional().describe("List to create it in, by name or id (default list if omitted)"),
+      title: z.string(),
+      list: z.string().optional().describe("Name or id; default list if omitted"),
       ...reminderFields,
-      completed: z.boolean().optional().describe("Create it already completed"),
-      tags: z.array(z.string()).optional().describe("Tags to set"),
-      subtasks: z.array(z.string()).optional().describe("Titles of initial subtasks"),
+      completed: z.boolean().optional(),
+      tags: z.array(z.string()).optional(),
+      subtasks: z.array(z.string()).optional().describe("Subtask titles"),
     },
     annotations: CREATE,
   },
@@ -228,20 +219,20 @@ server.registerTool(
 server.registerTool(
   "update_reminder",
   {
-    description: "Update a reminder. Only the fields given change; tags and subtasks in its notes are kept.",
+    description: `Update a reminder; only the fields given change, and tags and subtasks in its notes are kept. ${DATES}`,
     inputSchema: {
       id: reminderId,
-      title: z.string().optional().describe("New title"),
-      list: z.string().optional().describe("Move it to this list, by name or id"),
+      title: z.string().optional(),
+      list: z.string().optional().describe("Move to this list (name or id)"),
       ...reminderFields,
-      completed: z.boolean().optional().describe("Mark completed or not"),
-      completion_date: dateTime("Completion").optional(),
-      clear_alarms: z.boolean().optional().describe("Remove all alarms"),
-      clear_recurrence: z.boolean().optional().describe("Remove the recurrence rules"),
-      clear_location_trigger: z.boolean().optional().describe("Remove the location trigger"),
-      tags: z.array(z.string()).optional().describe("Replace the tags with these"),
-      add_tags: z.array(z.string()).optional().describe("Tags to add"),
-      remove_tags: z.array(z.string()).optional().describe("Tags to remove"),
+      completed: z.boolean().optional(),
+      completion_date: date.optional(),
+      clear_alarms: z.boolean().optional(),
+      clear_recurrence: z.boolean().optional(),
+      clear_location_trigger: z.boolean().optional(),
+      tags: z.array(z.string()).optional().describe("Replaces all tags"),
+      add_tags: z.array(z.string()).optional(),
+      remove_tags: z.array(z.string()).optional(),
     },
     annotations: DESTRUCTIVE,
   },
@@ -295,7 +286,7 @@ server.registerTool(
 
 // ── Reminder lists ────────────────────────────────────────────────────
 
-const color = z.string().describe("Hex color, e.g. '#FF5733'")
+const color = z.string().describe("Hex, e.g. '#FF5733'")
 
 server.registerTool(
   "list_reminder_lists",
@@ -311,7 +302,7 @@ server.registerTool(
   "create_reminder_list",
   {
     description: "Create a reminder list.",
-    inputSchema: { name: z.string().min(1).describe("List name"), color: color.optional() },
+    inputSchema: { name: z.string().min(1), color: color.optional() },
     annotations: CREATE,
   },
   async (args) =>
@@ -326,7 +317,7 @@ server.registerTool(
   "update_reminder_list",
   {
     description: "Rename a reminder list or change its color.",
-    inputSchema: { name: listName, new_name: z.string().optional().describe("New name"), color: color.optional() },
+    inputSchema: { name: listName, new_name: z.string().optional(), color: color.optional() },
     annotations: DESTRUCTIVE,
   },
   async (args) =>
@@ -377,7 +368,7 @@ server.registerTool(
   "add_subtask",
   {
     description: "Add a subtask to a reminder.",
-    inputSchema: { reminder_id: reminderId, title: z.string().describe("Subtask title") },
+    inputSchema: { reminder_id: reminderId, title: z.string() },
     annotations: CREATE,
   },
   async (args) =>
@@ -397,8 +388,8 @@ server.registerTool(
     inputSchema: {
       reminder_id: reminderId,
       subtask_id: subtaskId,
-      title: z.string().optional().describe("New title"),
-      completed: z.boolean().optional().describe("Completed or not"),
+      title: z.string().optional(),
+      completed: z.boolean().optional(),
     },
     annotations: DESTRUCTIVE,
   },
