@@ -4,17 +4,9 @@ export {
 } from "./calendar-repository.js"
 export type { PermissionDomain } from "./cli-executor.js"
 export {
-  BinaryValidationError,
   CliPermissionError,
-  calculateBinaryHash,
-  clearBinaryPathCache,
   executeCli,
   findProjectRoot,
-  findSecureBinaryPath,
-  getEnvironmentBinaryConfig,
-  validateBinaryIntegrity,
-  validateBinaryPath,
-  validateBinarySecurity,
 } from "./cli-executor.js"
 export * from "./constants.js"
 export type {

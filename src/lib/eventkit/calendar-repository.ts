@@ -12,6 +12,25 @@ import type {
 
 const DEFAULT_READ_WINDOW_DAYS = 14
 
+// Fields the CLI sends as null when absent; the tools treat them as missing.
+const OPTIONAL_EVENT_FIELDS: (keyof EventJSON)[] = [
+  "notes",
+  "location",
+  "structuredLocation",
+  "url",
+  "availability",
+  "alarms",
+  "recurrenceRules",
+  "organizer",
+  "attendees",
+  "status",
+  "isDetached",
+  "occurrenceDate",
+  "creationDate",
+  "lastModifiedDate",
+  "externalId",
+]
+
 const formatDateOnly = (date: Date): string => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, "0")
@@ -94,23 +113,7 @@ class CalendarRepository {
     // A direct lookup, the one update and delete use. Searching a date range for the id missed every
     // event outside it: EventKit caps a range at four years, so only events near today were found.
     const event = await executeCli<EventJSON>(["--action", "read-event", "--id", id])
-    return nullToUndefined(event, [
-      "notes",
-      "location",
-      "structuredLocation",
-      "url",
-      "availability",
-      "alarms",
-      "recurrenceRules",
-      "organizer",
-      "attendees",
-      "status",
-      "isDetached",
-      "occurrenceDate",
-      "creationDate",
-      "lastModifiedDate",
-      "externalId",
-    ]) as CalendarEvent
+    return nullToUndefined(event, OPTIONAL_EVENT_FIELDS) as CalendarEvent
   }
 
   async findEvents(
@@ -134,25 +137,7 @@ class CalendarRepository {
       filters.search,
       filters.accountName,
     )
-    const normalized = events.map((e) =>
-      nullToUndefined(e, [
-        "notes",
-        "location",
-        "structuredLocation",
-        "url",
-        "availability",
-        "alarms",
-        "recurrenceRules",
-        "organizer",
-        "attendees",
-        "status",
-        "isDetached",
-        "occurrenceDate",
-        "creationDate",
-        "lastModifiedDate",
-        "externalId",
-      ]),
-    ) as CalendarEvent[]
+    const normalized = events.map((e) => nullToUndefined(e, OPTIONAL_EVENT_FIELDS)) as CalendarEvent[]
 
     if (filters.availability) {
       return normalized.filter((event) => event.availability === filters.availability)
