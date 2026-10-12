@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 import { runJxa } from "../lib/jxa.js"
 import { jsonResult, runTool } from "../lib/mcp-result.js"
+import { offsetArg } from "../lib/paging"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── JXA scripts ────────────────────────────────────────────────────────
@@ -226,6 +227,9 @@ function run(argv) {
   app.includeStandardAdditions = true;
   const query = args.query.toLowerCase();
   const limit = args.limit || 20;
+  const offset = args.offset || 0;
+  // The first offset matches are found and dropped, so the search stops once offset + limit are in hand.
+  const wanted = offset + limit;
   let foldersToSearch = [];
   if (args.folder) {
     const allFolders = app.folders();
@@ -237,7 +241,7 @@ function run(argv) {
   }
   const results = [];
   for (const folder of foldersToSearch) {
-    if (results.length >= limit) break;
+    if (results.length >= wanted) break;
     const folderName = folder.name();
     // Each property is read for the whole folder in one Apple event. Reading them note by note made
     // a full search take tens of seconds, and common words ran past the 30 s limit.
@@ -252,7 +256,7 @@ function run(argv) {
     let ids = null;
     let modificationDates = null;
     for (let i = 0; i < names.length; i++) {
-      if (results.length >= limit) break;
+      if (results.length >= wanted) break;
       const { text, warning } = texts[i];
       // An unreadable note might match, so it is returned with its warning rather than skipped.
       if (warning || names[i].toLowerCase().includes(query) || text.toLowerCase().includes(query)) {
@@ -272,7 +276,7 @@ function run(argv) {
       }
     }
   }
-  return JSON.stringify(results);
+  return JSON.stringify(results.slice(offset));
 }
 `
 
@@ -330,7 +334,7 @@ server.registerTool(
     inputSchema: {
       folder: z.string().describe("Folder name"),
       limit: z.number().int().min(1).max(500).default(50).describe("Max notes to return"),
-      offset: z.number().int().min(0).default(0).describe("Offset for pagination"),
+      offset: offsetArg("notes"),
     },
     annotations: { readOnlyHint: true },
   },
@@ -465,11 +469,12 @@ server.registerTool(
       query: z.string().describe("Search query"),
       folder: z.string().optional().describe("Folder name to scope search (optional)"),
       limit: z.number().int().min(1).max(200).default(20).describe("Max results to return"),
+      offset: offsetArg("notes"),
     },
     annotations: { readOnlyHint: true },
   },
-  async ({ query, folder, limit }) =>
-    runTool("search_notes", () => jsonResult(JSON.parse(runJxa(JXA_SEARCH_NOTES, { query, limit, folder })))),
+  async ({ query, folder, limit, offset }) =>
+    runTool("search_notes", () => jsonResult(JSON.parse(runJxa(JXA_SEARCH_NOTES, { query, limit, offset, folder })))),
 )
 
 // ── Entry point ────────────────────────────────────────────────────────

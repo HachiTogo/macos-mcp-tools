@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { CliUserError, camelizeKeys, createErrorMessage, nullToUndefined } from "./helpers.js"
+import { CliUserError, camelizeKeys, createErrorMessage, formatListMarkdown, nullToUndefined } from "./helpers.js"
 import { ValidationError } from "./schemas.js"
 
 describe("helpers", () => {
@@ -120,5 +120,25 @@ describe("camelizeKeys", () => {
       recurrenceRules: [{ frequency: "weekly", daysOfWeek: [2, 4] }],
       note: "keep_this_value",
     })
+  })
+})
+
+describe("formatListMarkdown", () => {
+  const render = (items: string[], page?: { offset: number; total: number }) =>
+    formatListMarkdown("Things", items, (item) => [`- ${item}`], "None.", page).split("\n")
+
+  it("reports the total when the whole list is shown", () => {
+    expect(render(["a", "b"])[0]).toBe("### Things (Total: 2)")
+    expect(render(["a", "b"], { offset: 0, total: 2 })[0]).toBe("### Things (Total: 2)")
+    expect(render([], { offset: 0, total: 0 })).toEqual(["### Things (Total: 0)", "", "None."])
+  })
+
+  it("says when a page holds only part of the list", () => {
+    expect(render(["c"], { offset: 2, total: 3 })[0]).toBe("### Things (1 of 3, from offset 2)")
+    expect(render([], { offset: 5, total: 3 })).toEqual([
+      "### Things (0 of 3, from offset 5)",
+      "",
+      "Nothing at offset 5.",
+    ])
   })
 })

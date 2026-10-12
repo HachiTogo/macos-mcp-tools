@@ -136,11 +136,15 @@ export const formatListMarkdown = <T>(
   items: T[],
   formatItem: (item: T) => string[],
   emptyMessage: string,
+  page?: { offset: number; total: number },
 ): string => {
-  const lines: string[] = [`### ${title} (Total: ${items.length})`, ""]
+  // A page that holds less than the whole list says so, rather than reporting its own size as the total.
+  const partial = page !== undefined && items.length < page.total
+  const count = partial ? `${items.length} of ${page.total}, from offset ${page.offset}` : `Total: ${items.length}`
+  const lines: string[] = [`### ${title} (${count})`, ""]
 
   if (items.length === 0) {
-    lines.push(emptyMessage)
+    lines.push(partial ? `Nothing at offset ${page.offset}.` : emptyMessage)
   } else {
     items.forEach((item) => {
       lines.push(...formatItem(item))

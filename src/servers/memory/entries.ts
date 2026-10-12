@@ -121,6 +121,7 @@ export type SearchEntriesArguments = EntryMatcher & {
   happened_after?: string
   happened_before?: string
   limit: number
+  offset: number
 }
 
 export type QueryResultArguments = EntryMatcher

@@ -140,7 +140,7 @@ describe("chat.db queries", () => {
   })
 
   test("list_chats orders by latest message, skips empty chats, and previews rich-text bodies", () => {
-    const chats = listChats(10, db)
+    const chats = listChats({ limit: 10, offset: 0 }, db)
     expect(chats.map((c) => c.chatId)).toEqual(["chat100", "+15555550101"])
     expect(chats[0]).toMatchObject({
       displayName: "Book club",
@@ -152,32 +152,59 @@ describe("chat.db queries", () => {
   })
 
   test("get_messages is chronological, decodes attributedBody, marks my messages, and leaves out reactions", () => {
-    const messages = getMessages("+15555550101", 50, undefined, undefined, db)
+    const messages = getMessages("+15555550101", { limit: 50, offset: 0 }, db)
     expect(messages.map((m) => [m.text, m.sender])).toEqual([
       ["See you at 6", "+15555550101"],
       ["Running 10% late", "me"],
     ])
-    expect(getMessages("+15555550101", 1, undefined, undefined, db).map((m) => m.text)).toEqual(["Running 10% late"])
+    expect(getMessages("+15555550101", { limit: 1, offset: 0 }, db).map((m) => m.text)).toEqual(["Running 10% late"])
   })
 
   test("get_messages date bounds: a bare date is local midnight, a timestamp is exact", () => {
     // 2026-10-01T08:30-07:00 is 15:30Z: the first message (15:00Z) is inside, the later one is not.
-    const morning = getMessages("+15555550101", 50, "2026-10-01", "2026-10-01T08:30:00-07:00", db)
+    const morning = getMessages(
+      "+15555550101",
+      { limit: 50, offset: 0, fromDate: "2026-10-01", toDate: "2026-10-01T08:30:00-07:00" },
+      db,
+    )
     expect(morning.map((m) => m.text)).toEqual(["See you at 6"])
     // Local Oct 2 starts at 07:00Z, so both 09:00Z group messages are on it.
-    expect(getMessages("chat100", 50, "2026-10-02", undefined, db)).toHaveLength(2)
+    expect(getMessages("chat100", { limit: 50, offset: 0, fromDate: "2026-10-02" }, db)).toHaveLength(2)
   })
 
   test("search_messages matches text and attributedBody case-insensitively, literally, within a chat", () => {
-    expect(searchMessages("LATE", 50, undefined, db).map((m) => m.text)).toEqual(["Running 10% late"])
-    expect(searchMessages("10%", 50, undefined, db)).toHaveLength(1)
-    expect(searchMessages("0_", 50, undefined, db)).toEqual([])
-    const inGroup = searchMessages("e", 50, "chat100", db)
+    expect(searchMessages("LATE", { limit: 50, offset: 0 }, db).map((m) => m.text)).toEqual(["Running 10% late"])
+    expect(searchMessages("10%", { limit: 50, offset: 0 }, db)).toHaveLength(1)
+    expect(searchMessages("0_", { limit: 50, offset: 0 }, db)).toEqual([])
+    const inGroup = searchMessages("e", { limit: 50, offset: 0, chatIdentifier: "chat100" }, db)
     expect(inGroup.map((m) => [m.text, m.chatId])).toEqual([
       ["Dune", "chat100"],
       ["Next book?", "chat100"],
     ])
-    expect(searchMessages("e", 1, undefined, db)).toHaveLength(1)
+    expect(searchMessages("e", { limit: 1, offset: 0 }, db)).toHaveLength(1)
+  })
+
+  test("list_chats pages by offset", () => {
+    expect(listChats({ limit: 1, offset: 1 }, db).map((c) => c.chatId)).toEqual(["+15555550101"])
+    expect(listChats({ limit: 1, offset: 2 }, db)).toEqual([])
+  })
+
+  test("get_messages offset skips the newest messages and keeps each page chronological", () => {
+    // chat100 holds "Next book?" then "Dune"; offset 1 skips the newest, leaving the older one.
+    expect(getMessages("chat100", { limit: 1, offset: 1 }, db).map((m) => m.text)).toEqual(["Next book?"])
+    const page = (offset: number) => getMessages("+15555550101", { limit: 1, offset }, db).map((m) => m.text)
+    expect([...page(1), ...page(0)]).toEqual(
+      getMessages("+15555550101", { limit: 2, offset: 0 }, db).map((m) => m.text),
+    )
+  })
+
+  test("search_messages offset counts matches, not rows, so a non-matching rich-text body is not skipped", () => {
+    const all = searchMessages("e", { limit: 50, offset: 0 }, db).map((m) => m.id)
+    expect(searchMessages("e", { limit: 1, offset: 1 }, db).map((m) => m.id)).toEqual([all[1]])
+    // For "you", SQL returns the newer rich-text row (which does not match) and then the one match. Counting
+    // rows, offset 1 would skip the rich-text row and return the match; counting matches skips the match.
+    expect(searchMessages("you", { limit: 50, offset: 0 }, db).map((m) => m.text)).toEqual(["See you at 6"])
+    expect(searchMessages("you", { limit: 50, offset: 1 }, db)).toEqual([])
   })
 
   test("get_participants lists a chat's handles", () => {

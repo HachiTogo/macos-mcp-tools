@@ -15,6 +15,7 @@ import {
   UpdateCalendarEventSchema,
   validateToolArgs,
 } from "../lib/eventkit/index.js"
+import { offsetArg, paginate } from "../lib/paging"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 // ── Formatters ────────────────────────────────────────────────────────
@@ -167,6 +168,8 @@ server.registerTool(
       account: z.string().optional().describe("Only events in this account"),
       search: z.string().optional().describe("Text to match in title, notes or location"),
       availability: availability.optional(),
+      limit: z.number().int().min(1).optional().describe("Return at most this many events (all by default)"),
+      offset: offsetArg("events"),
     },
   },
   async (args) =>
@@ -190,7 +193,13 @@ server.registerTool(
         availability: validated.availability,
         accountName: validated.filterAccount,
       })
-      return formatListMarkdown("Calendar Events", events, formatEventMarkdown, "No calendar events found.")
+      return formatListMarkdown(
+        "Calendar Events",
+        paginate(events, args.offset, args.limit),
+        formatEventMarkdown,
+        "No calendar events found.",
+        { offset: args.offset, total: events.length },
+      )
     }, "read calendar events"),
 )
 

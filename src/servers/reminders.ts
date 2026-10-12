@@ -32,6 +32,7 @@ import {
   updateSubtask,
   validateToolArgs,
 } from "../lib/eventkit/index.js"
+import { offsetArg, paginate } from "../lib/paging"
 import { PACKAGE_VERSION } from "../lib/version.js"
 
 import {
@@ -137,9 +138,10 @@ server.registerTool(
       location_based: z.boolean().optional().describe("Only location-based reminders"),
       tags: z.array(z.string()).optional().describe("Only reminders with all of these tags"),
       limit: z.number().int().min(1).optional().describe("Return at most this many reminders"),
+      offset: offsetArg("reminders"),
     },
   },
-  async ({ limit, ...filters }) =>
+  async ({ limit, offset, ...filters }) =>
     handleAsyncOperation(async () => {
       const validated = validateToolArgs(
         camel(filters, {
@@ -163,9 +165,10 @@ server.registerTool(
       })
       return formatListMarkdown(
         "Reminders",
-        limit === undefined ? reminders : reminders.slice(0, limit),
+        paginate(reminders, offset, limit),
         formatReminderMarkdown,
         "No reminders found matching the criteria.",
+        { offset, total: reminders.length },
       )
     }, "read reminders"),
 )

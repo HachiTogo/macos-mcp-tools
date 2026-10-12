@@ -34,6 +34,9 @@ Arguments are snake_case throughout, nested ones included: calendar `startDate`,
 | `fetch_email_attachment` `attachmentName`; `search_emails` `unreadOnly`; `reply_email` `replyAll` | `attachment_name`; `unread_only`; `reply_all` |
 | `flag_emails` items `flagIndex`, `flaggedStatus`, `backgroundColor` | `flag_index`, `flagged_status`, `background_color` |
 
+### Added
+- **One pagination shape.** Every tool that lists or searches your content takes `limit` and `offset`, as mail, contacts and `list_notes` already did. `list_chats`, `get_messages`, `search_messages`, `search_notes`, `search_entries`, `list_events` and `list_reminders` gain `offset`, and `list_events` gains `limit`. Defaults and maximums are unchanged, and `list_events` and `list_reminders` still return everything when `limit` is left out. `get_messages` pages back in time: `offset` skips the newest messages, and each page reads oldest first. A calendar or reminders page that holds only part of the result says so in its heading ("10 of 57, from offset 20"). Mail results echo `offset` in `structuredContent.query`. Tools that list small catalogs (accounts, folders, groups, calendars, reminder lists, subtasks) return everything and take no paging arguments.
+
 ### Changed
 - **EventKit permission failures are identified by code.** The Swift CLI now marks them `code: "permission_denied"` with `domain` `calendars` or `reminders`, replacing eight regular expressions over the message text. The unused binary path and hash checks (`SWIFT_BINARY_HASH` was never set) are removed; a missing binary is reported as before.
 - **Notes title lookups skip Recently Deleted.** A trashed note counted as a title match, so deleting "X" and creating a new "X" made the title ambiguous until the trash emptied. A title lookup across folders now ignores Recently Deleted; naming that folder, or passing the note's `id`, still reaches a trashed note. The folder is matched by its English name.

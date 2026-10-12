@@ -713,7 +713,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
         },
         "offset": {
           "default": 0,
-          "description": "Pagination offset",
+          "description": "Skip this many matching contacts before returning; use with limit to page.",
           "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
@@ -739,7 +739,7 @@ exports[`tools/list contract contacts tools match the snapshot 1`] = `
         },
         "offset": {
           "default": 0,
-          "description": "Pagination offset",
+          "description": "Skip this many matching contacts before returning; use with limit to page.",
           "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
@@ -1135,7 +1135,7 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
         },
         "offset": {
           "default": 0,
-          "description": "Offset for pagination",
+          "description": "Skip this many matching notes before returning; use with limit to page.",
           "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
@@ -1357,6 +1357,13 @@ exports[`tools/list contract notes tools match the snapshot 1`] = `
           "description": "Max results to return",
           "maximum": 200,
           "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching notes before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
           "type": "integer",
         },
         "query": {
@@ -1781,6 +1788,13 @@ exports[`tools/list contract memory tools match the snapshot 1`] = `
         "object": {
           "type": "string",
         },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching entries before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
         "status": {
           "type": "string",
         },
@@ -1871,6 +1885,13 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
           "minimum": 1,
           "type": "integer",
         },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching conversations before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
       },
       "type": "object",
     },
@@ -1898,6 +1919,13 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
           "description": "Maximum messages to return (1–200). Default: 50.",
           "maximum": 200,
           "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many of the newest matching messages; use with limit to page back in time. Each page is in chronological order.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
           "type": "integer",
         },
         "to_date": {
@@ -1930,6 +1958,13 @@ exports[`tools/list contract messages tools match the snapshot 1`] = `
           "description": "Maximum results to return (1–200). Default: 50.",
           "maximum": 200,
           "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching messages before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
           "type": "integer",
         },
         "query": {
@@ -2025,6 +2060,19 @@ exports[`tools/list contract events tools match the snapshot 1`] = `
         "end_date": {
           "description": "Range end: 'YYYY-MM-DD HH:mm:ss' in local time (recommended), or ISO 8601",
           "type": "string",
+        },
+        "limit": {
+          "description": "Return at most this many events (all by default)",
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching events before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
         },
         "search": {
           "description": "Text to match in title, notes or location",
@@ -2569,6 +2617,13 @@ exports[`tools/list contract reminders tools match the snapshot 1`] = `
         "location_based": {
           "description": "Only location-based reminders",
           "type": "boolean",
+        },
+        "offset": {
+          "default": 0,
+          "description": "Skip this many matching reminders before returning; use with limit to page.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
         },
         "priority": {
           "description": "Only this priority",

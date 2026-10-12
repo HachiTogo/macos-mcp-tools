@@ -153,6 +153,7 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
       source: SOURCE_NAME,
       query: {
         limit: argumentsValue.limit,
+        offset: argumentsValue.offset,
         ...(argumentsValue.provider ? { provider: argumentsValue.provider } : {}),
         ...(argumentsValue.mailbox ? { mailbox: argumentsValue.mailbox } : {}),
         timeZone: TIME_ZONE,
@@ -271,6 +272,7 @@ export const createUnreadEmailsResult = async (argumentsValue: UnreadEmailArgume
         source: SOURCE_NAME,
         query: {
           limit: argumentsValue.limit,
+          offset: argumentsValue.offset,
           ...(argumentsValue.provider ? { provider: argumentsValue.provider } : {}),
           ...(argumentsValue.mailbox ? { mailbox: argumentsValue.mailbox } : {}),
           timeZone: TIME_ZONE,
@@ -327,6 +329,7 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
         source: SOURCE_NAME,
         query: {
           limit: args.limit,
+          offset: args.offset,
           ...(args.provider ? { provider: args.provider } : {}),
           ...(args.mailbox ? { mailbox: args.mailbox } : {}),
           ...(args.subject ? { subject: args.subject } : {}),
@@ -353,6 +356,7 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
         source: SOURCE_NAME,
         query: {
           limit: args.limit,
+          offset: args.offset,
           timeZone: TIME_ZONE,
         },
         messages: [],
