@@ -106,6 +106,14 @@ export const normalizeSender = (row: EmailRow) => {
 
 /** Gmail's All Mail, under either of the names Gmail uses by region. */
 const GMAIL_ALL_MAIL = /^\[(gmail|google mail)\]\/all mail$/i
+
+/**
+ * The provider a message stored in this mailbox is reported under, so its value works as a
+ * filter: Gmail's All Mail is "gmail", and otherwise the config's provider. An account the config
+ * does not classify is "unknown", not a guess.
+ */
+export const providerOfMailbox = (accountKey: string, mailboxName: string, providerByAccount: Map<string, string>) =>
+  GMAIL_ALL_MAIL.test(mailboxName) ? "gmail" : (providerByAccount.get(accountKey) ?? "unknown")
 /** Labels Gmail applies itself. They are not folders a user filed into: Important, Starred, etc. */
 const GMAIL_SYSTEM_LABEL = /^\[(gmail|google mail)\](\/|$)/i
 
@@ -147,10 +155,7 @@ export const normalizeEmail = (
   }
 
   const mailboxName = getMailboxName(mailboxUrl)
-  const accountKey = getMailboxAccountKey(mailboxUrl)
-  // The provider list_mail_accounts reports, so its value works as a filter. An account the config
-  // does not classify is "unknown", not a guess.
-  let provider = providerByAccount.get(accountKey) ?? "unknown"
+  const provider = providerOfMailbox(getMailboxAccountKey(mailboxUrl), mailboxName, providerByAccount)
 
   // Where the message is reported. Every account but Gmail: the mailbox it is stored in.
   let displayMailboxName = mailboxName
@@ -161,7 +166,6 @@ export const normalizeEmail = (
     // Gmail stores every message here and expresses folders as labels, so the storage mailbox says
     // nothing about where the message is filed. Report its first filed label instead -- INBOX when
     // it has one -- and treat a message with no filed label as archived.
-    provider = "gmail"
     const filed = filedGmailLabels(row.labelMailboxUrls)
     if (filed.length === 0 && !options.includeArchivedGmail) {
       return undefined

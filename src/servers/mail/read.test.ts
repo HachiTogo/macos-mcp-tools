@@ -1,13 +1,13 @@
 import { Database } from "bun:sqlite"
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 import { getMailboxName } from "./mailbox"
 import { emailListOutput, mailAccountsOutput } from "./output"
 import { buildMailboxInventoryQuery, buildUnreadMessagesQuery, getSchemaInfo } from "./queries"
-import { describeMailAccounts, runUnreadEmailRead, summarizeMailAccounts } from "./read"
+import { describeMailAccounts, filterWarnings, runUnreadEmailRead, summarizeMailAccounts } from "./read"
 
 // Provider and mailbox filters are applied in JavaScript, because they depend on the account
 // config and on decoded mailbox names. This used to mean: read the newest 250 messages, filter
@@ -51,11 +51,13 @@ const seed = (noisy: number, quiet: number) => {
   return db
 }
 
-const read = (db: Database, args: Partial<{ limit: number; offset: number; mailbox: string }> = {}) =>
+const read = (db: Database, args: Partial<{ limit: number; offset: number; mailbox: string; provider: string }> = {}) =>
   runUnreadEmailRead(db, { limit: 25, offset: 0, ...args })
 
 const structured = (result: ReturnType<typeof read>) =>
-  result.structuredContent as { messages: { id: string; mailboxUrl: string }[] }
+  result.structuredContent as { messages: { id: string; mailboxUrl: string }[]; warnings?: string[] }
+
+const text = (result: ReturnType<typeof read>) => (result.content[0]?.type === "text" ? result.content[0].text : "")
 
 describe("runUnreadEmailRead", () => {
   test("finds matches past the first page of rows", () => {
@@ -217,12 +219,66 @@ describe("Gmail through runUnreadEmailRead", () => {
   })
 })
 
+// A filter no mailbox can satisfy used to return an empty result indistinguishable from an empty
+// inbox: an agent filtering on provider "icloud" reported an iCloud inbox clear while it held mail.
+describe("filters that match nothing", () => {
+  test("a provider no account has is named, with the providers that exist", () => {
+    const result = read(seed(0, 3), { provider: "icloud" })
+    expect(structured(result).messages).toEqual([])
+    expect(structured(result).warnings).toEqual([
+      `⚠️ No account has provider "icloud". Providers: unknown. Set them in ${join(dataDir, "email.json")}.`,
+    ])
+    expect(text(result)).toStartWith('⚠️ No account has provider "icloud"')
+  })
+
+  test("a mailbox nothing contains is named", () => {
+    const result = read(seed(0, 3), { mailbox: "receipts" })
+    expect(structured(result).messages).toEqual([])
+    expect(structured(result).warnings).toEqual([
+      '⚠️ No mailbox name or URL contains "receipts". See list_mail_accounts.',
+    ])
+  })
+
+  test("a filter that matches carries no warning", () => {
+    const result = read(seed(0, 3), { provider: "unknown", mailbox: "quiet" })
+    expect(structured(result).messages).toHaveLength(3)
+    expect(structured(result).warnings).toBeUndefined()
+  })
+
+  test("Gmail's All Mail counts as gmail even when the config calls the account unknown", () => {
+    const urls = ["imap://GMAIL-KEY/%5BGmail%5D/All%20Mail", "imap://GMAIL-KEY/INBOX", `${QUIET}/INBOX`]
+    const config = {
+      accounts: { "GMAIL-KEY": { label: "Personal", category: "personal", provider: "unknown" } },
+      displayOrder: [],
+    }
+    expect(filterWarnings(urls, config, { provider: "gmail" })).toEqual([])
+    expect(filterWarnings(urls, config, { provider: "icloud" })[0]).toContain("Providers: gmail, unknown.")
+  })
+
+  test("a provider set in the config matches", () => {
+    writeFileSync(
+      join(dataDir, "email.json"),
+      JSON.stringify({
+        accounts: {
+          "noisy%40example.com@imap.example.com": { label: "Work", category: "work", provider: "gmail" },
+          "quiet%40example.com@imap.example.com": { label: "Home", category: "personal", provider: "icloud" },
+        },
+        displayOrder: [],
+      }),
+    )
+    const result = read(seed(2, 3), { provider: "icloud" })
+    expect(structured(result).messages).toHaveLength(3)
+    expect(structured(result).warnings).toBeUndefined()
+  })
+})
+
 // The SDK refuses a result whose structuredContent does not match the tool's declared outputSchema,
 // on the server for successes and on the client for anything carrying structuredContent.
 describe("declared output schemas", () => {
   test("an unread read matches, with results or with none", () => {
     expect(emailListOutput.parse(read(seed(3, 2)).structuredContent)).toBeTruthy()
     expect(emailListOutput.parse(read(seed(0, 0)).structuredContent)).toBeTruthy()
+    expect(emailListOutput.parse(read(seed(0, 3), { provider: "icloud" }).structuredContent)).toBeTruthy()
   })
 
   test("the failure shape the read and search catch branches return matches", () => {

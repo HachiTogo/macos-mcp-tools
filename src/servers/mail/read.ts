@@ -11,7 +11,7 @@ import { MAIL_DB_PATH, TIME_ZONE } from "./constants"
 import { EmailToolError } from "./errors"
 import { formatEmailsForContent, formatSearchEmailSummary } from "./format"
 import { getMailboxAccountKey, getMailboxName, getProviderByAccount } from "./mailbox"
-import { cleanText, matchesMailboxFilter, normalizeEmail, SOURCE_NAME } from "./normalize"
+import { cleanText, matchesMailboxFilter, normalizeEmail, providerOfMailbox, SOURCE_NAME } from "./normalize"
 import {
   buildMailboxInventoryQuery,
   buildSearchMessagesQuery,
@@ -25,6 +25,7 @@ import type {
   EmailRow,
   ListMailAccountsResult,
   MailAccountSummary,
+  NormalizedEmail,
   SearchEmailArguments,
   UnreadEmailArguments,
 } from "./types"
@@ -59,6 +60,50 @@ const resolveConfigForRead = (database: Database): { config: EmailConfig; warnin
   }
 }
 
+type Filters = { provider?: string; mailbox?: string }
+
+/**
+ * Why a provider or mailbox filter cannot match anything. Checked against every mailbox in the
+ * Envelope Index, so a warning means no message can match: an empty result alone would look the
+ * same as an empty inbox.
+ */
+export const filterWarnings = (mailboxUrls: string[], config: EmailConfig, filters: Filters): string[] => {
+  if (!filters.provider && !filters.mailbox) return []
+
+  const providerByAccount = getProviderByAccount(config)
+  const providers = new Set<string>()
+  const needle = filters.mailbox?.toLowerCase()
+  let mailboxFound = false
+  for (const url of mailboxUrls) {
+    const name = getMailboxName(url)
+    providers.add(providerOfMailbox(getMailboxAccountKey(url), name, providerByAccount))
+    if (needle && (name.toLowerCase().includes(needle) || url.toLowerCase().includes(needle))) mailboxFound = true
+  }
+
+  const warnings: string[] = []
+  if (filters.provider && !providers.has(filters.provider)) {
+    warnings.push(
+      `⚠️ No account has provider "${filters.provider}". Providers: ${[...providers].sort().join(", ") || "none"}. Set them in ${resolveConfigPath()}.`,
+    )
+  }
+  if (filters.mailbox && !mailboxFound) {
+    warnings.push(`⚠️ No mailbox name or URL contains "${filters.mailbox}". See list_mail_accounts.`)
+  }
+  return warnings
+}
+
+const filterWarningsFor = (database: Database, config: EmailConfig, filters: Filters) => {
+  if (!filters.provider && !filters.mailbox) return []
+  const rows = database.query("SELECT url AS mailboxUrl FROM mailboxes WHERE url IS NOT NULL").all() as {
+    mailboxUrl: string
+  }[]
+  return filterWarnings(rows.map((row) => cleanText(row.mailboxUrl) ?? "").filter(Boolean), config, filters)
+}
+
+/** Shown ahead of a result's text; the same list goes into structuredContent as `warnings`. */
+const withWarnings = (warnings: string[], text: string) =>
+  (warnings.length > 0 ? `${warnings.join("\n")}\n\n` : "") + text
+
 /** Rows a single statement returns while looking for matches. */
 const SCAN_PAGE = 250
 /** Ceiling on rows examined for one call, so a narrow filter over a huge mailbox still terminates. */
@@ -74,6 +119,15 @@ type Scan<T> = { matches: T[]; scanned: number; exhausted: boolean }
  * what this used to do -- means a filter matching nothing among the newest 250 messages reports no
  * results at all, however many actually match.
  */
+const noScan = <Match>(): Scan<Match> => ({ matches: [], scanned: 0, exhausted: true })
+
+const scanLimitWarning = (scan: Scan<unknown>, needed: number) =>
+  !scan.exhausted && scan.matches.length < needed
+    ? [
+        `⚠️ Stopped after examining ${scan.scanned} messages without filling the page. More may match; narrow the filter, or page with offset.`,
+      ]
+    : []
+
 const scanForMatches = <Row, Match>(
   fetchPage: (page: QueryWindow) => Row[],
   keep: (row: Row) => Match | undefined,
@@ -110,30 +164,30 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
   const providerByAccount = getProviderByAccount(config)
   const allAccountKeys = new Set<string>()
   const needed = argumentsValue.offset + argumentsValue.limit
+  const unmatched = filterWarningsFor(database, config, argumentsValue)
 
-  const scan = scanForMatches(
-    (page) => database.query(buildUnreadMessagesQuery(schema, page)).all() as EmailRow[],
-    (row) => {
-      const accountKey = getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")
-      if (accountKey) allAccountKeys.add(accountKey)
+  // A filter no mailbox can satisfy matches no message, so there is nothing to scan.
+  const scan =
+    unmatched.length > 0
+      ? noScan<NormalizedEmail>()
+      : scanForMatches(
+          (page) => database.query(buildUnreadMessagesQuery(schema, page)).all() as EmailRow[],
+          (row) => {
+            const accountKey = getMailboxAccountKey(cleanText(row.mailboxUrl) ?? "")
+            if (accountKey) allAccountKeys.add(accountKey)
 
-      const email = normalizeEmail(row, providerByAccount, config, { includeArchivedGmail: false })
-      if (!email) return undefined
-      if (argumentsValue.provider && email.provider !== argumentsValue.provider) return undefined
-      if (!matchesMailboxFilter(email, argumentsValue.mailbox)) return undefined
-      return email
-    },
-    needed,
-  )
+            const email = normalizeEmail(row, providerByAccount, config, { includeArchivedGmail: false })
+            if (!email) return undefined
+            if (argumentsValue.provider && email.provider !== argumentsValue.provider) return undefined
+            if (!matchesMailboxFilter(email, argumentsValue.mailbox)) return undefined
+            return email
+          },
+          needed,
+        )
 
   const emails = scan.matches.slice(argumentsValue.offset, needed)
   const unconfiguredKeys = [...allAccountKeys].filter((key) => !config.accounts[key])
-  const warnings: string[] = [...configWarnings]
-  if (!scan.exhausted && scan.matches.length < needed) {
-    warnings.push(
-      `⚠️ Stopped after examining ${scan.scanned} messages without filling the page. More may match; narrow the filter, or page with offset.`,
-    )
-  }
+  const warnings: string[] = [...unmatched, ...configWarnings, ...scanLimitWarning(scan, needed)]
   if (unconfiguredKeys.length > 0) {
     warnings.push(
       `⚠️ ${unconfiguredKeys.length} unconfigured account(s): ${unconfiguredKeys.join(", ")}. Edit ${resolveConfigPath()} to classify them.`,
@@ -144,9 +198,7 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
     content: [
       {
         type: "text",
-        text:
-          (warnings.length > 0 ? `${warnings.join("\n")}\n\n` : "") +
-          formatEmailsForContent(emails, argumentsValue, config),
+        text: withWarnings(warnings, formatEmailsForContent(emails, argumentsValue, config)),
       },
     ],
     structuredContent: {
@@ -159,6 +211,7 @@ export const runUnreadEmailRead = (database: Database, argumentsValue: UnreadEma
         timeZone: TIME_ZONE,
       },
       messages: emails,
+      ...(warnings.length > 0 ? { warnings } : {}),
     },
   }
 }
@@ -239,12 +292,14 @@ export const createListMailAccountsResult = async (): Promise<CallToolResult> =>
     database = db
     ensureRequiredColumns(getSchemaInfo(db))
 
-    const { config } = resolveConfigForRead(db)
+    const { config, warnings } = resolveConfigForRead(db)
     const rows = db.query(buildMailboxInventoryQuery(getSchemaInfo(db))).all() as MailboxInventoryRow[]
     const result = summarizeMailAccounts(rows, config, resolveConfigPath())
-    const text = describeMailAccounts(result)
 
-    return { content: [{ type: "text", text }], structuredContent: result as unknown as Record<string, unknown> }
+    return {
+      content: [{ type: "text", text: withWarnings(warnings, describeMailAccounts(result)) }],
+      structuredContent: { ...result, ...(warnings.length > 0 ? { warnings } : {}) },
+    }
   } catch (error) {
     throw error instanceof EmailToolError ? error : new EmailToolError(`Email read failed: ${String(error)}`)
   } finally {
@@ -295,34 +350,39 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
     const schema = getSchemaInfo(db)
     ensureRequiredColumns(schema)
 
-    const { config } = resolveConfigForRead(db)
+    const { config, warnings: configWarnings } = resolveConfigForRead(db)
 
     const providerByAccount = getProviderByAccount(config)
     const needed = args.offset + args.limit
-    const scan = scanForMatches(
-      (page) => {
-        const { sql, params } = buildSearchMessagesQuery(schema, args, page)
-        return db.query(sql).all(...params) as (EmailRow & { readFlag?: number | null })[]
-      },
-      (row) => {
-        const normalized = normalizeEmail(row, providerByAccount, config, { includeArchivedGmail: true })
-        if (!normalized) return undefined
-        // The query returns read and unread alike, so the flag decides rather than the caller.
-        normalized.isUnread = row.readFlag === 0
-        if (args.provider && normalized.provider !== args.provider) return undefined
-        if (!matchesMailboxFilter(normalized, args.mailbox)) return undefined
-        return normalized
-      },
-      needed,
-    )
+    const unmatched = filterWarningsFor(db, config, args)
+    const scan =
+      unmatched.length > 0
+        ? noScan<NormalizedEmail>()
+        : scanForMatches(
+            (page) => {
+              const { sql, params } = buildSearchMessagesQuery(schema, args, page)
+              return db.query(sql).all(...params) as (EmailRow & { readFlag?: number | null })[]
+            },
+            (row) => {
+              const normalized = normalizeEmail(row, providerByAccount, config, { includeArchivedGmail: true })
+              if (!normalized) return undefined
+              // The query returns read and unread alike, so the flag decides rather than the caller.
+              normalized.isUnread = row.readFlag === 0
+              if (args.provider && normalized.provider !== args.provider) return undefined
+              if (!matchesMailboxFilter(normalized, args.mailbox)) return undefined
+              return normalized
+            },
+            needed,
+          )
 
     const emails = scan.matches.slice(args.offset, needed)
+    const warnings = [...unmatched, ...configWarnings, ...scanLimitWarning(scan, needed)]
 
     return {
       content: [
         {
           type: "text",
-          text: formatSearchEmailSummary(emails, args),
+          text: withWarnings(warnings, formatSearchEmailSummary(emails, args)),
         },
       ],
       structuredContent: {
@@ -340,6 +400,7 @@ export const createSearchEmailResult = async (args: SearchEmailArguments): Promi
           timeZone: TIME_ZONE,
         },
         messages: emails,
+        ...(warnings.length > 0 ? { warnings } : {}),
       },
     }
   } catch (error) {

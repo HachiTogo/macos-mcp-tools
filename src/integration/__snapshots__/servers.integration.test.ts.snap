@@ -9,7 +9,7 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Mail accounts and mailboxes, with unread counts. The provider and mailbox filters take values from here; one that matches nothing returns no mail, not an error.",
+    "description": "Mail accounts and mailboxes, with unread counts. The provider and mailbox filters take values from here; one that matches nothing returns no mail and a warning.",
     "inputSchema": {
       "properties": {},
       "type": "object",
