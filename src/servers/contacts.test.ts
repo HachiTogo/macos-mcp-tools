@@ -17,6 +17,9 @@ import {
   JXA_GROUPS_GET,
   JXA_GROUPS_READ,
   JXA_GROUPS_REMOVE_MEMBER,
+  readableLabel,
+  relabel,
+  storedLabel,
 } from "./contacts"
 
 type FakeApp = { people: { whose: (query: { id: string }) => () => unknown[] } }
@@ -163,5 +166,46 @@ describe("read tools' declared output schemas", () => {
     const contact = structured(JXA_CONTACTS_GET, { id: "p2" })
     expect(contact?.warnings).toEqual(["Could not read emails: Can't get object."])
     expect(contactOutput.parse(contact)).toBeTruthy()
+  })
+})
+
+// Contacts returned its built-in labels as raw codes, `_$!<Work>!$_`, and saved a plain "work" as a
+// custom label rather than its own Work.
+describe("contact labels", () => {
+  test("reads give the word Contacts shows", () => {
+    expect(readableLabel("_$!<Work>!$_")).toBe("work")
+    expect(readableLabel("_$!<WorkFAX>!$_")).toBe("work fax")
+    expect(readableLabel("_$!<HomePage>!$_")).toBe("homepage")
+  })
+
+  test("custom labels and unlisted codes pass through", () => {
+    expect(readableLabel("rentals")).toBe("rentals")
+    expect(readableLabel("_$!<Anniversary>!$_")).toBe("_$!<Anniversary>!$_")
+    expect(storedLabel("rentals")).toBe("rentals")
+    expect(storedLabel("_$!<Home>!$_")).toBe("_$!<Home>!$_")
+  })
+
+  test("writes turn a built-in word back into its code, in any case", () => {
+    expect(storedLabel("Work")).toBe("_$!<Work>!$_")
+    expect(storedLabel("work fax")).toBe("_$!<WorkFAX>!$_")
+    expect(storedLabel(readableLabel("_$!<Mobile>!$_"))).toBe("_$!<Mobile>!$_")
+  })
+
+  test("a contact's emails, phones and addresses are all mapped, and nothing else", () => {
+    const contact = {
+      id: "1",
+      note: "_$!<Work>!$_ stays in a note",
+      emails: [{ label: "_$!<Work>!$_", value: "a@example.com" }],
+      phones: [{ label: "_$!<Mobile>!$_", value: "555-0100" }],
+      addresses: [{ label: "_$!<Home>!$_", city: "Springfield" }],
+    }
+    expect(relabel(contact, readableLabel)).toEqual({
+      id: "1",
+      note: "_$!<Work>!$_ stays in a note",
+      emails: [{ label: "work", value: "a@example.com" }],
+      phones: [{ label: "mobile", value: "555-0100" }],
+      addresses: [{ label: "home", city: "Springfield" }],
+    })
+    expect(relabel({ first_name: "A" }, storedLabel)).toEqual({ first_name: "A" })
   })
 })

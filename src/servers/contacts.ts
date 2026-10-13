@@ -283,6 +283,48 @@ function run(argv) {
 }
 `
 
+// ── Labels ─────────────────────────────────────────────────────────────
+
+// Contacts stores its built-in labels as codes like `_$!<Work>!$_` and shows them as words. Reads
+// give the word Contacts shows. Writes turn that word back into the code, because Contacts saves a
+// plain "work" as a custom label that only looks like its own. Custom labels, and codes not
+// listed, pass through both ways unchanged.
+const STANDARD_LABELS: Record<string, string> = {
+  Home: "home",
+  Work: "work",
+  Other: "other",
+  School: "school",
+  Mobile: "mobile",
+  Main: "main",
+  Pager: "pager",
+  HomeFAX: "home fax",
+  WorkFAX: "work fax",
+  OtherFAX: "other fax",
+  HomePage: "homepage",
+}
+const CODE_BY_WORD = new Map(Object.entries(STANDARD_LABELS).map(([code, word]) => [word, `_$!<${code}>!$_`]))
+
+export const readableLabel = (label: string): string => {
+  const code = /^_\$!<(.+)>!\$_$/.exec(label)?.[1]
+  return (code && STANDARD_LABELS[code]) || label
+}
+
+export const storedLabel = (label: string): string => CODE_BY_WORD.get(label.toLowerCase()) ?? label
+
+/** A contact, or a contact's arguments, with every email, phone and address label mapped. */
+export const relabel = <T extends Record<string, unknown>>(contact: T, map: (label: string) => string): T => {
+  const mapped: Record<string, unknown> = { ...contact }
+  for (const field of ["emails", "phones", "addresses"]) {
+    const items = contact[field]
+    if (Array.isArray(items)) {
+      mapped[field] = items.map((item: { label?: unknown }) =>
+        typeof item.label === "string" ? { ...item, label: map(item.label) } : item,
+      )
+    }
+  }
+  return mapped as T
+}
+
 // ── MCP Server ─────────────────────────────────────────────────────────
 
 const server = new McpServer({
@@ -356,13 +398,14 @@ server.registerTool(
     outputSchema: contactOutput,
     annotations: READ,
   },
-  async ({ id }) => runScript("get_contact", JXA_CONTACTS_GET, { id }),
+  async ({ id }) =>
+    runTool("get_contact", () => jsonResult(relabel(JSON.parse(runJxa(JXA_CONTACTS_GET, { id })), readableLabel))),
 )
 
 server.registerTool(
   "create_contact",
   { description: "Create a contact.", inputSchema: contactFields, annotations: CREATE },
-  async (args) => runScript("create_contact", JXA_CONTACTS_CREATE, args),
+  async (args) => runScript("create_contact", JXA_CONTACTS_CREATE, relabel(args, storedLabel)),
 )
 
 server.registerTool(
@@ -372,7 +415,7 @@ server.registerTool(
     inputSchema: { id: contactId, ...contactFields },
     annotations: DESTRUCTIVE,
   },
-  async (args) => runScript("update_contact", JXA_CONTACTS_UPDATE, args),
+  async (args) => runScript("update_contact", JXA_CONTACTS_UPDATE, relabel(args, storedLabel)),
 )
 
 server.registerTool(
