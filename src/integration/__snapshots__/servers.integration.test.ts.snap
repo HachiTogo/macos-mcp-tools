@@ -917,7 +917,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "bcc": {
           "items": {
             "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
             "type": "string",
           },
           "type": "array",
@@ -930,7 +929,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "cc": {
           "items": {
             "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
             "type": "string",
           },
           "type": "array",
@@ -938,7 +936,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "from": {
           "description": "Must match an enabled account",
           "format": "email",
-          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
           "type": "string",
         },
         "subject": {
@@ -948,7 +945,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "to": {
           "items": {
             "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
             "type": "string",
           },
           "minItems": 1,
@@ -983,7 +979,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "from": {
           "description": "Must match an enabled account",
           "format": "email",
-          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
           "type": "string",
         },
         "handle": {
@@ -1031,7 +1026,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "bcc": {
           "items": {
             "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
             "type": "string",
           },
           "type": "array",
@@ -1043,7 +1037,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "cc": {
           "items": {
             "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
             "type": "string",
           },
           "type": "array",
@@ -1051,7 +1044,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "from": {
           "description": "Must match an enabled account",
           "format": "email",
-          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
           "type": "string",
         },
         "handle": {
@@ -1076,7 +1068,6 @@ exports[`tools/list contract mail tools match the snapshot 1`] = `
         "to": {
           "items": {
             "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
             "type": "string",
           },
           "minItems": 1,
