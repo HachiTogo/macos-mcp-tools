@@ -136,6 +136,8 @@ export type ExtractEmailLinksResult = {
   links: EmailLink[]
   count: number
   truncated: boolean
+  /** A part whose charset could not be decoded, for example. */
+  warnings?: string[]
 }
 
 export type ListEmailAttachmentsArguments = {

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **A mail filter that cannot match now says so.** `list_unread_emails` and `search_emails` with a `provider` no account has, or a `mailbox` no mailbox name or URL contains, returned an empty result that looked like an empty inbox. They now return it with a warning naming the providers that exist and where to set them, in the text and as `warnings` in `structuredContent`.
+- **`extract_email_links` decodes every message's links.** It read a part's encoding only from headers after its `Content-Type` line, so mail that lists `Content-Transfer-Encoding` first (GitHub's notifications, among others) came back with quoted-printable left in: hrefs cut at line breaks and full of `=3D`. Parts are now read as MIME: headers in any order, parts ending only at their boundary, nested multiparts followed, every HTML part read, and text decoded in its charset. Hrefs are also unescaped, so `&amp;` in a query string becomes `&`. A message with no text part no longer yields the URLs in its headers.
 - **`search_emails` and `list_mail_accounts` no longer drop warnings.** A config that could not be saved, and a search that stopped scanning before filling its page, are now reported as `list_unread_emails` already reported them.
 
 ## [1.0.0] - 2026-10-13
