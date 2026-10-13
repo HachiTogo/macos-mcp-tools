@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CI caps what the model reads of the tool contract.** Hosts give the model each tool's name, description and input schema; hints and output schemas stay with the client. The integration suite now fails if that part, summed over all seven servers, passes 36,000 bytes, about 9K tokens. It is 35,174 bytes. The whole `tools/list` keeps its ratchet as a lock against drift.
+
 ### Changed
 
 - **Email fields no longer repeat zod's address regex.** `send_email`, `reply_email` and `forward_email` listed a 116-byte pattern beside `format: "email"` on every address field, nine times in all. `tools/list` now gives the format alone, about 1 KB less of what the model reads. The servers still validate every address with the same rule, so what the tools accept is unchanged.

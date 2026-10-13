@@ -3,8 +3,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
 
-// Every host loads tools/list into the model's context. The SDK's JSON Schema carries boilerplate
-// no client needs: `$schema` on every schema, `additionalProperties: false` on inputs (the server
+// Hosts give the model each tool's name, description and inputSchema; annotations and outputSchema
+// stay with the client. The SDK's JSON Schema carries boilerplate no client needs: `$schema` on every schema, `additionalProperties: false` on inputs (the server
 // strips unknown keys anyway) or `{}` on loose outputs, the ±2^53 bounds zod adds to every integer,
 // `anyOf` spelled out where a list of types says the same, zod's email regex beside the
 // `format: "email"` that already names it, and `execution: { taskSupport: "forbidden" }`, which is
