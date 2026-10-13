@@ -53,7 +53,7 @@ server.registerTool(
   "list_mail_accounts",
   {
     description:
-      "Mail accounts and mailboxes, with unread counts. The provider and mailbox filters take values from here; one that matches nothing returns no mail, not an error.",
+      "Mail accounts and mailboxes, with unread counts. The provider and mailbox filters take values from here; one that matches nothing returns no mail and a warning.",
     inputSchema: {},
     outputSchema: mailAccountsOutput,
     annotations: READ,
