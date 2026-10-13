@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-13
+
 ### Added
 
 - **CI caps what the model reads of the tool contract.** Hosts give the model each tool's name, description and input schema; hints and output schemas stay with the client. The integration suite now fails if that part, summed over all seven servers, passes 36,000 bytes, about 9K tokens. It is 35,174 bytes. The whole `tools/list` keeps its ratchet as a lock against drift.
