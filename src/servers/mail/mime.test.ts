@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { extractLinksFromSource } from "./message-content"
+import { extractLinksFromSource, trimUrlEnd } from "./message-content"
 import { decodeTextPart, parseContentType, quotedPrintableBytes, textParts } from "./mime"
 
 const crlf = (...lines: string[]) => lines.join("\r\n")
@@ -175,5 +175,35 @@ describe("extractLinksFromSource on multipart mail", () => {
       "--m--",
     )
     expect(extractLinksFromSource(source).links).toEqual([])
+  })
+})
+
+describe("plain-text links", () => {
+  test("leave out the sentence's punctuation", () => {
+    expect(trimUrlEnd("https://example.com/a.")).toBe("https://example.com/a")
+    expect(trimUrlEnd("https://example.com/a?!")).toBe("https://example.com/a")
+    expect(trimUrlEnd("https://example.com/a),")).toBe("https://example.com/a")
+    expect(trimUrlEnd("https://example.com/a.html")).toBe("https://example.com/a.html")
+  })
+
+  test("keep a closing bracket the URL itself opened", () => {
+    expect(trimUrlEnd("https://en.wikipedia.org/wiki/Mercury_(planet)")).toBe(
+      "https://en.wikipedia.org/wiki/Mercury_(planet)",
+    )
+    expect(trimUrlEnd("https://en.wikipedia.org/wiki/Mercury_(planet))")).toBe(
+      "https://en.wikipedia.org/wiki/Mercury_(planet)",
+    )
+  })
+
+  test("in a plain-text message", () => {
+    const source = crlf(
+      "Content-Type: text/plain",
+      "",
+      "Read https://example.com/start. Then (https://example.com/next).",
+    )
+    expect(extractLinksFromSource(source).links.map((link) => link.url)).toEqual([
+      "https://example.com/start",
+      "https://example.com/next",
+    ])
   })
 })

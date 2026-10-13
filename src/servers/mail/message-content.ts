@@ -101,6 +101,26 @@ export const decodeHtmlEntities = (value: string): string => {
     .replace(/&#(\d+);/g, (_match, dec) => String.fromCodePoint(parseInt(dec, 10)))
 }
 
+const CLOSERS: Record<string, string> = { ")": "(", "]": "[", "}": "{" }
+
+const occurrences = (text: string, char: string) => text.split(char).length - 1
+
+/**
+ * A URL found in plain text, without the punctuation of the sentence around it: "see
+ * https://example.com/a." links to /a. A closing bracket stays when the URL opened it, as in
+ * https://en.wikipedia.org/wiki/Mercury_(planet).
+ */
+export const trimUrlEnd = (url: string): string => {
+  let trimmed = url
+  for (;;) {
+    const last = trimmed.at(-1) ?? ""
+    const opener = CLOSERS[last]
+    if (".,;:!?".includes(last) && last !== "") trimmed = trimmed.slice(0, -1)
+    else if (opener && occurrences(trimmed, last) > occurrences(trimmed, opener)) trimmed = trimmed.slice(0, -1)
+    else return trimmed
+  }
+}
+
 /**
  * Links from every inline HTML part, or from the plain-text parts when there is no HTML. A message
  * with no text part has no links: the raw source is headers and encoded attachments.
@@ -147,8 +167,8 @@ export const extractLinksFromSource = (
     for (const part of parts) {
       const urlRegex = /\bhttps?:\/\/[^\s<>"']+/g
       for (const match of decodeTextPart(part, warnings).matchAll(urlRegex)) {
-        const url = match[0]
-        pushLink(url, url)
+        const url = trimUrlEnd(match[0])
+        if (!/^https?:\/\/$/.test(url)) pushLink(url, url)
       }
     }
   }
