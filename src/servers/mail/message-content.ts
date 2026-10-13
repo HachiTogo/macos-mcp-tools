@@ -17,6 +17,7 @@ import {
   FETCH_EMAIL_SOURCE_JXA,
   LIST_EMAIL_ATTACHMENTS_JXA,
 } from "./jxa-scripts"
+import { decodeTextPart, textParts } from "./mime"
 import type {
   EmailAttachment,
   EmailHandle,
@@ -88,20 +89,6 @@ export const fetchEmailSourceWithJxa = (handle: EmailHandle): { found: boolean; 
   }
 }
 
-export const decodeQuotedPrintable = (value: string): string => {
-  const softBreaksRemoved = value.replace(/=\r?\n/g, "")
-  return softBreaksRemoved.replace(/=([0-9A-Fa-f]{2})/g, (_match, hex) => String.fromCharCode(parseInt(hex, 16)))
-}
-
-export const decodeBase64Body = (value: string): string => {
-  const stripped = value.replace(/\s+/g, "")
-  try {
-    return Buffer.from(stripped, "base64").toString("utf8")
-  } catch {
-    return ""
-  }
-}
-
 export const decodeHtmlEntities = (value: string): string => {
   return value
     .replace(/&nbsp;/g, " ")
@@ -114,42 +101,16 @@ export const decodeHtmlEntities = (value: string): string => {
     .replace(/&#(\d+);/g, (_match, dec) => String.fromCodePoint(parseInt(dec, 10)))
 }
 
-export const findMimePart = (source: string, contentTypePattern: RegExp): { body: string; encoding: string } | null => {
-  const typeMatch = contentTypePattern.exec(source)
-  if (!typeMatch) {
-    return null
-  }
-
-  const partStart = typeMatch.index
-  const blankLineMatch = /\r?\n\r?\n/.exec(source.slice(partStart))
-  if (!blankLineMatch) {
-    return null
-  }
-  const bodyStart = partStart + blankLineMatch.index + blankLineMatch[0].length
-
-  const headers = source.slice(partStart, partStart + blankLineMatch.index)
-  const encodingMatch = /Content-Transfer-Encoding\s*:\s*([^\r\n;]+)/i.exec(headers)
-  const encoding = encodingMatch ? encodingMatch[1].trim().toLowerCase() : ""
-
-  const remainder = source.slice(bodyStart)
-  const boundaryMatch = /\r?\n--/.exec(remainder)
-  const body = boundaryMatch ? remainder.slice(0, boundaryMatch.index) : remainder
-
-  return { body, encoding }
-}
-
-export const decodePartBody = (body: string, encoding: string): string => {
-  if (encoding === "quoted-printable") {
-    return decodeQuotedPrintable(body)
-  }
-  if (encoding === "base64") {
-    return decodeBase64Body(body)
-  }
-  return body
-}
-
-export const extractLinksFromSource = (source: string): { links: EmailLink[]; truncated: boolean } => {
-  const htmlPart = findMimePart(source, /Content-Type\s*:\s*text\/html/i)
+/**
+ * Links from every inline HTML part, or from the plain-text parts when there is no HTML. A message
+ * with no text part has no links: the raw source is headers and encoded attachments.
+ */
+export const extractLinksFromSource = (
+  source: string,
+): { links: EmailLink[]; truncated: boolean; warnings: string[] } => {
+  const parts = textParts(source)
+  const html = parts.filter((part) => part.type === "text/html")
+  const warnings: string[] = []
   const links: EmailLink[] = []
   const seen = new Set<string>()
 
@@ -162,11 +123,12 @@ export const extractLinksFromSource = (source: string): { links: EmailLink[]; tr
     links.push({ url, text })
   }
 
-  if (htmlPart) {
-    const html = decodePartBody(htmlPart.body, htmlPart.encoding)
+  for (const part of html) {
+    const decodedHtml = decodeTextPart(part, warnings)
     const anchorRegex = /<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi
-    for (const match of html.matchAll(anchorRegex)) {
-      const href = (match[1] ?? match[2] ?? match[3] ?? "").trim()
+    for (const match of decodedHtml.matchAll(anchorRegex)) {
+      // Attribute values are HTML-escaped: a query string arrives as `?a=1&amp;b=2`.
+      const href = decodeHtmlEntities((match[1] ?? match[2] ?? match[3] ?? "").trim())
       if (!href) continue
       if (href.startsWith("mailto:")) continue
       if (href.startsWith("javascript:")) continue
@@ -179,20 +141,22 @@ export const extractLinksFromSource = (source: string): { links: EmailLink[]; tr
 
       pushLink(href, text)
     }
-  } else {
-    const plainPart = findMimePart(source, /Content-Type\s*:\s*text\/plain/i)
-    const haystack = plainPart ? decodePartBody(plainPart.body, plainPart.encoding) : source
-    const urlRegex = /\bhttps?:\/\/[^\s<>"']+/g
-    for (const match of haystack.matchAll(urlRegex)) {
-      const url = match[0]
-      pushLink(url, url)
+  }
+
+  if (html.length === 0) {
+    for (const part of parts) {
+      const urlRegex = /\bhttps?:\/\/[^\s<>"']+/g
+      for (const match of decodeTextPart(part, warnings).matchAll(urlRegex)) {
+        const url = match[0]
+        pushLink(url, url)
+      }
     }
   }
 
   if (links.length > MAX_LINKS) {
-    return { links: links.slice(0, MAX_LINKS), truncated: true }
+    return { links: links.slice(0, MAX_LINKS), truncated: true, warnings }
   }
-  return { links, truncated: false }
+  return { links, truncated: false, warnings }
 }
 
 export const createExtractEmailLinksResult = async (
@@ -200,7 +164,9 @@ export const createExtractEmailLinksResult = async (
 ): Promise<CallToolResult> => {
   try {
     const { found, source } = fetchEmailSourceWithJxa(argumentsValue.handle)
-    const { links, truncated } = found ? extractLinksFromSource(source) : { links: [] as EmailLink[], truncated: false }
+    const { links, truncated, warnings } = found
+      ? extractLinksFromSource(source)
+      : { links: [] as EmailLink[], truncated: false, warnings: [] as string[] }
 
     const result: ExtractEmailLinksResult = {
       handle: argumentsValue.handle,
@@ -208,6 +174,7 @@ export const createExtractEmailLinksResult = async (
       links,
       count: links.length,
       truncated,
+      ...(warnings.length > 0 ? { warnings } : {}),
     }
 
     const content = ((): CallToolResult["content"] => {
@@ -215,9 +182,12 @@ export const createExtractEmailLinksResult = async (
         return [{ type: "text", text: "(message not found)" }]
       }
       if (links.length === 0) {
-        return [{ type: "text", text: "No links found." }]
+        return [{ type: "text", text: [...warnings, "No links found."].join("\n") }]
       }
-      const header = `Found ${links.length} link${links.length === 1 ? "" : "s"}${truncated ? " (truncated)" : ""}`
+      const header = [
+        ...warnings,
+        `Found ${links.length} link${links.length === 1 ? "" : "s"}${truncated ? " (truncated)" : ""}`,
+      ].join("\n")
       const lines = links.map((link) => `- [${link.text}](${link.url})`)
       return [{ type: "text", text: header }, ...lines.map((line) => ({ type: "text" as const, text: line }))]
     })()
