@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-14
+
 ### Fixed
 
 - **A mail filter that cannot match now says so.** `list_unread_emails` and `search_emails` with a `provider` no account has, or a `mailbox` no mailbox name or URL contains, returned an empty result that looked like an empty inbox. They now return it with a warning naming the providers that exist and where to set them, in the text and as `warnings` in `structuredContent`.
